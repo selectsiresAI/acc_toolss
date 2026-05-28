@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Settings, Download, RefreshCw, Users, TrendingUp, BarChart3, PieChart as PieChartIcon, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
 import { HelpButton } from "@/components/help/HelpButton";
 import { HelpHint } from "@/components/help/HelpHint";
 import { formatPtaValue } from "@/utils/ptaFormat";
@@ -83,6 +84,9 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
   const [searchTerm, setSearchTerm] = useState('');
 
   const { toast } = useToast();
+  const { t, locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
 
   // Lista completa de PTAs disponíveis
   const availablePTAs = [
@@ -167,8 +171,8 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
     } catch (error) {
       console.error('Error loading females data:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao carregar dados das fêmeas",
+        title: t("charts.errorTitle"),
+        description: t("charts.errorLoadingFemales"),
         variant: "destructive"
       });
     } finally {
@@ -211,7 +215,7 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
     } else if (groupBy === 'category') {
       const byCategory = new Map<string, { n: number; sums: Record<string, number>; counts: Record<string, number> }>();
       females.forEach((female) => {
-        const category = (female?.category || 'Sem Categoria') as string;
+        const category = (female?.category || t("charts.noCategory")) as string;
         if (!byCategory.has(category)) {
           byCategory.set(category, { n: 0, sums: {}, counts: {} });
         }
@@ -311,8 +315,8 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
   const handleExport = () => {
     if (!processedTrendData.length) {
       toast({
-        title: "Aviso",
-        description: "Nenhum dado disponível para exportar",
+        title: t("charts.warningTitle"),
+        description: t("charts.noDataToExport"),
         variant: "destructive"
       });
       return;
@@ -331,15 +335,15 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `graficos-${farm?.farm_name || 'fazenda'}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `${isEs ? 'graficos' : isEn ? 'charts' : 'graficos'}-${farm?.farm_name || (isEs ? 'finca' : isEn ? 'farm' : 'fazenda')}-${new Date().toISOString().split('T')[0]}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
     toast({
-      title: "Exportação concluída",
-      description: "Dados exportados com sucesso!"
+      title: t("charts.exportDone"),
+      description: t("charts.exportSuccess")
     });
   };
 
@@ -353,38 +357,38 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
         <div className="flex h-16 items-center px-4 gap-4">
           <Button variant="ghost" onClick={onBack} className="mr-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
+            {t("charts.back")}
           </Button>
           <div className="flex-1 flex items-center gap-2">
-            <h1 className="text-xl font-semibold">Gráficos e Análises Genéticas</h1>
-            <HelpHint content="Visualize tendências, distribuições e análises estatísticas do seu rebanho" />
+            <h1 className="text-xl font-semibold">{t("charts.title")}</h1>
+            <HelpHint content={t("charts.hintHeader")} />
             {farm && (
               <p className="text-sm text-muted-foreground">{farm.farm_name}</p>
             )}
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="text-xs">
-              {females.length} animais
+              {females.length} {t("charts.animals")}
             </Badge>
             {onNavigateToHerd && (
               <Button variant="outline" size="sm" onClick={onNavigateToHerd}>
                 <Users className="w-4 h-4 mr-2" />
-                Ver Rebanho
+                {t("charts.viewHerd")}
               </Button>
             )}
             <div className="flex items-center gap-1">
               <Button variant="outline" size="sm" onClick={loadFemalesData} disabled={loading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Atualizar
+                {t("charts.refresh")}
               </Button>
-              <HelpHint content="Recarrega os dados mais recentes do rebanho" side="bottom" />
+              <HelpHint content={t("charts.hintRefresh")} side="bottom" />
             </div>
             <div className="flex items-center gap-1">
               <Button variant="outline" size="sm" onClick={handleExport}>
                 <Download className="w-4 h-4 mr-2" />
-                Exportar
+                {t("charts.export")}
               </Button>
-              <HelpHint content="Exporta dados dos gráficos em formato CSV" side="bottom" />
+              <HelpHint content={t("charts.hintExport")} side="bottom" />
             </div>
           </div>
         </div>
@@ -397,7 +401,7 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="w-5 h-5" />
-                Configurações dos Gráficos
+                {t("charts.chartSettings")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -405,8 +409,8 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
                 {/* Seleção de PTAs */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <Label>PTAs para Análise</Label>
-                    <HelpHint content="Escolha até 5 PTAs para visualizar simultaneamente nos gráficos" side="bottom" />
+                    <Label>{t("charts.ptasForAnalysis")}</Label>
+                    <HelpHint content={t("charts.hintPtas")} side="bottom" />
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {availablePTAs.slice(0, 8).map(pta => (
@@ -431,17 +435,17 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
                 {/* Tipo de Gráfico */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <Label>Tipo de Gráfico</Label>
-                    <HelpHint content="Alterne entre linha, barras ou área para destacar tendências ou volumes" side="bottom" />
+                    <Label>{t("charts.chartType")}</Label>
+                    <HelpHint content={t("charts.hintChartType")} side="bottom" />
                   </div>
                   <Select value={chartType} onValueChange={(value: any) => setChartType(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="line">Linha</SelectItem>
-                      <SelectItem value="bar">Barras</SelectItem>
-                      <SelectItem value="area">Área</SelectItem>
+                      <SelectItem value="line">{t("charts.chartTypeLine")}</SelectItem>
+                      <SelectItem value="bar">{t("charts.chartTypeBar")}</SelectItem>
+                      <SelectItem value="area">{t("charts.chartTypeArea")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -449,17 +453,17 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
                 {/* Agrupamento */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <Label>Agrupar Por</Label>
-                    <HelpHint content="Agrupe por ano, categoria ou paridade para comparar cortes diferentes" side="bottom" />
+                    <Label>{t("charts.groupBy")}</Label>
+                    <HelpHint content={t("charts.hintGroupBy")} side="bottom" />
                   </div>
                   <Select value={groupBy} onValueChange={(value: any) => setGroupBy(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="year">Ano de Nascimento</SelectItem>
-                      <SelectItem value="category">Categoria</SelectItem>
-                      <SelectItem value="parity">Ordem de Parto</SelectItem>
+                      <SelectItem value="year">{t("charts.groupByYear")}</SelectItem>
+                      <SelectItem value="category">{t("charts.groupByCategory")}</SelectItem>
+                      <SelectItem value="parity">{t("charts.groupByParity")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -473,15 +477,15 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="comparison" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
-                Comparação
+                {t("charts.comparison")}
               </TabsTrigger>
               <TabsTrigger value="distribution" className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
-                Distribuição
+                {t("charts.distribution")}
               </TabsTrigger>
               <TabsTrigger value="panorama" className="flex items-center gap-2">
                 <Eye className="w-4 h-4" />
-                Panorama do Rebanho
+                {t("charts.herdOverview")}
               </TabsTrigger>
             </TabsList>
 
@@ -489,7 +493,7 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
             <TabsContent value="comparison" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Comparação Entre PTAs</CardTitle>
+                  <CardTitle>{t("charts.ptaComparison")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {processedTrendData.length > 0 ? (
@@ -545,7 +549,7 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
                     <div className="h-[400px] flex items-center justify-center text-muted-foreground">
                       <div className="text-center space-y-2">
                         <BarChart3 className="w-12 h-12 mx-auto opacity-50" />
-                        <p>Nenhum dado disponível para comparação</p>
+                        <p>{t("charts.noDataForComparison")}</p>
                       </div>
                     </div>
                   )}
@@ -559,9 +563,9 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <CardTitle>
-                      Distribuição de Valores - {availablePTAs.find(p => p.key === selectedPTAs[0])?.label || selectedPTAs[0]}
+                      {t("charts.valueDistribution")} - {availablePTAs.find(p => p.key === selectedPTAs[0])?.label || selectedPTAs[0]}
                     </CardTitle>
-                    <HelpHint content="Entenda como os animais se distribuem nas faixas de PTA escolhida" />
+                    <HelpHint content={t("charts.hintDistribution")} />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -586,15 +590,15 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
                             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
                           }}
                           formatter={(value: any, name: string) => [
-                            name === 'count' ? `${value} animais` : `${Number(value).toFixed(1)}%`,
-                            name === 'count' ? 'Quantidade' : 'Porcentagem'
+                            name === 'count' ? `${value} ${t("charts.animals")}` : `${Number(value).toFixed(1)}%`,
+                            name === 'count' ? t("charts.quantity") : t("charts.percentage")
                           ]}
                         />
                         <Bar 
                           dataKey="count" 
                           fill={COLORS.primary} 
                           opacity={0.8}
-                          name="Quantidade de Animais"
+                          name={t("charts.animalCount")}
                         />
                       </BarChart>
                     </ResponsiveContainer>
@@ -602,7 +606,7 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
                     <div className="h-[400px] flex items-center justify-center text-muted-foreground">
                       <div className="text-center space-y-2">
                         <BarChart3 className="w-12 h-12 mx-auto opacity-50" />
-                        <p>Nenhum dado disponível para distribuição</p>
+                        <p>{t("charts.noDataForDistribution")}</p>
                       </div>
                     </div>
                   )}
@@ -614,14 +618,14 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
                 <Card>
                   <CardHeader>
                     <div className="flex items-center gap-2">
-                      <CardTitle>Distribuição por Categoria</CardTitle>
-                      <HelpHint content="Visualize a participação de cada categoria de animais no PTA selecionado" />
+                      <CardTitle>{t("charts.categoryDistribution")}</CardTitle>
+                      <HelpHint content={t("charts.hintCategory")} />
                     </div>
                   </CardHeader>
                   <CardContent>
                     {(() => {
                       const categoryData = females.reduce((acc: any, female: any) => {
-                        const category = female.category || 'Sem Categoria';
+                        const category = female.category || t("charts.noCategory");
                         acc[category] = (acc[category] || 0) + 1;
                         return acc;
                       }, {});
@@ -651,12 +655,12 @@ const ChartsPage: React.FC<ChartsPageProps> = ({ farm, onBack, onNavigateToHerd 
                                 />
                               ))}
                             </Pie>
-                            <Tooltip formatter={(value: any) => [`${value} animais`, 'Quantidade']} />
+                            <Tooltip formatter={(value: any) => [`${value} ${t("charts.animals")}`, t("charts.quantity")]} />
                           </PieChart>
                         </ResponsiveContainer>
                       ) : (
                         <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                          <p>Nenhuma categoria disponível</p>
+                          <p>{t("charts.noCategoryAvailable")}</p>
                         </div>
                       );
                     })()}
@@ -724,6 +728,7 @@ function TraitCard({
   showTrend: boolean;
   domainTicks: number[];
 }) {
+  const { t, locale } = useTranslation();
   const colorMean = "#111827"; // preto/cinza-900
   const colorFarmMean = "#22C3EE"; // azul claro para média da fazenda
   const colorTrend = "#10B981"; // verde-emerald
@@ -779,7 +784,7 @@ function TraitCard({
       {/* Header tarja preta com tendência geral */}
       <div className="bg-black text-white px-4 py-2 text-sm font-semibold flex items-center justify-between">
         <div className="truncate">{trait}</div>
-        <div className="text-xs opacity-90">Tendência: {slopeRounded >= 0 ? "+" : ""}{slopeRounded}/ano</div>
+        <div className="text-xs opacity-90">{t("charts.trend")}: {slopeRounded >= 0 ? "+" : ""}{slopeRounded}{t("charts.perYear")}</div>
       </div>
 
       <div className="p-3 h-64">
@@ -801,9 +806,9 @@ function TraitCard({
                 if (!p) return null;
                 return (
                   <div className="bg-white/95 shadow rounded-md px-3 py-2 text-xs text-gray-800">
-                    <div className="font-semibold">Ano: {label}</div>
+                    <div className="font-semibold">{t("charts.year")}: {label}</div>
                     <div>N: {Math.round(p.n || 0)}</div>
-                    <div>Ganho: {formatPtaValue(trait, p.delta)}</div>
+                    <div>{t("charts.gain")}: {formatPtaValue(trait, p.delta)}</div>
                   </div>
                 );
               }}
@@ -814,7 +819,7 @@ function TraitCard({
             <Line
               type="monotone"
               dataKey="mean"
-              name="Média anual"
+              name={t("charts.annualMean")}
               stroke={colorMean}
               dot={{ r: 5, strokeWidth: 2, stroke: '#111827', fill: '#fff' }}
               label={{ position: 'top', formatter: (v:any) => formatPtaValue(trait, v), fontSize: 12 }}
@@ -826,7 +831,7 @@ function TraitCard({
                 strokeDasharray="6 6" 
                 ifOverflow="extendDomain" 
                 label={{ 
-                  value: `Média ${formatPtaValue(trait, farmMean)}`, 
+                  value: `${t("charts.mean")} ${formatPtaValue(trait, farmMean)}`,
                   position: 'insideTopLeft', 
                   fill: '#0EA5B7', 
                   fontSize: 12 
@@ -837,7 +842,7 @@ function TraitCard({
               <Line 
                 type="linear" 
                 dataKey="trend" 
-                name={`Tendência (${slopeRounded}/ano)`} 
+                name={`${t("charts.trendLabel")} (${slopeRounded}${t("charts.perYear")})`}
                 stroke={colorTrend} 
                 dot={false} 
                 data={trendLine}
@@ -851,10 +856,10 @@ function TraitCard({
       <div className="border-t px-4 py-2 text-xs text-gray-700 flex flex-wrap gap-x-6 gap-y-1">
         <span><strong>STD:</strong> {formatPtaValue(trait, stats.std)}</span>
         <span><strong>Max:</strong> {formatPtaValue(trait, stats.max)}</span>
-        <span><strong>Média:</strong> {formatPtaValue(trait, stats.mean)}</span>
+        <span><strong>{t("charts.mean")}:</strong> {formatPtaValue(trait, stats.mean)}</span>
         <span><strong>Min:</strong> {formatPtaValue(trait, stats.min)}</span>
-        <span><strong>% &lt; Média:</strong> {Math.round(stats.belowPct)}%</span>
-        <span><strong>Herdabilidade:</strong> {(h2 ?? 0.30).toFixed(2).replace('.', ',')}</span>
+        <span><strong>{t("charts.belowMean")}:</strong> {Math.round(stats.belowPct)}%</span>
+        <span><strong>{t("charts.heritability")}:</strong> {(h2 ?? 0.30).toFixed(2).replace('.', locale === "pt-BR" ? ',' : '.')}</span>
       </div>
 
       {/* Ações */}
@@ -874,7 +879,7 @@ function TraitCard({
           }}
           className="text-xs inline-flex items-center gap-1 px-3 py-2 rounded-xl border hover:bg-gray-50"
         >
-          <Download size={14}/> Exportar CSV
+          <Download size={14}/> {t("charts.exportCsv")}
         </button>
       </div>
     </div>
@@ -907,6 +912,7 @@ const PanoramaRebanhoView: React.FC<{
   farmName,
   domainTicks,
 }) => {
+  const { t, locale } = useTranslation();
   const [search, setSearch] = useState("");
 
   const filteredPTAs = useMemo(() => {
@@ -967,7 +973,7 @@ const PanoramaRebanhoView: React.FC<{
       {/* Toolbar */}
       <div className="bg-white rounded-2xl shadow p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-xl font-semibold">Gráficos — Panorama do Rebanho</h2>
+          <h2 className="text-xl font-semibold">{t("charts.panoramaTitle")}</h2>
           <div className="ml-auto flex items-center gap-3">
             <div className="flex items-center gap-2 text-sm">
               <label className="flex items-center gap-2">
@@ -977,9 +983,9 @@ const PanoramaRebanhoView: React.FC<{
                   checked={showFarmAverage}
                   onChange={(e) => setShowFarmAverage(e.target.checked)}
                 />
-                Mostrar média da fazenda
+                {t("charts.showFarmAverage")}
               </label>
-              <HelpHint content="Exiba a média geral do rebanho para comparar com tendências externas" side="bottom" />
+              <HelpHint content={t("charts.hintFarmAverage")} side="bottom" />
             </div>
             <div className="flex items-center gap-2 text-sm">
               <label className="flex items-center gap-2">
@@ -989,37 +995,37 @@ const PanoramaRebanhoView: React.FC<{
                   checked={showTrendLine}
                   onChange={(e) => setShowTrendLine(e.target.checked)}
                 />
-                Mostrar tendência genética
+                {t("charts.showGeneticTrend")}
               </label>
-              <HelpHint content="Adicione uma linha de tendência linear para evidenciar evolução ao longo do tempo" side="bottom" />
+              <HelpHint content={t("charts.hintTrend")} side="bottom" />
             </div>
             <button
               onClick={reset}
               className="px-3 py-2 rounded-xl border text-sm hover:bg-gray-50"
             >
-              Resetar seleção
+              {t("charts.resetSelection")}
             </button>
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2">
           <input
             className="border rounded-lg px-3 py-2 text-sm w-72"
-            placeholder="Buscar característica (PTA)…"
+            placeholder={t("charts.searchTrait")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <HelpHint content="Digite parte do nome para localizar rapidamente um PTA específico" side="bottom" />
+          <HelpHint content={t("charts.hintSearch")} side="bottom" />
           <button
             onClick={selectAll}
             className="px-3 py-2 rounded-xl border text-sm hover:bg-gray-50"
           >
-            Selecionar todas
+            {t("charts.selectAll")}
           </button>
           <button 
             onClick={clearAll} 
             className="px-3 py-2 rounded-xl border text-sm hover:bg-gray-50"
           >
-            Limpar
+            {t("charts.clear")}
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-52 overflow-auto pr-2">
@@ -1050,14 +1056,14 @@ const PanoramaRebanhoView: React.FC<{
         <div className="flex items-center justify-center py-8">
           <div className="text-center">
             <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Carregando dados...</p>
+            <p className="text-sm text-muted-foreground">{t("charts.loadingData")}</p>
           </div>
         </div>
       ) : selectedPTAs.length === 0 ? (
         <div className="bg-white rounded-2xl shadow p-8 text-center text-muted-foreground">
           <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p className="text-lg font-medium mb-2">Nenhuma característica selecionada</p>
-          <p>Selecione uma ou mais PTAs para visualizar o panorama do rebanho</p>
+          <p className="text-lg font-medium mb-2">{t("charts.noTraitSelected")}</p>
+          <p>{t("charts.selectPtasToView")}</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
@@ -1080,7 +1086,7 @@ const PanoramaRebanhoView: React.FC<{
       )}
 
       <div className="text-xs text-gray-500 text-center pb-8">
-        Dados processados do rebanho da fazenda{farmName ? ` ${farmName}` : ''} com agrupamento por ano de nascimento (2021-2025).
+        {t("charts.farmDataFooter")}{farmName ? ` ${farmName}` : ''} {t("charts.yearGroupingFooter")}
       </div>
     </div>
   );

@@ -17,6 +17,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const browserLang = navigator.language;
       if (browserLang.startsWith('en')) {
         setLocale('en-US');
+      } else if (browserLang.startsWith('es')) {
+        setLocale('es');
       } else {
         setLocale('pt-BR');
       }

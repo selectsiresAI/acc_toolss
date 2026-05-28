@@ -13,6 +13,7 @@ import { BullSelector } from '@/components/BullSelector';
 import { HelpButton } from '@/components/help/HelpButton';
 import { HelpHint } from '@/components/help/HelpHint';
 import { normalizeNaabCode } from '@/utils/bullNormalization';
+import { useTranslation } from '@/hooks/useTranslation';
 
 
 // Types - Updated to match Supabase structure
@@ -136,7 +137,8 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
   const [bulls, setBulls] = useState<Bull[]>(propBulls || []);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  
+  const { t, locale } = useTranslation();
+
   const [botijao, setBotijao] = useState<BotijaoVirtual>({
     fazendaId: farm.id,
     itens: [],
@@ -233,8 +235,8 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
     } catch (error) {
       console.error('Error loading bulls:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao carregar banco de touros",
+        title: t('botijao.error'),
+        description: t('botijao.errorLoadingBulls'),
         variant: "destructive",
       });
     } finally {
@@ -374,8 +376,8 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
         });
 
         toast({
-          title: "Touros adicionados",
-          description: `${bullsToAdd.length} touro(s) foram adicionados ao Botijão Virtual.`,
+          title: t('botijao.bullsAdded'),
+          description: t('botijao.bullsAddedDesc', { count: bullsToAdd.length }),
         });
       }
     }
@@ -705,8 +707,8 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
         writeFile(workbook, fileName);
         
         toast({
-          title: "Exportação concluída",
-          description: "Arquivo XLSX foi baixado com sucesso!"
+          title: t('botijao.exportComplete'),
+          description: t('botijao.exportCompleteDesc')
         });
       });
     });
@@ -718,18 +720,18 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
       
       <div className="flex items-center justify-between mb-6 gap-4">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">Botijão Virtual</h1>
-          <HelpHint content="Gerencie inventário de sêmen: controle doses, distribua por categoria, registre nitrogênio e acompanhe valor do estoque" />
+          <h1 className="text-2xl font-bold">{t('botijao.title')}</h1>
+          <HelpHint content={t('botijao.helpHint')} />
         </div>
         <div>
-          <p className="text-muted-foreground">Fazenda: {farm.nome}</p>
+          <p className="text-muted-foreground">{t('botijao.farm')}: {farm.nome}</p>
           <p className="text-xs text-muted-foreground">
-            Última atualização: {new Date(botijao.dataAtualizacao).toLocaleString()}
+            {t('botijao.lastUpdate')}: {new Date(botijao.dataAtualizacao).toLocaleString(locale)}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={onBack}>
-            Voltar
+            {t('bulls.back')}
           </Button>
         </div>
       </div>
@@ -738,9 +740,9 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
       {selectedFemales.length > 0 && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Fêmeas Selecionadas para Acasalamento</CardTitle>
+            <CardTitle className="text-lg">{t('botijao.selectedFemales')}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {selectedFemales.length} fêmea(s) selecionada(s) do rebanho
+              {t('botijao.selectedFemalesCount', { count: selectedFemales.length })}
             </p>
           </CardHeader>
           <CardContent>
@@ -754,7 +756,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                     </span>
                     {female.sire_naab && (
                       <span className="text-xs text-muted-foreground">
-                        Pai: {female.sire_naab}
+                        {t('botijao.sire')}: {female.sire_naab}
                       </span>
                     )}
                   </div>
@@ -766,7 +768,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
             </div>
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
               <p className="text-sm text-blue-800">
-                <strong>Dica:</strong> Configure os touros no Botijão Virtual abaixo para criar acasalamentos ideais para estas fêmeas.
+                <strong>{t('botijao.tip')}:</strong> {t('botijao.tipText')}
               </p>
             </div>
           </CardContent>
@@ -781,7 +783,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
               <Clock className="text-blue-500" size={20} />
               <div>
                 <div className="text-2xl font-bold">{stats.totalDoses}</div>
-                <div className="text-sm text-muted-foreground">Total de Doses</div>
+                <div className="text-sm text-muted-foreground">{t('botijao.totalDoses')}</div>
               </div>
             </div>
           </CardContent>
@@ -793,7 +795,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
               <TrendingUp className="text-green-500" size={20} />
               <div>
                 <div className="text-2xl font-bold">{stats.dosesConvencionais}</div>
-                <div className="text-sm text-muted-foreground">Convencionais</div>
+                <div className="text-sm text-muted-foreground">{t('botijao.conventionalPlural')}</div>
               </div>
             </div>
           </CardContent>
@@ -805,7 +807,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
               <TrendingUp className="text-purple-500" size={20} />
               <div>
                 <div className="text-2xl font-bold">{stats.dosesSexadas}</div>
-                <div className="text-sm text-muted-foreground">Sexadas</div>
+                <div className="text-sm text-muted-foreground">{t('botijao.sexedPlural')}</div>
               </div>
             </div>
           </CardContent>
@@ -814,10 +816,10 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <div className="text-green-600">R$</div>
+              <div className="text-green-600">{t('botijao.currencySymbol')}</div>
               <div>
                 <div className="text-2xl font-bold">{stats.valorTotal.toFixed(0)}</div>
-                <div className="text-sm text-muted-foreground">Valor Total</div>
+                <div className="text-sm text-muted-foreground">{t('botijao.totalValue')}</div>
               </div>
             </div>
           </CardContent>
@@ -829,25 +831,25 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
         <Card>
           <CardContent className="p-3">
             <div className="text-lg font-bold">{stats.porCategoria.Nov}</div>
-            <div className="text-xs text-muted-foreground">Novilhas</div>
+            <div className="text-xs text-muted-foreground">{t('botijao.heifers')}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
             <div className="text-lg font-bold">{stats.porCategoria.Prim}</div>
-            <div className="text-xs text-muted-foreground">Primíparas</div>
+            <div className="text-xs text-muted-foreground">{t('botijao.primiparous')}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
             <div className="text-lg font-bold">{stats.porCategoria.Secund}</div>
-            <div className="text-xs text-muted-foreground">Secundíparas</div>
+            <div className="text-xs text-muted-foreground">{t('botijao.secondiparous')}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3">
             <div className="text-lg font-bold">{stats.porCategoria.Mult}</div>
-            <div className="text-xs text-muted-foreground">Multíparas</div>
+            <div className="text-xs text-muted-foreground">{t('botijao.multiparous')}</div>
           </CardContent>
         </Card>
       </div>
@@ -861,18 +863,18 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
             <DialogTrigger asChild>
               <Button>
                 <Plus size={16} className="mr-2" />
-                Adicionar Touro
+                {t('botijao.addBull')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Adicionar Touro ao Botijão</DialogTitle>
+                <DialogTitle>{t('botijao.addBullToTank')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
                   <BullSelector 
-                    label="Selecionar Touro"
-                    placeholder="Digite o código NAAB ou selecione da lista"
+                    label={t('botijao.selectBull')}
+                    placeholder={t('botijao.selectBullPlaceholder')}
                     value={newItem.touro ? {
                       id: newItem.touro.code,
                       code: newItem.touro.code,
@@ -901,10 +903,10 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label>Tipo</Label>
-                    <Select 
-                      value={newItem.tipo} 
-                      onValueChange={(value: "Convencional" | "Sexado") => 
+                    <Label>{t('botijao.type')}</Label>
+                    <Select
+                      value={newItem.tipo}
+                      onValueChange={(value: "Convencional" | "Sexado") =>
                         setNewItem(prev => ({ ...prev, tipo: value }))
                       }
                     >
@@ -912,27 +914,27 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Convencional">Convencional</SelectItem>
-                        <SelectItem value="Sexado">Sexado</SelectItem>
+                        <SelectItem value="Convencional">{t('botijao.conventional')}</SelectItem>
+                        <SelectItem value="Sexado">{t('botijao.sexed')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <Label>Doses</Label>
+                    <Label>{t('botijao.doses')}</Label>
                     <Input
                       type="number"
                       min="1"
                       value={newItem.doses}
-                      onChange={(e) => setNewItem(prev => ({ 
-                        ...prev, 
-                        doses: parseInt(e.target.value) || 1 
+                      onChange={(e) => setNewItem(prev => ({
+                        ...prev,
+                        doses: parseInt(e.target.value) || 1
                       }))}
                     />
                   </div>
 
                   <div>
-                    <Label>Preço por Dose (R$)</Label>
+                    <Label>{t('botijao.pricePerDose')}</Label>
                     <Input
                       type="number"
                       min="0"
@@ -947,7 +949,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                 </div>
 
                 <div>
-                  <Label>Distribuição por Categoria de Idade</Label>
+                  <Label>{t('botijao.distributionByAge')}</Label>
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {["Nov", "Prim", "Secund", "Mult"].map(cat => (
                       <div key={cat}>
@@ -970,7 +972,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                 </div>
 
                 <div>
-                  <Label>Distribuição por Segmentação</Label>
+                  <Label>{t('botijao.distributionBySegment')}</Label>
                   <div className="grid grid-cols-3 gap-2 mt-2">
                     {["Doadoras", "Intermediarias", "Receptoras"].map(seg => (
                       <div key={seg}>
@@ -993,20 +995,20 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                 </div>
 
                 <div>
-                  <Label>Observações</Label>
+                  <Label>{t('botijao.notes')}</Label>
                   <Input
                     value={newItem.observacoes}
                     onChange={(e) => setNewItem(prev => ({ ...prev, observacoes: e.target.value }))}
-                    placeholder="Observações sobre este touro..."
+                    placeholder={t('botijao.notesPlaceholder')}
                   />
                 </div>
 
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                    Cancelar
+                    {t('botijao.cancel')}
                   </Button>
                   <Button onClick={addItemToBotijao} disabled={!newItem.touro}>
-                    Adicionar
+                    {t('botijao.add')}
                   </Button>
                 </div>
               </div>
@@ -1017,16 +1019,16 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
             <DialogTrigger asChild>
               <Button variant="outline">
                 <Snowflake size={16} className="mr-2" />
-                Abastecimento N2
+                {t('botijao.nitrogenSupply')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Abastecimento de Nitrogênio</DialogTitle>
+                <DialogTitle>{t('botijao.nitrogenSupplyTitle')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>Data do Abastecimento</Label>
+                  <Label>{t('botijao.supplyDate')}</Label>
                   <Input
                     type="date"
                     value={nitrogenData.dataAbastecimento}
@@ -1038,7 +1040,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                 </div>
                 
                 <div>
-                  <Label>Volume (Litros)</Label>
+                  <Label>{t('botijao.volumeLiters')}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -1052,23 +1054,23 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                 </div>
 
                 <div>
-                  <Label>Observações</Label>
+                  <Label>{t('botijao.notes')}</Label>
                   <Input
                     value={nitrogenData.observacoes}
-                    onChange={(e) => setNitrogenData(prev => ({ 
-                      ...prev, 
-                      observacoes: e.target.value 
+                    onChange={(e) => setNitrogenData(prev => ({
+                      ...prev,
+                      observacoes: e.target.value
                     }))}
-                    placeholder="Observações sobre o abastecimento..."
+                    placeholder={t('botijao.supplyNotesPlaceholder')}
                   />
                 </div>
 
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setShowNitrogenDialog(false)}>
-                    Cancelar
+                    {t('botijao.cancel')}
                   </Button>
                   <Button onClick={addNitrogenSupply}>
-                    Registrar Abastecimento
+                    {t('botijao.registerSupply')}
                   </Button>
                 </div>
               </div>
@@ -1080,9 +1082,9 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
             <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950 p-2 rounded-lg">
               <Snowflake size={16} className="text-blue-600" />
               <div className="text-sm">
-                <span className="font-medium">Último N2:</span>
+                <span className="font-medium">{t('botijao.lastN2')}:</span>
                 <span className="ml-1">
-                  {new Date(nitrogenRecords[nitrogenRecords.length - 1].dataAbastecimento).toLocaleDateString()} - 
+                  {new Date(nitrogenRecords[nitrogenRecords.length - 1].dataAbastecimento).toLocaleDateString(locale)} -
                   {nitrogenRecords[nitrogenRecords.length - 1].volume}L
                 </span>
                 <Button
@@ -1105,12 +1107,12 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
             disabled={botijao.itens.length === 0}
           >
             <Clock size={16} className="mr-2" />
-            Atualizar Estoque
+            {t('botijao.updateStock')}
           </Button>
 
           <Button variant="outline" onClick={exportBotijao} disabled={botijao.itens.length === 0}>
             <Download size={16} className="mr-2" />
-            Exportar
+            {t('botijao.export')}
           </Button>
         </div>
       </div>
@@ -1118,14 +1120,14 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
       {/* Tabela do Botijão */}
       <Card>
         <CardHeader>
-          <CardTitle>Composição do Botijão Virtual ({stats.totalTouros} touros)</CardTitle>
+          <CardTitle>{t('botijao.composition', { count: stats.totalTouros })}</CardTitle>
         </CardHeader>
         <CardContent>
           {botijao.itens.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {selectedBulls.length > 0 ? 
-                "Processando touros selecionados..." : 
-                "Nenhum touro adicionado ao botijão ainda."
+              {selectedBulls.length > 0 ?
+                t('botijao.processingBulls') :
+                t('botijao.noBullsYet')
               }
             </div>
           ) : (
@@ -1135,48 +1137,48 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                   <tr className="border-b">
                     <th className="text-left p-3">NAAB</th>
                     <th className="text-left p-3">
-                      <button 
+                      <button
                         onClick={() => handleSort("nome")}
                         className="flex items-center gap-1 hover:text-primary"
                       >
-                        Nome
+                        {t('botijao.name')}
                         {sortField === "nome" && (
                           sortDirection === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                         )}
                       </button>
                     </th>
                     <th className="text-left p-3">
-                      <button 
+                      <button
                         onClick={() => handleSort("empresa")}
                         className="flex items-center gap-1 hover:text-primary"
                       >
-                        Empresa
+                        {t('botijao.company')}
                         {sortField === "empresa" && (
                           sortDirection === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                         )}
                       </button>
                     </th>
                     <th className="text-left p-3">
-                      <button 
+                      <button
                         onClick={() => handleSort("tipo")}
                         className="flex items-center gap-1 hover:text-primary"
                       >
-                        Tipo
+                        {t('botijao.type')}
                         {sortField === "tipo" && (
                           sortDirection === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />
                         )}
                       </button>
                     </th>
-                    <th className="text-left p-3">Doses</th>
-                    <th className="text-left p-3">Preço</th>
-                    <th className="text-left p-3">Nov</th>
-                    <th className="text-left p-3">Prim</th>
-                    <th className="text-left p-3">Sec</th>
-                    <th className="text-left p-3">Mult</th>
-                    <th className="text-left p-3">Doad</th>
-                    <th className="text-left p-3">Inter</th>
-                    <th className="text-left p-3">Recep</th>
-                    <th className="text-left p-3">Ações</th>
+                    <th className="text-left p-3">{t('botijao.doses')}</th>
+                    <th className="text-left p-3">{t('botijao.price')}</th>
+                    <th className="text-left p-3">{t('botijao.colNov')}</th>
+                    <th className="text-left p-3">{t('botijao.colPrim')}</th>
+                    <th className="text-left p-3">{t('botijao.colSec')}</th>
+                    <th className="text-left p-3">{t('botijao.colMult')}</th>
+                    <th className="text-left p-3">{t('botijao.colDoad')}</th>
+                    <th className="text-left p-3">{t('botijao.colInter')}</th>
+                    <th className="text-left p-3">{t('botijao.colRecep')}</th>
+                    <th className="text-left p-3">{t('botijao.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1194,7 +1196,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                         <span className="font-semibold">{item.doses}</span>
                       </td>
                       <td className="p-3">
-                        <span>R$ {item.preco.toFixed(2)}</span>
+                        <span>{t('botijao.currencySymbol')} {item.preco.toFixed(2)}</span>
                       </td>
                       <td className="p-3">{item.distribuicao.Nov}</td>
                       <td className="p-3">{item.distribuicao.Prim}</td>
@@ -1210,7 +1212,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                             size="sm"
                             onClick={() => startEditingItem(item)}
                             className="text-blue-600"
-                            title="Editar touro"
+                            title={t('botijao.editBull')}
                           >
                             <Edit size={16} />
                           </Button>
@@ -1219,7 +1221,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                             size="sm"
                             onClick={() => duplicateItem(item)}
                             className="text-green-600"
-                            title="Duplicar touro"
+                            title={t('botijao.duplicateBull')}
                           >
                             <Plus size={16} />
                           </Button>
@@ -1228,7 +1230,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                             size="sm"
                             onClick={() => removeItem(item.id)}
                             className="text-red-600"
-                            title="Remover touro"
+                            title={t('botijao.removeBull')}
                           >
                             <Trash2 size={16} />
                           </Button>
@@ -1247,16 +1249,16 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
       <Dialog open={editingItem !== null} onOpenChange={(open) => !open && cancelEditing()}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Editar Touro no Botijão</DialogTitle>
+            <DialogTitle>{t('botijao.editBullInTank')}</DialogTitle>
           </DialogHeader>
           {editingItemData && (
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label>Tipo</Label>
-                  <Select 
-                    value={editingItemData.tipo} 
-                    onValueChange={(value: "Convencional" | "Sexado") => 
+                  <Label>{t('botijao.type')}</Label>
+                  <Select
+                    value={editingItemData.tipo}
+                    onValueChange={(value: "Convencional" | "Sexado") =>
                       setEditingItemData(prev => prev ? { ...prev, tipo: value } : null)
                     }
                   >
@@ -1264,27 +1266,27 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Convencional">Convencional</SelectItem>
-                      <SelectItem value="Sexado">Sexado</SelectItem>
+                      <SelectItem value="Convencional">{t('botijao.conventional')}</SelectItem>
+                      <SelectItem value="Sexado">{t('botijao.sexed')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label>Doses</Label>
+                  <Label>{t('botijao.doses')}</Label>
                   <Input
                     type="number"
                     min="1"
                     value={editingItemData.doses}
-                    onChange={(e) => setEditingItemData(prev => prev ? { 
-                      ...prev, 
-                      doses: parseInt(e.target.value) || 1 
+                    onChange={(e) => setEditingItemData(prev => prev ? {
+                      ...prev,
+                      doses: parseInt(e.target.value) || 1
                     } : null)}
                   />
                 </div>
 
                 <div>
-                  <Label>Preço por Dose (R$)</Label>
+                  <Label>{t('botijao.pricePerDose')}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -1299,7 +1301,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
               </div>
 
               <div>
-                <Label>Distribuição por Categoria de Idade</Label>
+                <Label>{t('botijao.distributionByAge')}</Label>
                 <div className="grid grid-cols-4 gap-2 mt-2">
                   {["Nov", "Prim", "Secund", "Mult"].map(cat => (
                     <div key={cat}>
@@ -1322,7 +1324,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
               </div>
 
               <div>
-                <Label>Distribuição por Segmentação</Label>
+                <Label>{t('botijao.distributionBySegment')}</Label>
                 <div className="grid grid-cols-3 gap-2 mt-2">
                   {["Doadoras", "Intermediarias", "Receptoras"].map(seg => (
                     <div key={seg}>
@@ -1345,23 +1347,23 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
               </div>
 
               <div>
-                <Label>Observações</Label>
+                <Label>{t('botijao.notes')}</Label>
                 <Input
                   value={editingItemData.observacoes || ""}
-                  onChange={(e) => setEditingItemData(prev => prev ? { 
-                    ...prev, 
-                    observacoes: e.target.value 
+                  onChange={(e) => setEditingItemData(prev => prev ? {
+                    ...prev,
+                    observacoes: e.target.value
                   } : null)}
-                  placeholder="Observações sobre este touro..."
+                  placeholder={t('botijao.notesPlaceholder')}
                 />
               </div>
 
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={cancelEditing}>
-                  Cancelar
+                  {t('botijao.cancel')}
                 </Button>
                 <Button onClick={saveEditing}>
-                  Salvar Alterações
+                  {t('botijao.saveChanges')}
                 </Button>
               </div>
             </div>
@@ -1373,22 +1375,22 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
       <Dialog open={showStockUpdateDialog} onOpenChange={setShowStockUpdateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Atualizar Estoque - Uso de Doses</DialogTitle>
+            <DialogTitle>{t('botijao.updateStockTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Touro</Label>
-              <Select 
-                value={newUpdate.touroId || ""} 
+              <Label>{t('botijao.bull')}</Label>
+              <Select
+                value={newUpdate.touroId || ""}
                 onValueChange={(value) => setNewUpdate(prev => ({ ...prev, touroId: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o touro" />
+                  <SelectValue placeholder={t('botijao.selectBull')} />
                 </SelectTrigger>
                 <SelectContent>
                   {botijao.itens.filter(item => item.doses > 0).map(item => (
                     <SelectItem key={item.id} value={item.id}>
-                      {item.touro.code} - {item.touro.name} ({item.doses} doses disponíveis)
+                      {item.touro.code} - {item.touro.name} ({item.doses} {t('botijao.dosesAvailable')})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1397,7 +1399,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Doses Utilizadas</Label>
+                <Label>{t('botijao.dosesUsed')}</Label>
                 <Input
                   type="number"
                   min="1"
@@ -1410,22 +1412,22 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
               </div>
 
               <div>
-                <Label>Categoria</Label>
-                <Select 
-                  value={newUpdate.categoria} 
+                <Label>{t('botijao.category')}</Label>
+                <Select
+                  value={newUpdate.categoria}
                   onValueChange={(value) => setNewUpdate(prev => ({ ...prev, categoria: value }))}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Nov">Novilhas</SelectItem>
-                    <SelectItem value="Prim">Primíparas</SelectItem>
-                    <SelectItem value="Secund">Secundíparas</SelectItem>
-                    <SelectItem value="Mult">Multíparas</SelectItem>
-                    <SelectItem value="Doadoras">Doadoras</SelectItem>
-                    <SelectItem value="Intermediarias">Intermediárias</SelectItem>
-                    <SelectItem value="Receptoras">Receptoras</SelectItem>
+                    <SelectItem value="Nov">{t('botijao.heifers')}</SelectItem>
+                    <SelectItem value="Prim">{t('botijao.primiparous')}</SelectItem>
+                    <SelectItem value="Secund">{t('botijao.secondiparous')}</SelectItem>
+                    <SelectItem value="Mult">{t('botijao.multiparous')}</SelectItem>
+                    <SelectItem value="Doadoras">{t('botijao.donors')}</SelectItem>
+                    <SelectItem value="Intermediarias">{t('botijao.intermediates')}</SelectItem>
+                    <SelectItem value="Receptoras">{t('botijao.recipients')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1433,7 +1435,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Data</Label>
+                <Label>{t('botijao.date')}</Label>
                 <Input
                   type="date"
                   value={newUpdate.data}
@@ -1442,24 +1444,24 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
               </div>
 
               <div>
-                <Label>Técnico Responsável</Label>
+                <Label>{t('botijao.technician')}</Label>
                 <Input
                   value={newUpdate.tecnico}
                   onChange={(e) => setNewUpdate(prev => ({ ...prev, tecnico: e.target.value }))}
-                  placeholder="Nome do técnico"
+                  placeholder={t('botijao.technicianPlaceholder')}
                 />
               </div>
             </div>
 
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowStockUpdateDialog(false)}>
-                Cancelar
+                {t('botijao.cancel')}
               </Button>
-              <Button 
-                onClick={addStockUpdate} 
+              <Button
+                onClick={addStockUpdate}
                 disabled={!newUpdate.touroId || !newUpdate.tecnico}
               >
-                Confirmar Uso
+                {t('botijao.confirmUse')}
               </Button>
             </div>
           </div>
@@ -1470,7 +1472,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
       <Dialog open={editingNitrogen !== null} onOpenChange={(open) => !open && setEditingNitrogen(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Registro de Nitrogênio</DialogTitle>
+            <DialogTitle>{t('botijao.editNitrogenRecord')}</DialogTitle>
           </DialogHeader>
           {editingNitrogen && (() => {
             const record = nitrogenRecords.find(r => r.id === editingNitrogen);
@@ -1479,7 +1481,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
             return (
               <div className="space-y-4">
                 <div>
-                  <Label>Data do Abastecimento</Label>
+                  <Label>{t('botijao.supplyDate')}</Label>
                   <Input
                     type="date"
                     value={record.dataAbastecimento}
@@ -1490,7 +1492,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                 </div>
                 
                 <div>
-                  <Label>Volume (Litros)</Label>
+                  <Label>{t('botijao.volumeLiters')}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -1503,26 +1505,26 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                 </div>
 
                 <div>
-                  <Label>Observações</Label>
+                  <Label>{t('botijao.notes')}</Label>
                   <Input
                     value={record.observacoes}
-                    onChange={(e) => editNitrogenRecord(record.id, { 
-                      observacoes: e.target.value 
+                    onChange={(e) => editNitrogenRecord(record.id, {
+                      observacoes: e.target.value
                     })}
-                    placeholder="Observações sobre o abastecimento..."
+                    placeholder={t('botijao.supplyNotesPlaceholder')}
                   />
                 </div>
 
                 <div className="flex justify-end gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => deleteNitrogenRecord(record.id)} 
+                  <Button
+                    variant="outline"
+                    onClick={() => deleteNitrogenRecord(record.id)}
                     className="text-red-600"
                   >
-                    Excluir
+                    {t('botijao.delete')}
                   </Button>
                   <Button variant="outline" onClick={() => setEditingNitrogen(null)}>
-                    Fechar
+                    {t('botijao.close')}
                   </Button>
                 </div>
               </div>
@@ -1537,7 +1539,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Snowflake className="text-blue-600" size={20} />
-              Histórico de Abastecimento de Nitrogênio
+              {t('botijao.nitrogenHistory')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1546,7 +1548,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
                 <div key={record.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                   <div>
                     <div className="font-medium">
-                      {new Date(record.dataAbastecimento).toLocaleDateString()} - {record.volume}L
+                      {new Date(record.dataAbastecimento).toLocaleDateString(locale)} - {record.volume}L
                     </div>
                     {record.observacoes && (
                       <div className="text-sm text-muted-foreground">{record.observacoes}</div>
@@ -1575,7 +1577,7 @@ function BotijaoVirtualPage({ client, farm, bulls: propBulls, selectedBulls = []
             onClick={clearAllData} 
             className="text-red-600 border-red-200 hover:bg-red-50"
           >
-            Limpar Todos os Dados Salvos
+            {t('botijao.clearAllData')}
           </Button>
         </div>
       )}

@@ -18,6 +18,7 @@ import {
   Tooltip,
   LabelList,
 } from 'recharts';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type Props = { farmId: string };
 
@@ -34,9 +35,27 @@ const ageOpts = [
   'Secundípara',
   'Multípara',
 ] as const;
+
+const AGE_OPT_KEYS: Record<(typeof ageOpts)[number], string> = {
+  ALL: 'ag.topParents.all',
+  Bezerra: 'ag.topParents.calf',
+  Novilha: 'ag.topParents.heifer',
+  'Primípara': 'ag.topParents.primiparous',
+  'Secundípara': 'ag.topParents.secondiparous',
+  'Multípara': 'ag.topParents.multiparous',
+};
+
 const segOpts = ['ALL', 'Superior', 'Intermediário', 'Inferior'] as const;
 
+const SEG_OPT_KEYS: Record<(typeof segOpts)[number], string> = {
+  ALL: 'ag.topParents.all',
+  Superior: 'seg.superior',
+  'Intermediário': 'seg.intermediate',
+  Inferior: 'seg.inferior',
+};
+
 export default function TopParentsStep({ farmId }: Props) {
+  const { t } = useTranslation();
   const [age, setAge] = useState<(typeof ageOpts)[number]>('ALL');
   const [seg, setSeg] = useState<(typeof segOpts)[number]>('ALL');
   const [topN, setTopN] = useState(20);
@@ -99,24 +118,24 @@ export default function TopParentsStep({ farmId }: Props) {
       <div className="flex gap-2">
         <Select value={age} onValueChange={(v: any) => setAge(v)}>
           <SelectTrigger className="w-40">
-            <SelectValue placeholder="Categoria" />
+            <SelectValue placeholder={t("ag.topParents.segment" as any)} />
           </SelectTrigger>
           <SelectContent>
             {ageOpts.map((o) => (
               <SelectItem key={o} value={o}>
-                {o}
+                {t(AGE_OPT_KEYS[o] as any)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={seg} onValueChange={(v: any) => setSeg(v)}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder="Segmento" />
+            <SelectValue placeholder={t("ag.topParents.segment" as any)} />
           </SelectTrigger>
           <SelectContent>
             {segOpts.map((o) => (
               <SelectItem key={o} value={o}>
-                {o}
+                {t(SEG_OPT_KEYS[o] as any)}
               </SelectItem>
             ))}
           </SelectContent>

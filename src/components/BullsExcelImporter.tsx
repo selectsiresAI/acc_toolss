@@ -4,15 +4,19 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from "xlsx";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function BullsExcelImporter() {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState("");
   const { toast } = useToast();
 
   const processExcelFile = async (file: File) => {
     setImporting(true);
-    setProgress("Lendo arquivo Excel...");
+    setProgress(isEs ? "Leyendo archivo Excel..." : isEn ? "Reading Excel file..." : "Lendo arquivo Excel...");
 
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -20,7 +24,7 @@ export function BullsExcelImporter() {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      setProgress(`${jsonData.length} touros encontrados. Processando...`);
+      setProgress(isEs ? `${jsonData.length} toros encontrados. Procesando...` : isEn ? `${jsonData.length} bulls found. Processing...` : `${jsonData.length} touros encontrados. Processando...`);
 
       // Convert to bulls format and insert
       const bulls = jsonData.map((row: any) => {
@@ -101,7 +105,7 @@ export function BullsExcelImporter() {
         };
       });
 
-      setProgress("Inserindo touros no banco de dados...");
+      setProgress(isEs ? "Insertando toros en la base de datos..." : isEn ? "Inserting bulls into the database..." : "Inserindo touros no banco de dados...");
 
       // Insert bulls in batches of 50
       const batchSize = 50;
@@ -110,7 +114,7 @@ export function BullsExcelImporter() {
 
       for (let i = 0; i < bulls.length; i += batchSize) {
         const batch = bulls.slice(i, i + batchSize);
-        
+
         const { error } = await supabase.from("bulls").upsert(batch, {
           onConflict: "code",
           ignoreDuplicates: false,
@@ -122,23 +126,23 @@ export function BullsExcelImporter() {
         }
 
         inserted += batch.length;
-        setProgress(`${inserted} de ${bulls.length} touros processados...`);
+        setProgress(isEs ? `${inserted} de ${bulls.length} toros procesados...` : isEn ? `${inserted} of ${bulls.length} bulls processed...` : `${inserted} de ${bulls.length} touros processados...`);
       }
 
-      setProgress(`✓ Importação concluída! ${bulls.length} touros importados.`);
+      setProgress(isEs ? `✓ Importación completada! ${bulls.length} toros importados.` : isEn ? `✓ Import complete! ${bulls.length} bulls imported.` : `✓ Importação concluída! ${bulls.length} touros importados.`);
 
       toast({
-        title: "Importação concluída!",
-        description: `${bulls.length} touros foram importados com sucesso.`,
+        title: isEs ? "Importación completada!" : isEn ? "Import complete!" : "Importação concluída!",
+        description: isEs ? `${bulls.length} toros fueron importados con éxito.` : isEn ? `${bulls.length} bulls were successfully imported.` : `${bulls.length} touros foram importados com sucesso.`,
       });
     } catch (error) {
       console.error("Erro na importação:", error);
       toast({
-        title: "Erro na importação",
-        description: error instanceof Error ? error.message : "Erro desconhecido",
+        title: isEs ? "Error en la importación" : isEn ? "Import error" : "Erro na importação",
+        description: error instanceof Error ? error.message : (isEs ? "Error desconocido" : isEn ? "Unknown error" : "Erro desconhecido"),
         variant: "destructive",
       });
-      setProgress("Erro na importação");
+      setProgress(isEs ? "Error en la importación" : isEn ? "Import error" : "Erro na importação");
     } finally {
       setImporting(false);
     }
@@ -153,7 +157,7 @@ export function BullsExcelImporter() {
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-4">Importar Touros do Excel</h2>
+      <h2 className="text-xl font-semibold mb-4">{isEs ? "Importar Toros desde Excel" : isEn ? "Import Bulls from Excel" : "Importar Touros do Excel"}</h2>
       <div className="space-y-4">
         <input
           type="file"
@@ -167,7 +171,7 @@ export function BullsExcelImporter() {
         )}
         {importing && (
           <div className="text-sm text-primary animate-pulse">
-            Processando...
+            {isEs ? "Procesando..." : isEn ? "Processing..." : "Processando..."}
           </div>
         )}
       </div>

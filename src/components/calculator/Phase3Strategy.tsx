@@ -5,14 +5,18 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGeneticCalculator, ServiceType } from "@/hooks/useGeneticCalculator";
+import { useTranslation } from "@/hooks/useTranslation";
 
-const SERVICE_OPTIONS: { value: ServiceType; label: string }[] = [
-  { value: "sexed", label: "Sêmen sexado" },
-  { value: "conventional", label: "Sêmen convencional" },
-  { value: "beef", label: "Sêmen de Corte" },
+const SERVICE_OPTIONS = (isEn: boolean, isEs: boolean): { value: ServiceType; label: string }[] => [
+  { value: "sexed", label: isEs ? "Semen sexado" : isEn ? "Sexed semen" : "Sêmen sexado" },
+  { value: "conventional", label: isEs ? "Semen convencional" : isEn ? "Conventional semen" : "Sêmen convencional" },
+  { value: "beef", label: isEs ? "Semen de carne" : isEn ? "Beef semen" : "Sêmen de Corte" },
 ];
 
 export function Phase3Strategy() {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const { inputs, outputs, setStrategyInputs } = useGeneticCalculator();
   const { strategy } = inputs;
   const { roi } = outputs;
@@ -81,14 +85,14 @@ export function Phase3Strategy() {
           <span className="bg-destructive text-destructive-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
             3
           </span>
-          Fase 3 - Estratégia genética
+          {isEs ? "Fase 3 - Estrategia genética" : isEn ? "Phase 3 - Genetic Strategy" : "Fase 3 - Estratégia genética"}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Novilhas */}
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold mb-4">Novilhas</h3>
+            <h3 className="text-lg font-semibold mb-4">{isEs ? "Vaquillas" : isEn ? "Heifers" : "Novilhas"}</h3>
             
             <div className="space-y-4">
               {/* Superior */}
@@ -112,7 +116,7 @@ export function Phase3Strategy() {
               <Card className="border-2 border-border">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="font-semibold">Intermediário</span>
+                    <span className="font-semibold">{isEs ? "Intermedio" : isEn ? "Intermediate" : "Intermediário"}</span>
                     <span className="font-bold text-lg">{strategy.heifersGroup.intermediate}%</span>
                   </div>
                   <Slider
@@ -129,7 +133,7 @@ export function Phase3Strategy() {
               <Card className="border-2 border-border">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="font-semibold">Inferior</span>
+                    <span className="font-semibold">{isEs ? "Inferior" : isEn ? "Inferior" : "Inferior"}</span>
                     <span className="font-bold text-lg">{strategy.heifersGroup.inferior}%</span>
                   </div>
                   <Slider
@@ -150,7 +154,7 @@ export function Phase3Strategy() {
               </div>
 
               <div>
-                <Label>Valor genético da Mãe</Label>
+                <Label>{isEs ? "Valor genético de la Madre" : isEn ? "Dam genetic value" : "Valor genético da Mãe"}</Label>
                 <Input
                   type="number"
                   value={strategy.heifersPlan.damGeneticValue}
@@ -162,7 +166,7 @@ export function Phase3Strategy() {
               <div className="space-y-3">
                 {(["firstService", "secondService", "thirdService"] as const).map((service, idx) => (
                   <div key={service}>
-                    <Label>{idx + 1}º serviço</Label>
+                    <Label>{isEs ? `${idx + 1}° servicio` : isEn ? `${idx + 1}${idx === 0 ? "st" : idx === 1 ? "nd" : "rd"} service` : `${idx + 1}º serviço`}</Label>
                     <Select
                       value={strategy.heifersPlan[service]}
                       onValueChange={(value: ServiceType) => updateHeifersPlan(service, value)}
@@ -171,7 +175,7 @@ export function Phase3Strategy() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {SERVICE_OPTIONS.map((opt) => (
+                        {SERVICE_OPTIONS(isEn, isEs).map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
                           </SelectItem>
@@ -186,7 +190,7 @@ export function Phase3Strategy() {
 
           {/* Grupo Vacas */}
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold mb-4">Grupo Vacas</h3>
+            <h3 className="text-lg font-semibold mb-4">{isEs ? "Grupo Vacas" : isEn ? "Cow Group" : "Grupo Vacas"}</h3>
             
             <div className="space-y-4">
               {/* Superior */}
@@ -210,7 +214,7 @@ export function Phase3Strategy() {
               <Card className="border-2 border-border">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="font-semibold">Intermediário</span>
+                    <span className="font-semibold">{isEs ? "Intermedio" : isEn ? "Intermediate" : "Intermediário"}</span>
                     <span className="font-bold text-lg">{strategy.cowsGroup.intermediate}%</span>
                   </div>
                   <Slider
@@ -227,7 +231,7 @@ export function Phase3Strategy() {
               <Card className="border-2 border-border">
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center mb-3">
-                    <span className="font-semibold">Inferior</span>
+                    <span className="font-semibold">{isEs ? "Inferior" : isEn ? "Inferior" : "Inferior"}</span>
                     <span className="font-bold text-lg">{strategy.cowsGroup.inferior}%</span>
                   </div>
                   <Slider
@@ -248,7 +252,7 @@ export function Phase3Strategy() {
               </div>
 
               <div>
-                <Label>Valor genético da Mãe</Label>
+                <Label>{isEs ? "Valor genético de la Madre" : isEn ? "Dam genetic value" : "Valor genético da Mãe"}</Label>
                 <Input
                   type="number"
                   value={strategy.cowsPlan.damGeneticValue}
@@ -260,7 +264,7 @@ export function Phase3Strategy() {
               <div className="space-y-3">
                 {(["firstService", "secondService", "thirdService"] as const).map((service, idx) => (
                   <div key={service}>
-                    <Label>{idx + 1}º serviço</Label>
+                    <Label>{isEs ? `${idx + 1}° servicio` : isEn ? `${idx + 1}${idx === 0 ? "st" : idx === 1 ? "nd" : "rd"} service` : `${idx + 1}º serviço`}</Label>
                     <Select
                       value={strategy.cowsPlan[service]}
                       onValueChange={(value: ServiceType) => updateCowsPlan(service, value)}
@@ -269,7 +273,7 @@ export function Phase3Strategy() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {SERVICE_OPTIONS.map((opt) => (
+                        {SERVICE_OPTIONS(isEn, isEs).map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
                           </SelectItem>
@@ -286,28 +290,28 @@ export function Phase3Strategy() {
         {/* Gráficos - usando valores calculados */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           <div>
-            <h4 className="text-center mb-4 font-semibold">Bezerras vivas ao nascer</h4>
+            <h4 className="text-center mb-4 font-semibold">{isEs ? "Terneras vivas al nacer" : isEn ? "Live heifer calves at birth" : "Bezerras vivas ao nascer"}</h4>
             <div className="space-y-2">
               <div className="bg-blue-500 text-white p-2 rounded text-center">
-                <div className="text-sm">Substituições necessárias</div>
+                <div className="text-sm">{isEs ? "Reemplazos necesarios" : isEn ? "Replacements needed" : "Substituições necessárias"}</div>
                 <div className="text-lg font-bold">{roi.heifersNeededAtBirth}</div>
               </div>
               <div className="bg-green-500 text-white p-2 rounded text-center">
-                <div className="text-sm">Substituições criadas</div>
+                <div className="text-sm">{isEs ? "Reemplazos creados" : isEn ? "Replacements created" : "Substituições criadas"}</div>
                 <div className="text-lg font-bold">{roi.totalHeifersBorn}</div>
               </div>
             </div>
           </div>
 
           <div>
-            <h4 className="text-center mb-4 font-semibold">Novilhas entrando no rebanho em lactação</h4>
+            <h4 className="text-center mb-4 font-semibold">{isEs ? "Vaquillas ingresando al rebaño en lactancia" : isEn ? "Heifers entering the lactating herd" : "Novilhas entrando no rebanho em lactação"}</h4>
             <div className="space-y-2">
               <div className="bg-blue-500 text-white p-2 rounded text-center">
-                <div className="text-sm">Substituições necessárias</div>
+                <div className="text-sm">{isEs ? "Reemplazos necesarios" : isEn ? "Replacements needed" : "Substituições necessárias"}</div>
                 <div className="text-lg font-bold">{roi.heifersNeededAtLactation}</div>
               </div>
               <div className="bg-green-500 text-white p-2 rounded text-center">
-                <div className="text-sm">Substituições criadas</div>
+                <div className="text-sm">{isEs ? "Reemplazos creados" : isEn ? "Replacements created" : "Substituições criadas"}</div>
                 <div className="text-lg font-bold">{roi.heifersCreated}</div>
               </div>
             </div>

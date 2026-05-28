@@ -6,7 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Users, Activity, Clock, Target } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS, es } from 'date-fns/locale';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useUserRole } from '@/hooks/useUserRole';
 
 interface UserMetrics {
@@ -25,6 +26,10 @@ interface UserMetrics {
 }
 
 export function UserEngagementMetrics() {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+  const dateFnsLocale = isEs ? es : isEn ? enUS : ptBR;
   const [metrics, setMetrics] = useState<UserMetrics[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -52,7 +57,7 @@ export function UserEngagementMetrics() {
       console.error('Erro ao carregar métricas:', error);
       toast({
         variant: 'destructive',
-        title: 'Erro ao carregar métricas',
+        title: isEs ? 'Error al cargar métricas' : isEn ? 'Error loading metrics' : 'Erro ao carregar métricas',
         description: error.message,
       });
     } finally {
@@ -77,9 +82,9 @@ export function UserEngagementMetrics() {
       (metrics.predictions_made > 0 ? 25 : 0) +
       (metrics.unique_features_used > 3 ? 25 : 0);
     
-    if (score >= 75) return { label: 'Alto', variant: 'default' as const };
-    if (score >= 50) return { label: 'Médio', variant: 'secondary' as const };
-    return { label: 'Baixo', variant: 'outline' as const };
+    if (score >= 75) return { label: isEs ? 'Alto' : isEn ? 'High' : 'Alto', variant: 'default' as const };
+    if (score >= 50) return { label: isEs ? 'Medio' : isEn ? 'Medium' : 'Médio', variant: 'secondary' as const };
+    return { label: isEs ? 'Bajo' : isEn ? 'Low' : 'Baixo', variant: 'outline' as const };
   };
 
   if (!isAdmin) {
@@ -108,52 +113,52 @@ export function UserEngagementMetrics() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
+            <CardTitle className="text-sm font-medium">{isEs ? "Total de Usuarios" : isEn ? "Total Users" : "Total de Usuários"}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalUsers}</div>
             <p className="text-xs text-muted-foreground">
-              {activeUsers} ativos
+              {activeUsers} {isEs ? "activos" : isEn ? "active" : "ativos"}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Média de Sessões</CardTitle>
+            <CardTitle className="text-sm font-medium">{isEs ? "Promedio de Sesiones" : isEn ? "Average Sessions" : "Média de Sessões"}</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{avgSessions.toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">
-              por usuário
+              {isEs ? "por usuario" : isEn ? "per user" : "por usuário"}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Com Fazendas</CardTitle>
+            <CardTitle className="text-sm font-medium">{isEs ? "Con Fincas" : isEn ? "With Farms" : "Com Fazendas"}</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{usersWithFarms}</div>
             <p className="text-xs text-muted-foreground">
-              {((usersWithFarms / totalUsers) * 100).toFixed(0)}% do total
+              {((usersWithFarms / totalUsers) * 100).toFixed(0)}% {isEs ? "del total" : isEn ? "of total" : "do total"}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fizeram Predições</CardTitle>
+            <CardTitle className="text-sm font-medium">{isEs ? "Hicieron Predicciones" : isEn ? "Made Predictions" : "Fizeram Predições"}</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{usersWithPredictions}</div>
             <p className="text-xs text-muted-foreground">
-              {((usersWithPredictions / totalUsers) * 100).toFixed(0)}% do total
+              {((usersWithPredictions / totalUsers) * 100).toFixed(0)}% {isEs ? "del total" : isEn ? "of total" : "do total"}
             </p>
           </CardContent>
         </Card>
@@ -162,22 +167,22 @@ export function UserEngagementMetrics() {
       {/* Tabela Detalhada */}
       <Card>
         <CardHeader>
-          <CardTitle>Detalhamento por Usuário</CardTitle>
+          <CardTitle>{isEs ? "Detalle por Usuario" : isEn ? "Detail by User" : "Detalhamento por Usuário"}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead className="text-center">Engajamento</TableHead>
-                  <TableHead className="text-center">Fazendas</TableHead>
-                  <TableHead className="text-center">Páginas</TableHead>
+                  <TableHead>{isEs ? "Usuario" : isEn ? "User" : "Usuário"}</TableHead>
+                  <TableHead className="text-center">{isEs ? "Engagement" : isEn ? "Engagement" : "Engajamento"}</TableHead>
+                  <TableHead className="text-center">{isEs ? "Fincas" : isEn ? "Farms" : "Fazendas"}</TableHead>
+                  <TableHead className="text-center">{isEs ? "Páginas" : isEn ? "Pages" : "Páginas"}</TableHead>
                   <TableHead className="text-center">Features</TableHead>
-                  <TableHead className="text-center">Predições</TableHead>
-                  <TableHead className="text-center">Sessões</TableHead>
-                  <TableHead className="text-center">Tempo Total</TableHead>
-                  <TableHead>Última Atividade</TableHead>
+                  <TableHead className="text-center">{isEs ? "Predicciones" : isEn ? "Predictions" : "Predições"}</TableHead>
+                  <TableHead className="text-center">{isEs ? "Sesiones" : isEn ? "Sessions" : "Sessões"}</TableHead>
+                  <TableHead className="text-center">{isEs ? "Tiempo Total" : isEn ? "Total Time" : "Tempo Total"}</TableHead>
+                  <TableHead>{isEs ? "Última Actividad" : isEn ? "Last Activity" : "Última Atividade"}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -187,7 +192,7 @@ export function UserEngagementMetrics() {
                     <TableRow key={metric.user_id}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{metric.full_name || 'Sem nome'}</div>
+                          <div className="font-medium">{metric.full_name || (isEs ? 'Sin nombre' : isEn ? 'No name' : 'Sem nome')}</div>
                           <div className="text-xs text-muted-foreground">{metric.email}</div>
                         </div>
                       </TableCell>
@@ -221,11 +226,11 @@ export function UserEngagementMetrics() {
                           <span className="text-sm text-muted-foreground">
                             {formatDistanceToNow(new Date(metric.last_activity), {
                               addSuffix: true,
-                              locale: ptBR,
+                              locale: dateFnsLocale,
                             })}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground">Nunca</span>
+                          <span className="text-muted-foreground">{isEs ? "Nunca" : isEn ? "Never" : "Nunca"}</span>
                         )}
                       </TableCell>
                     </TableRow>

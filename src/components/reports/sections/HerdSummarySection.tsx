@@ -5,6 +5,7 @@ import { calculateCategoryCounts, getAutomaticCategory, type FemaleCategory } fr
 import { formatPtaValue } from '@/utils/ptaFormat';
 import { Info } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { useTranslation } from "@/hooks/useTranslation";
 
 // PTAs to display with their field names and labels
 const PTA_CONFIG = [
@@ -65,13 +66,19 @@ function getPercentileColor(percentile: number): string {
 
 // Percentile explanation component
 function PercentileExplanation() {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   return (
     <div className="bg-muted/50 rounded-lg p-3 mb-4 text-sm flex items-start gap-2">
       <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
       <p className="text-muted-foreground">
-        <span className="font-semibold text-foreground">Percentil Interno:</span>{' '}
-        A porcentagem indica a posição da média do rebanho em relação aos próprios animais. 
-        Um valor de 70% significa que a média está entre os 30% melhores do rebanho para aquela característica.
+        <span className="font-semibold text-foreground">{isEs ? "Percentil Interno:" : isEn ? "Internal Percentile:" : "Percentil Interno:"}</span>{' '}
+        {isEs
+          ? "El porcentaje indica la posición del promedio del rebaño en relación con sus propios animales. Un valor de 70% significa que el promedio está entre el 30% superior del rebaño para esa característica."
+          : isEn
+          ? "The percentage indicates the position of the herd average relative to its own animals. A value of 70% means the average is among the top 30% of the herd for that trait."
+          : "A porcentagem indica a posição da média do rebanho em relação aos próprios animais. Um valor de 70% significa que a média está entre os 30% melhores do rebanho para aquela característica."}
       </p>
     </div>
   );
@@ -130,13 +137,16 @@ function KPICard({ stat }: { stat: PtaStats }) {
 }
 
 // Category averages table
-function CategoryAveragesTable({ 
-  females, 
-  ptaStats 
-}: { 
-  females: FemaleDenormRow[]; 
+function CategoryAveragesTable({
+  females,
+  ptaStats
+}: {
+  females: FemaleDenormRow[];
   ptaStats: PtaStats[];
 }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   // Group females by category
   const femalesByCategory = females.reduce((acc, f) => {
     const category = getAutomaticCategory(f.birth_date, f.parity_order);
@@ -165,7 +175,7 @@ function CategoryAveragesTable({
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-border">
-            <th className="text-left py-2 px-2 font-medium text-muted-foreground">Categoria</th>
+            <th className="text-left py-2 px-2 font-medium text-muted-foreground">{isEs ? "Categoría" : isEn ? "Category" : "Categoria"}</th>
             <th className="text-center py-2 px-2 font-medium text-muted-foreground">N</th>
             {activePtas.map(pta => (
               <th key={pta.field} className="text-right py-2 px-2 font-medium text-muted-foreground">
@@ -201,6 +211,9 @@ function CategoryAveragesTable({
 }
 
 export default function HerdSummarySection({ farmId, farmName }: HerdSummarySectionProps) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [females, setFemales] = useState<FemaleDenormRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [ptaStats, setPtaStats] = useState<PtaStats[]>([]);
@@ -247,7 +260,7 @@ export default function HerdSummarySection({ farmId, farmName }: HerdSummarySect
   if (loading) {
     return (
       <div className="p-8 text-center text-muted-foreground">
-        Carregando dados do rebanho...
+        {isEs ? "Cargando datos del rebaño..." : isEn ? "Loading herd data..." : "Carregando dados do rebanho..."}
       </div>
     );
   }
@@ -259,22 +272,22 @@ export default function HerdSummarySection({ farmId, farmName }: HerdSummarySect
       {/* Section: Category Counts */}
       <div>
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Contagem por Categoria
+          {isEs ? "Conteo por Categoría" : isEn ? "Count by Category" : "Contagem por Categoria"}
         </h3>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           <CategoryCountCard label="Total" count={categoryCounts.total} />
-          <CategoryCountCard label="Bezerras" count={categoryCounts.bezerras} />
-          <CategoryCountCard label="Novilhas" count={categoryCounts.novilhas} />
-          <CategoryCountCard label="Primíparas" count={categoryCounts.primiparas} />
-          <CategoryCountCard label="Secundíparas" count={categoryCounts.secundiparas} />
-          <CategoryCountCard label="Multíparas" count={categoryCounts.multiparas} />
+          <CategoryCountCard label={isEs ? "Terneras" : isEn ? "Calves" : "Bezerras"} count={categoryCounts.bezerras} />
+          <CategoryCountCard label={isEs ? "Novillas" : isEn ? "Heifers" : "Novilhas"} count={categoryCounts.novilhas} />
+          <CategoryCountCard label={isEs ? "Primíparas" : isEn ? "Primiparous" : "Primíparas"} count={categoryCounts.primiparas} />
+          <CategoryCountCard label={isEs ? "Secundíparas" : isEn ? "Secundiparous" : "Secundíparas"} count={categoryCounts.secundiparas} />
+          <CategoryCountCard label={isEs ? "Multíparas" : isEn ? "Multiparous" : "Multíparas"} count={categoryCounts.multiparas} />
         </div>
       </div>
 
       {/* Section: KPI Cards */}
       <div>
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Médias Gerais do Rebanho
+          {isEs ? "Promedios Generales del Rebaño" : isEn ? "Overall Herd Averages" : "Médias Gerais do Rebanho"}
         </h3>
         
         <PercentileExplanation />
@@ -287,7 +300,7 @@ export default function HerdSummarySection({ farmId, farmName }: HerdSummarySect
           </div>
         ) : (
           <p className="text-muted-foreground text-sm">
-            Sem dados genéticos disponíveis para este rebanho.
+            {isEs ? "Sin datos genéticos disponibles para este rebaño." : isEn ? "No genetic data available for this herd." : "Sem dados genéticos disponíveis para este rebanho."}
           </p>
         )}
       </div>
@@ -296,7 +309,7 @@ export default function HerdSummarySection({ farmId, farmName }: HerdSummarySect
       {ptaStats.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Médias por Categoria
+            {isEs ? "Promedios por Categoría" : isEn ? "Averages by Category" : "Médias por Categoria"}
           </h3>
           <CategoryAveragesTable females={females} ptaStats={ptaStats} />
         </div>

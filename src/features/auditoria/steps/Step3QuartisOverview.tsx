@@ -13,7 +13,8 @@ import { parseNum } from "@/lib/number";
 import { ChartExportProvider } from "@/components/pdf/ChartExportProvider";
 import { BatchExportBar, SingleExportButton } from "@/components/pdf/ExportButtons";
 import { useRegisterChart } from "@/components/pdf/useRegisterChart";
- import { formatPtaValue } from "@/utils/ptaFormat";
+import { formatPtaValue } from "@/utils/ptaFormat";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type Row = {
   trait_key: string;
@@ -40,8 +41,9 @@ const DEFAULT_PTAS = ["tpi", "ptam", "fm_dollar", "cm_dollar", "nm_dollar", "gm_
 
 function Step3QuartisOverviewContent() {
   const { farmId } = useAGFilters();
+  const { t } = useTranslation();
   const quartisCardRef = useRef<HTMLDivElement>(null);
-  const chartTitle = "Quartis – Top 25% vs Bottom 25%";
+  const chartTitle = t("ag.quartis.title");
   useRegisterChart("step3-quartis-overview", 3, chartTitle, quartisCardRef);
 
   const traitCatalog = PTA_CATALOG ?? [];
@@ -98,13 +100,13 @@ function Step3QuartisOverviewContent() {
 
     try {
       if (!farmId) {
-        setErrorMsg("Selecione um rebanho para carregar os dados.");
+        setErrorMsg(t("ag.quartis.selectHerd"));
         return;
       }
-      
+
       const sanitized = safeCols(selectedTraits);
       if (sanitized.length === 0) {
-        setErrorMsg("Selecione ao menos uma PTA.");
+        setErrorMsg(t("ag.quartis.selectPta"));
         return;
       }
 
@@ -153,7 +155,7 @@ function Step3QuartisOverviewContent() {
 
       setRows(result);
     } catch (e: any) {
-      setErrorMsg(`Erro inesperado: ${e?.message ?? "desconhecido"}`);
+      setErrorMsg(`${t("common.unexpectedError")} ${e?.message ?? t("common.unknown")}`);
     } finally {
       setIsLoading(false);
     }
@@ -189,15 +191,15 @@ function Step3QuartisOverviewContent() {
       {/* Painel de seleção */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Selecionar PTAs</CardTitle>
+          <CardTitle className="text-sm">{t("ag.quartis.selectPtas")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={selectAll}>
-              Selecionar todas
+              {t("ag.quartis.selectAll")}
             </Button>
             <Button variant="ghost" size="sm" onClick={clearAll}>
-              Limpar
+              {t("ag.quartis.clear")}
             </Button>
           </div>
           
@@ -217,7 +219,7 @@ function Step3QuartisOverviewContent() {
 
           <Button onClick={loadData} disabled={isLoading || selectedTraits.length === 0} className="w-full">
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Atualizar
+            {t("ag.quartis.refresh")}
           </Button>
         </CardContent>
       </Card>
@@ -230,7 +232,7 @@ function Step3QuartisOverviewContent() {
         </CardHeader>
         <CardContent>
           {isLoading && (
-            <div className="py-6 text-muted-foreground">Calculando...</div>
+            <div className="py-6 text-muted-foreground">{t("ag.quartis.calculating")}</div>
           )}
           
           {errorMsg && <div className="text-sm text-red-600 mb-4">{errorMsg}</div>}
@@ -240,11 +242,11 @@ function Step3QuartisOverviewContent() {
               <thead>
                 <tr className="text-left border-b">
                   <th className="py-2 pr-3">PTA</th>
-                  <th className="py-2 pr-3">N total</th>
-                  <th className="py-2 pr-3">Top 25% (N)</th>
-                  <th className="py-2 pr-3">Média Top 25%</th>
-                  <th className="py-2 pr-3">Bottom 25% (N)</th>
-                  <th className="py-2 pr-3">Média Bottom 25%</th>
+                  <th className="py-2 pr-3">{t("ag.quartis.nTotal")}</th>
+                  <th className="py-2 pr-3">{t("ag.quartis.topN")}</th>
+                  <th className="py-2 pr-3">{t("ag.quartis.topMean")}</th>
+                  <th className="py-2 pr-3">{t("ag.quartis.bottomN")}</th>
+                  <th className="py-2 pr-3">{t("ag.quartis.bottomMean")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -264,7 +266,7 @@ function Step3QuartisOverviewContent() {
                 {rows.length === 0 && !errorMsg && !isLoading && (
                   <tr>
                     <td colSpan={6} className="py-6 text-muted-foreground">
-                      Selecione PTAs e clique em "Atualizar".
+                      {t("ag.quartis.selectAndRefresh")}
                     </td>
                   </tr>
                 )}

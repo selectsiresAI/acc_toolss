@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Send, User, Mail, Calendar, Tag } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS, es } from "date-fns/locale";
+import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 
@@ -43,6 +44,10 @@ interface SupportTicketDetailProps {
 }
 
 export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProps) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+  const dateFnsLocale = isEs ? es : isEn ? enUS : ptBR;
   const [responses, setResponses] = useState<TicketResponse[]>([]);
   const [newResponse, setNewResponse] = useState("");
   const [isInternal, setIsInternal] = useState(false);
@@ -70,7 +75,7 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
       setResponses((data as any) || []);
     } catch (error) {
       console.error('Error loading responses:', error);
-      toast.error('Erro ao carregar respostas');
+      toast.error(isEs ? 'Error al cargar respuestas' : isEn ? 'Error loading responses' : 'Erro ao carregar respostas');
     } finally {
       setLoadingResponses(false);
     }
@@ -78,14 +83,14 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
 
   const handleSendResponse = async () => {
     if (!newResponse.trim()) {
-      toast.error('Digite uma resposta');
+      toast.error(isEs ? 'Escriba una respuesta' : isEn ? 'Type a response' : 'Digite uma resposta');
       return;
     }
 
     try {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) throw new Error(isEs ? 'Usuario no autenticado' : isEn ? 'User not authenticated' : 'Usuário não autenticado');
 
       const { error } = await (supabase
         .from('support_ticket_responses' as any) as any)
@@ -98,13 +103,13 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
 
       if (error) throw error;
 
-      toast.success('Resposta enviada com sucesso');
+      toast.success(isEs ? 'Respuesta enviada con éxito' : isEn ? 'Response sent successfully' : 'Resposta enviada com sucesso');
       setNewResponse("");
       setIsInternal(false);
       await loadResponses();
     } catch (error) {
       console.error('Error sending response:', error);
-      toast.error('Erro ao enviar resposta');
+      toast.error(isEs ? 'Error al enviar respuesta' : isEn ? 'Error sending response' : 'Erro ao enviar resposta');
     } finally {
       setLoading(false);
     }
@@ -121,10 +126,10 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
       if (error) throw error;
 
       setCurrentStatus(newStatus);
-      toast.success('Status atualizado com sucesso');
+      toast.success(isEs ? 'Estado actualizado con éxito' : isEn ? 'Status updated successfully' : 'Status atualizado com sucesso');
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error('Erro ao atualizar status');
+      toast.error(isEs ? 'Error al actualizar estado' : isEn ? 'Error updating status' : 'Erro ao atualizar status');
     } finally {
       setLoading(false);
     }
@@ -132,22 +137,22 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
-      new: { variant: "destructive", label: "Novo" },
-      in_progress: { variant: "default", label: "Em Andamento" },
-      resolved: { variant: "secondary", label: "Resolvido" },
-      closed: { variant: "outline", label: "Fechado" }
+      new: { variant: "destructive", label: isEs ? "Nuevo" : isEn ? "New" : "Novo" },
+      in_progress: { variant: "default", label: isEs ? "En Progreso" : isEn ? "In Progress" : "Em Andamento" },
+      resolved: { variant: "secondary", label: isEs ? "Resuelto" : isEn ? "Resolved" : "Resolvido" },
+      closed: { variant: "outline", label: isEs ? "Cerrado" : isEn ? "Closed" : "Fechado" }
     };
-    
+
     const config = variants[status] || variants.new;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
-      technical: "Técnico",
-      billing: "Financeiro",
-      feature: "Funcionalidade",
-      other: "Outro"
+      technical: isEs ? "Técnico" : isEn ? "Technical" : "Técnico",
+      billing: isEs ? "Financiero" : isEn ? "Billing" : "Financeiro",
+      feature: isEs ? "Funcionalidad" : isEn ? "Feature" : "Funcionalidade",
+      other: isEs ? "Otro" : isEn ? "Other" : "Outro"
     };
     return labels[category] || category;
   };
@@ -158,9 +163,9 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={onClose}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
+            {isEs ? "Volver" : isEn ? "Back" : "Voltar"}
           </Button>
-          <h1 className="text-2xl font-bold">Detalhes do Ticket</h1>
+          <h1 className="text-2xl font-bold">{isEs ? "Detalles del Ticket" : isEn ? "Ticket Details" : "Detalhes do Ticket"}</h1>
         </div>
 
         {/* Informações do Ticket */}
@@ -179,10 +184,10 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="new">Novo</SelectItem>
-                  <SelectItem value="in_progress">Em Andamento</SelectItem>
-                  <SelectItem value="resolved">Resolvido</SelectItem>
-                  <SelectItem value="closed">Fechado</SelectItem>
+                  <SelectItem value="new">{isEs ? "Nuevo" : isEn ? "New" : "Novo"}</SelectItem>
+                  <SelectItem value="in_progress">{isEs ? "En Progreso" : isEn ? "In Progress" : "Em Andamento"}</SelectItem>
+                  <SelectItem value="resolved">{isEs ? "Resuelto" : isEn ? "Resolved" : "Resolvido"}</SelectItem>
+                  <SelectItem value="closed">{isEs ? "Cerrado" : isEn ? "Closed" : "Fechado"}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -191,7 +196,7 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Nome:</span>
+                <span className="font-medium">{isEs ? "Nombre:" : isEn ? "Name:" : "Nome:"}</span>
                 <span>{ticket.name}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -201,12 +206,12 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Criado em:</span>
-                <span>{format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                <span className="font-medium">{isEs ? "Creado en:" : isEn ? "Created at:" : "Criado em:"}</span>
+                <span>{format(new Date(ticket.created_at), isEn ? "MM/dd/yyyy 'at' HH:mm" : "dd/MM/yyyy 'às' HH:mm", { locale: dateFnsLocale })}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">Categoria:</span>
+                <span className="font-medium">{isEs ? "Categoría:" : isEn ? "Category:" : "Categoria:"}</span>
                 <span>{getCategoryLabel(ticket.category)}</span>
               </div>
             </div>
@@ -214,7 +219,7 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
             <Separator />
             
             <div>
-              <h3 className="font-semibold mb-2">Descrição:</h3>
+              <h3 className="font-semibold mb-2">{isEs ? "Descripción:" : isEn ? "Description:" : "Descrição:"}</h3>
               <p className="text-muted-foreground whitespace-pre-wrap">{ticket.message}</p>
             </div>
           </CardContent>
@@ -223,7 +228,7 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
         {/* Histórico de Respostas */}
         <Card>
           <CardHeader>
-            <CardTitle>Histórico de Respostas</CardTitle>
+            <CardTitle>{isEs ? "Historial de Respuestas" : isEn ? "Response History" : "Histórico de Respostas"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {loadingResponses ? (
@@ -232,7 +237,7 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
               </div>
             ) : responses.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                Nenhuma resposta ainda. Seja o primeiro a responder!
+                {isEs ? "Ninguna respuesta aún. ¡Sea el primero en responder!" : isEn ? "No responses yet. Be the first to respond!" : "Nenhuma resposta ainda. Seja o primeiro a responder!"}
               </p>
             ) : (
               responses.map((response) => (
@@ -251,12 +256,12 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
                       </span>
                       {response.is_internal && (
                         <Badge variant="outline" className="text-xs">
-                          Interna
+                          {isEs ? "Interna" : isEn ? "Internal" : "Interna"}
                         </Badge>
                       )}
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {format(new Date(response.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {format(new Date(response.created_at), isEn ? "MM/dd/yyyy 'at' HH:mm" : "dd/MM/yyyy 'às' HH:mm", { locale: dateFnsLocale })}
                     </span>
                   </div>
                   <p className="text-sm whitespace-pre-wrap">{response.message}</p>
@@ -269,11 +274,11 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
         {/* Nova Resposta */}
         <Card>
           <CardHeader>
-            <CardTitle>Adicionar Resposta</CardTitle>
+            <CardTitle>{isEs ? "Agregar Respuesta" : isEn ? "Add Response" : "Adicionar Resposta"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
-              placeholder="Digite sua resposta..."
+              placeholder={isEs ? "Escriba su respuesta..." : isEn ? "Type your response..." : "Digite sua resposta..."}
               value={newResponse}
               onChange={(e) => setNewResponse(e.target.value)}
               rows={6}
@@ -289,12 +294,12 @@ export function SupportTicketDetail({ ticket, onClose }: SupportTicketDetailProp
                   className="rounded"
                   disabled={loading}
                 />
-                <span>Nota interna (não visível para o usuário)</span>
+                <span>{isEs ? "Nota interna (no visible para el usuario)" : isEn ? "Internal note (not visible to the user)" : "Nota interna (não visível para o usuário)"}</span>
               </label>
               
               <Button onClick={handleSendResponse} disabled={loading || !newResponse.trim()}>
                 <Send className="h-4 w-4 mr-2" />
-                {loading ? 'Enviando...' : 'Enviar Resposta'}
+                {loading ? (isEs ? 'Enviando...' : isEn ? 'Sending...' : 'Enviando...') : (isEs ? 'Enviar Respuesta' : isEn ? 'Send Response' : 'Enviar Resposta')}
               </Button>
             </div>
           </CardContent>

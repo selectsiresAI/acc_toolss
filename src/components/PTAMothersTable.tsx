@@ -7,6 +7,7 @@ import { useHerdStore } from '@/hooks/useHerdStore';
 import { usePlanStore } from '@/hooks/usePlanStore';
 import { useToast } from '@/hooks/use-toast';
 import { formatPtaValue } from '@/utils/ptaFormat';
+import { useTranslation } from "@/hooks/useTranslation";
 
 // Default PTAs to display in the table
 const DEFAULT_PTAS = [
@@ -23,6 +24,9 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
   selectedPTAs = DEFAULT_PTAS, 
   className = "" 
 }) => {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const { toast } = useToast();
   const { selectedHerdId } = useHerdStore();
   const planStore = usePlanStore();
@@ -78,8 +82,8 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
   const handleRecalculate = async () => {
     if (!selectedHerdId) {
       toast({
-        title: "Nenhum rebanho selecionado",
-        description: "Selecione um rebanho para recalcular as médias.",
+        title: isEs ? "Ningún rebaño seleccionado" : isEn ? "No herd selected" : "Nenhum rebanho selecionado",
+        description: isEs ? "Seleccione un rebaño para recalcular los promedios." : isEn ? "Select a herd to recalculate averages." : "Selecione um rebanho para recalcular as médias.",
         variant: "destructive",
       });
       return;
@@ -89,13 +93,13 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
     try {
       await loadPtaMeansForHerd(selectedHerdId, selectedPTAs);
       toast({
-        title: "Médias recalculadas",
-        description: "As médias das PTAs foram atualizadas com sucesso.",
+        title: isEs ? "Promedios recalculados" : isEn ? "Averages recalculated" : "Médias recalculadas",
+        description: isEs ? "Los promedios de PTAs fueron actualizados con éxito." : isEn ? "PTA averages were successfully updated." : "As médias das PTAs foram atualizadas com sucesso.",
       });
     } catch (error) {
       toast({
-        title: "Erro ao recalcular",
-        description: "Erro ao carregar dados do rebanho.",
+        title: isEs ? "Error al recalcular" : isEn ? "Recalculation error" : "Erro ao recalcular",
+        description: isEs ? "Error al cargar datos del rebaño." : isEn ? "Error loading herd data." : "Erro ao carregar dados do rebanho.",
         variant: "destructive",
       });
     } finally {
@@ -118,7 +122,7 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Calculator className="w-5 h-5" />
-            PTA Média das Mães (por categoria)
+            {isEs ? "PTA Promedio de las Madres (por categoría)" : isEn ? "Average Mother PTA (by category)" : "PTA Média das Mães (por categoria)"}
           </CardTitle>
           <Button
             onClick={handleRecalculate}
@@ -128,7 +132,7 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
             className="flex items-center gap-2"
           >
             <RefreshCw className={`w-4 h-4 ${(loading || isRecalculating) ? 'animate-spin' : ''}`} />
-            Recalcular
+            {isEs ? "Recalcular" : isEn ? "Recalculate" : "Recalcular"}
           </Button>
         </div>
       </CardHeader>
@@ -142,9 +146,9 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
         {showEmptyAlert && (
           <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
             <p className="text-sm text-yellow-700">
-              {!selectedHerdId 
-                ? "Selecione um rebanho para visualizar as médias das PTAs."
-                : "Nenhum dado encontrado para o rebanho selecionado."
+              {!selectedHerdId
+                ? (isEs ? "Seleccione un rebaño para ver los promedios de PTAs." : isEn ? "Select a herd to view PTA averages." : "Selecione um rebanho para visualizar as médias das PTAs.")
+                : (isEs ? "No se encontraron datos para el rebaño seleccionado." : isEn ? "No data found for the selected herd." : "Nenhum dado encontrado para o rebanho selecionado.")
               }
             </p>
           </div>
@@ -154,7 +158,7 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             <span className="ml-2 text-sm text-muted-foreground">
-              Carregando médias das PTAs...
+              {isEs ? "Cargando promedios de PTAs..." : isEn ? "Loading PTA averages..." : "Carregando médias das PTAs..."}
             </span>
           </div>
         ) : (
@@ -162,7 +166,7 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
             <table className="min-w-full border-collapse">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="border px-3 py-2 text-left text-sm font-medium">Categoria</th>
+                  <th className="border px-3 py-2 text-left text-sm font-medium">{isEs ? "Categoría" : isEn ? "Category" : "Categoria"}</th>
                   {selectedPTAs.map(ptaLabel => (
                     <th key={ptaLabel} className="border px-3 py-2 text-center text-sm font-medium">
                       {ptaLabel}
@@ -172,7 +176,7 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
               </thead>
               <tbody>
                 <tr className="border-b hover:bg-muted/25">
-                  <td className="border px-3 py-2 font-medium text-green-700">Novilhas</td>
+                  <td className="border px-3 py-2 font-medium text-green-700">{isEs ? "Novillas" : isEn ? "Heifers" : "Novilhas"}</td>
                   {selectedPTAs.map(ptaLabel => (
                     <td key={ptaLabel} className="border px-3 py-2 text-center">
                       {getPTAValue(ptaLabel, 'novilha')}
@@ -180,7 +184,7 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
                   ))}
                 </tr>
                 <tr className="border-b hover:bg-muted/25">
-                  <td className="border px-3 py-2 font-medium text-purple-700">Primíparas</td>
+                  <td className="border px-3 py-2 font-medium text-purple-700">{isEs ? "Primíparas" : isEn ? "Primiparous" : "Primíparas"}</td>
                   {selectedPTAs.map(ptaLabel => (
                     <td key={ptaLabel} className="border px-3 py-2 text-center">
                       {getPTAValue(ptaLabel, 'primipara')}
@@ -188,7 +192,7 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
                   ))}
                 </tr>
                 <tr className="border-b hover:bg-muted/25">
-                  <td className="border px-3 py-2 font-medium text-orange-700">Secundíparas</td>
+                  <td className="border px-3 py-2 font-medium text-orange-700">{isEs ? "Secundíparas" : isEn ? "Secundiparous" : "Secundíparas"}</td>
                   {selectedPTAs.map(ptaLabel => (
                     <td key={ptaLabel} className="border px-3 py-2 text-center">
                       {getPTAValue(ptaLabel, 'secundipara')}
@@ -196,7 +200,7 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
                   ))}
                 </tr>
                 <tr className="border-b hover:bg-muted/25">
-                  <td className="border px-3 py-2 font-medium text-red-700">Multíparas</td>
+                  <td className="border px-3 py-2 font-medium text-red-700">{isEs ? "Multíparas" : isEn ? "Multiparous" : "Multíparas"}</td>
                   {selectedPTAs.map(ptaLabel => (
                     <td key={ptaLabel} className="border px-3 py-2 text-center">
                       {getPTAValue(ptaLabel, 'multipara')}
@@ -211,8 +215,8 @@ const PTAMothersTable: React.FC<PTAMothersTableProps> = ({
         {!showEmptyAlert && !loading && !isRecalculating && (
           <div className="mt-4 text-xs text-muted-foreground">
             <p>
-              Médias ponderadas por paridade. Valores arredondados para inteiros.
-              {selectedHerdId && ` Rebanho: ${selectedHerdId.slice(0, 8)}...`}
+              {isEs ? "Promedios ponderados por paridad. Valores redondeados a enteros." : isEn ? "Weighted averages by parity. Values rounded to integers." : "Médias ponderadas por paridade. Valores arredondados para inteiros."}
+              {selectedHerdId && (isEs ? ` Rebaño: ${selectedHerdId.slice(0, 8)}...` : isEn ? ` Herd: ${selectedHerdId.slice(0, 8)}...` : ` Rebanho: ${selectedHerdId.slice(0, 8)}...`)}
             </p>
           </div>
         )}

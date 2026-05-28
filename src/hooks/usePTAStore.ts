@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { fetchFemalesDenormByFarm } from '@/supabase/queries/females';
 import { getAutomaticCategoryLower } from '@/utils/femaleCategories';
+import { getLocale } from '@/lib/i18n';
 
 // PTA Label to Database Column Mapping
 export const PTA_COLUMN_MAP: Record<string, string> = {
@@ -197,7 +198,7 @@ export const usePTAStore = create<PTAStoreState>((set, get) => ({
     } catch (error: any) {
       console.error('Error loading PTA means:', error);
       set({ 
-        error: error.message || 'Erro ao carregar PTAs médias',
+        error: error.message || ({ "en-US": "Error loading average PTAs", "es": "Error al cargar PTAs promedio" }[getLocale()] ?? "Erro ao carregar PTAs médias"),
         loading: false
       });
     }

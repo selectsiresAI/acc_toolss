@@ -73,7 +73,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
       }
     } catch (error: any) {
       console.error('Authentication error occurred');
-      setError(error.message || 'Erro ao fazer login');
+      setError(error.message || t('auth.errorLogin' as any));
       toast({
         title: "Erro no login",
         description: error.message || 'Verifique suas credenciais e tente novamente',
@@ -90,17 +90,17 @@ const AuthPage: React.FC<AuthPageProps> = ({
 
     // Validações básicas
     if (!fullName.trim()) {
-      setError('Nome completo é obrigatório');
+      setError(t('auth.errorNameRequired' as any));
       setIsLoading(false);
       return;
     }
     if (signupPassword !== confirmPassword) {
-      setError('As senhas não coincidem');
+      setError(t('auth.errorPasswordMismatch' as any));
       setIsLoading(false);
       return;
     }
     if (signupPassword.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
+      setError(t('auth.errorPasswordMin' as any));
       setIsLoading(false);
       return;
     }
@@ -137,7 +137,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
       }
     } catch (error: any) {
       console.error('Registration error occurred');
-      setError(error.message || 'Erro ao criar conta');
+      setError(error.message || t('auth.errorSignup' as any));
       toast({
         title: "Erro ao criar conta",
         description: error.message || 'Tente novamente',
@@ -172,7 +172,7 @@ const AuthPage: React.FC<AuthPageProps> = ({
       setResetEmail('');
     } catch (error: any) {
       console.error('Password reset error occurred');
-      setError(error.message || 'Erro ao enviar e-mail de recuperação');
+      setError(error.message || t('auth.errorReset' as any));
       toast({
         title: "Erro ao enviar e-mail",
         description: error.message || 'Tente novamente',

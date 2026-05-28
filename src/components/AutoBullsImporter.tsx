@@ -4,8 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from "xlsx";
 import { Card } from "./ui/card";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function AutoBullsImporter() {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [status, setStatus] = useState<"idle" | "importing" | "done" | "error">("idle");
   const [progress, setProgress] = useState("");
   const [details, setDetails] = useState<{ inserted: number; updated: number } | null>(null);
@@ -14,18 +18,18 @@ export function AutoBullsImporter() {
   useEffect(() => {
     const importBulls = async () => {
       setStatus("importing");
-      setProgress("Carregando arquivo Excel...");
+      setProgress(isEs ? "Cargando archivo Excel..." : isEn ? "Loading Excel file..." : "Carregando arquivo Excel...");
 
       try {
         const response = await fetch("/USA_-_holstein_List_57.xlsx");
         const arrayBuffer = await response.arrayBuffer();
         
-        setProgress("Processando arquivo Excel...");
+        setProgress(isEs ? "Procesando archivo Excel..." : isEn ? "Processing Excel file..." : "Processando arquivo Excel...");
         const workbook = XLSX.read(arrayBuffer);
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        setProgress(`${jsonData.length} touros encontrados. Preparando dados...`);
+        setProgress(isEs ? `${jsonData.length} toros encontrados. Preparando datos...` : isEn ? `${jsonData.length} bulls found. Preparing data...` : `${jsonData.length} touros encontrados. Preparando dados...`);
 
         const bulls = jsonData.map((row: any) => {
           let birthDate = null;
@@ -117,14 +121,14 @@ export function AutoBullsImporter() {
           };
         });
 
-        setProgress("Inserindo touros no banco de dados...");
+        setProgress(isEs ? "Insertando toros en la base de datos..." : isEn ? "Inserting bulls into the database..." : "Inserindo touros no banco de dados...");
 
         const batchSize = 50;
         let totalInserted = 0;
 
         for (let i = 0; i < bulls.length; i += batchSize) {
           const batch = bulls.slice(i, i + batchSize);
-          
+
           const { error } = await supabase.from("bulls").upsert(batch, {
             onConflict: "code",
             ignoreDuplicates: false,
@@ -136,24 +140,24 @@ export function AutoBullsImporter() {
           }
 
           totalInserted += batch.length;
-          setProgress(`${totalInserted} de ${bulls.length} touros processados...`);
+          setProgress(isEs ? `${totalInserted} de ${bulls.length} toros procesados...` : isEn ? `${totalInserted} of ${bulls.length} bulls processed...` : `${totalInserted} de ${bulls.length} touros processados...`);
         }
 
         setDetails({ inserted: bulls.length, updated: 0 });
         setStatus("done");
-        setProgress(`✓ Importação concluída! ${bulls.length} touros importados.`);
+        setProgress(isEs ? `✓ Importación completada! ${bulls.length} toros importados.` : isEn ? `✓ Import complete! ${bulls.length} bulls imported.` : `✓ Importação concluída! ${bulls.length} touros importados.`);
 
         toast({
-          title: "Importação concluída!",
-          description: `${bulls.length} touros foram importados com sucesso.`,
+          title: isEs ? "Importación completada!" : isEn ? "Import complete!" : "Importação concluída!",
+          description: isEs ? `${bulls.length} toros fueron importados con éxito.` : isEn ? `${bulls.length} bulls were successfully imported.` : `${bulls.length} touros foram importados com sucesso.`,
         });
       } catch (error) {
         console.error("Erro na importação:", error);
         setStatus("error");
-        setProgress(`Erro: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
+        setProgress(isEs ? `Error: ${error instanceof Error ? error.message : "Error desconocido"}` : isEn ? `Error: ${error instanceof Error ? error.message : "Unknown error"}` : `Erro: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
         toast({
-          title: "Erro na importação",
-          description: error instanceof Error ? error.message : "Erro desconhecido",
+          title: isEs ? "Error en la importación" : isEn ? "Import error" : "Erro na importação",
+          description: error instanceof Error ? error.message : (isEs ? "Error desconocido" : isEn ? "Unknown error" : "Erro desconhecido"),
           variant: "destructive",
         });
       }
@@ -164,7 +168,7 @@ export function AutoBullsImporter() {
 
   return (
     <Card className="p-6 max-w-2xl mx-auto mt-8">
-      <h2 className="text-2xl font-bold mb-4">Importação Automática de Touros</h2>
+      <h2 className="text-2xl font-bold mb-4">{isEs ? "Importación Automática de Toros" : isEn ? "Automatic Bull Import" : "Importação Automática de Touros"}</h2>
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           {status === "importing" && (
@@ -180,7 +184,7 @@ export function AutoBullsImporter() {
         </div>
         {details && (
           <div className="text-sm text-muted-foreground border-t pt-4">
-            <p>Total de touros: {details.inserted}</p>
+            <p>{isEs ? "Total de toros" : isEn ? "Total bulls" : "Total de touros"}: {details.inserted}</p>
           </div>
         )}
       </div>

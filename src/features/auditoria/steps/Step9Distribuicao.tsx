@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PTA_CATALOG } from "@/lib/pta";
@@ -37,6 +38,7 @@ function buildBuckets(values: number[], bucketCount: number) {
 }
 
 export default function Step9Distribuicao() {
+  const { t } = useTranslation();
   const { farmId, ptasSelecionadas } = useAGFilters();
   const { data: females = [] } = useFemales(farmId);
   const [bucketCount, setBucketCount] = useState(10);
@@ -57,7 +59,7 @@ export default function Step9Distribuicao() {
   if (!ptasSelecionadas.length) {
     return (
       <Card>
-        <CardContent className="p-6 text-muted-foreground">Selecione ao menos uma PTA.</CardContent>
+        <CardContent className="p-6 text-muted-foreground">{t("dist9.selectPta")}</CardContent>
       </Card>
     );
   }
@@ -66,11 +68,11 @@ export default function Step9Distribuicao() {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Distribuição — múltiplas PTAs</CardTitle>
+          <CardTitle>{t("dist9.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
-            <label className="text-sm">Número de classes</label>
+            <label className="text-sm">{t("dist9.numClasses")}</label>
             <input
               type="range"
               min={5}
@@ -89,7 +91,7 @@ export default function Step9Distribuicao() {
           return (
             <Card key={key}>
               <CardHeader>
-                <CardTitle>Distribuição — {labelOf(key)}</CardTitle>
+                <CardTitle>{t("dist9.distribution")} — {labelOf(key)}</CardTitle>
               </CardHeader>
               <CardContent>
                 {data.length ? (
@@ -99,11 +101,11 @@ export default function Step9Distribuicao() {
                       <XAxis dataKey="range" angle={-45} textAnchor="end" height={80} />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="count" fill="#ED1C24" opacity={0.85} name="Qtd de Animais" />
+                      <Bar dataKey="count" fill="#ED1C24" opacity={0.85} name={t("dist9.animalCount")} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-[200px] flex items-center justify-center text-muted-foreground">Sem dados.</div>
+                  <div className="h-[200px] flex items-center justify-center text-muted-foreground">{t("dist9.noData")}</div>
                 )}
               </CardContent>
             </Card>

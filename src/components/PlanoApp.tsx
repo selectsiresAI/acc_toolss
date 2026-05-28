@@ -5,12 +5,14 @@ import ProjecaoGenetica from "./ProjecaoGenetica";
 import CalculadoraReposicao from "./CalculadoraReposicao";
 import { HelpButton } from "@/components/help/HelpButton";
 import { HelpHint } from "@/components/help/HelpHint";
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function PlanoApp({
   onBack
 }: {
   onBack: () => void;
 }) {
+  const { t } = useTranslation();
   const [activeSubmenu, setActiveSubmenu] = useState<"projecao" | "calculadora" | null>(null);
   
   if (activeSubmenu === "projecao") {
@@ -20,7 +22,7 @@ export default function PlanoApp({
           <div className="flex items-center justify-between gap-4">
             <Button variant="outline" onClick={() => setActiveSubmenu(null)} className="bg-gray-200 hover:bg-gray-100">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar ao Menu Plano
+              {t("plano.backToMenu")}
             </Button>
           </div>
         </div>
@@ -34,7 +36,7 @@ export default function PlanoApp({
           <div className="flex items-center justify-between gap-4">
             <Button variant="outline" onClick={() => setActiveSubmenu(null)} className="bg-gray-200 hover:bg-gray-100">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar ao Menu Plano
+              {t("plano.backToMenu")}
             </Button>
           </div>
         </div>
@@ -49,11 +51,11 @@ export default function PlanoApp({
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 text-center sm:text-left">
               <div className="flex items-center gap-2 justify-center sm:justify-start">
-                <h1 className="text-3xl font-bold mb-2">Plano</h1>
-                <HelpHint content="Escolha entre Projeção Genética ou Calculadora de Reposição para planejamento estratégico" />
+                <h1 className="text-3xl font-bold mb-2">{t("plano.title")}</h1>
+                <HelpHint content={t("plano.helpHint")} />
               </div>
               <p className="text-muted-foreground">
-                Escolha uma das funcionalidades abaixo para começar
+                {t("plano.chooseBelow")}
               </p>
             </div>
           </div>
@@ -68,28 +70,27 @@ export default function PlanoApp({
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
                   <span className="text-2xl">🧬</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Projeção Genética</h3>
+                <h3 className="text-xl font-semibold mb-2">{t("plano.projTitle")}</h3>
                 <p className="text-gray-600 text-sm">
-                  Sistema avançado de simulação genética para bovinos. 
-                  Calcule predições de performance e ROI baseado em dados reprodutivos.
+                  {t("plano.projDesc")}
                 </p>
               </div>
               <div className="space-y-2 text-sm text-gray-500 mb-6">
                 <div className="flex items-center gap-2">
                   
-                  Análise de PTAs e índices genéticos
+                  {t("plano.projFeature1")}
                 </div>
                 <div className="flex items-center gap-2">
                   
-                  Cálculos de ROI em tempo real
+                  {t("plano.projFeature2")}
                 </div>
                 <div className="flex items-center gap-2">
                   
-                  Gráficos e relatórios detalhados
+                  {t("plano.projFeature3")}
                 </div>
               </div>
               <Button onClick={() => setActiveSubmenu("projecao")} className="w-full bg-red-700 hover:bg-red-600">
-                Acessar Projeção Genética
+                {t("plano.projAccess")}
               </Button>
             </div>
           </div>
@@ -101,28 +102,27 @@ export default function PlanoApp({
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-red-50">
                   <span className="text-2xl">📊</span>
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Calculadora de Reposição</h3>
+                <h3 className="text-xl font-semibold mb-2">{t("plano.calcTitle")}</h3>
                 <p className="text-gray-600 text-sm">
-                  Ferramenta completa para planejamento de reposição de rebanho. 
-                  7 fases de análise desde crescimento até retorno do investimento.
+                  {t("plano.calcDesc")}
                 </p>
               </div>
               <div className="space-y-2 text-sm text-gray-500 mb-6">
                 <div className="flex items-center gap-2">
                   
-                  7 fases de planejamento estruturado
+                  {t("plano.calcFeature1")}
                 </div>
                 <div className="flex items-center gap-2">
                   
-                  Estratégia genética customizável
+                  {t("plano.calcFeature2")}
                 </div>
                 <div className="flex items-center gap-2">
                   
-                  Análise de investimentos e retornos
+                  {t("plano.calcFeature3")}
                 </div>
               </div>
               <Button onClick={() => setActiveSubmenu("calculadora")} className="w-full bg-red-700 hover:bg-red-600">
-                Acessar Calculadora de Reposição
+                {t("plano.calcAccess")}
               </Button>
             </div>
           </div>
@@ -131,10 +131,9 @@ export default function PlanoApp({
         {/* Info Section */}
         <div className="mt-12 text-center">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold mb-2">Sistema Integrado de Planejamento</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("plano.integratedTitle")}</h3>
             <p className="text-gray-600 text-sm max-w-2xl mx-auto">
-              O módulo Plano oferece duas ferramentas complementares para otimização genética e 
-              planejamento de rebanho. Use ambas para uma estratégia completa de melhoramento genético.
+              {t("plano.integratedDesc")}
             </p>
           </div>
         </div>

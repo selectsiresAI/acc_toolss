@@ -1,17 +1,17 @@
 import React from "react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface PlanStepperProps {
   currentStep: number; // 0 = plano, 1 = touros, 2 = resultados
   onStepClick?: (step: number) => void;
 }
 
-const STEPS = [
-  { label: "Plano Genético", icon: "①" },
-  { label: "Touros", icon: "②" },
-  { label: "Resultados", icon: "③" },
-];
+const STEP_KEYS = ["planStepper.geneticPlan", "planStepper.bulls", "planStepper.results"] as const;
+const STEP_ICONS = ["①", "②", "③"];
 
 export function PlanStepper({ currentStep, onStepClick }: PlanStepperProps) {
+  const { t } = useTranslation();
+  const STEPS = STEP_KEYS.map((key, i) => ({ label: t(key as any), icon: STEP_ICONS[i] }));
   return (
     <div
       style={{

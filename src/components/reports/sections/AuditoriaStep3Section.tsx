@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PTA_CATALOG } from "@/lib/pta";
  import { formatPtaValue } from "@/utils/ptaFormat";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type Row = {
   trait_key: string;
@@ -35,6 +36,9 @@ interface AuditoriaStep3SectionProps {
 }
 
 export default function AuditoriaStep3Section({ farmId }: AuditoriaStep3SectionProps) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const traitCatalog = PTA_CATALOG ?? [];
   const labelMap = useMemo(() => {
     const entries: Record<string, string> = {};
@@ -87,13 +91,13 @@ export default function AuditoriaStep3Section({ farmId }: AuditoriaStep3SectionP
 
     try {
       if (!farmId) {
-        setErrorMsg("Selecione um rebanho para carregar os dados.");
+        setErrorMsg(isEs ? "Seleccione un rebaño para cargar los datos." : isEn ? "Select a herd to load data." : "Selecione um rebanho para carregar os dados.");
         return;
       }
       
       const sanitized = safeCols(DEFAULT_PTAS);
       if (sanitized.length === 0) {
-        setErrorMsg("Nenhuma PTA disponível.");
+        setErrorMsg(isEs ? "Ningún PTA disponible." : isEn ? "No PTA available." : "Nenhuma PTA disponível.");
         return;
       }
 
@@ -141,7 +145,7 @@ export default function AuditoriaStep3Section({ farmId }: AuditoriaStep3SectionP
 
       setRows(result);
     } catch (e: any) {
-      setErrorMsg(`Erro inesperado: ${e?.message ?? "desconhecido"}`);
+      setErrorMsg(isEs ? `Error inesperado: ${e?.message ?? "desconocido"}` : isEn ? `Unexpected error: ${e?.message ?? "unknown"}` : `Erro inesperado: ${e?.message ?? "desconhecido"}`);
     } finally {
       setIsLoading(false);
     }
@@ -159,7 +163,7 @@ export default function AuditoriaStep3Section({ farmId }: AuditoriaStep3SectionP
       </CardHeader>
       <CardContent>
         {isLoading && (
-          <div className="py-6 text-muted-foreground">Calculando...</div>
+          <div className="py-6 text-muted-foreground">{isEs ? "Calculando..." : isEn ? "Calculating..." : "Calculando..."}</div>
         )}
         
         {errorMsg && <div className="text-sm text-destructive mb-4">{errorMsg}</div>}
@@ -171,9 +175,9 @@ export default function AuditoriaStep3Section({ farmId }: AuditoriaStep3SectionP
                 <th className="py-2 pr-3">PTA</th>
                 <th className="py-2 pr-3">N total</th>
                 <th className="py-2 pr-3">Top 25% (N)</th>
-                <th className="py-2 pr-3">Média Top 25%</th>
+                <th className="py-2 pr-3">{isEs ? "Promedio Top 25%" : isEn ? "Top 25% Mean" : "Média Top 25%"}</th>
                 <th className="py-2 pr-3">Bottom 25% (N)</th>
-                <th className="py-2 pr-3">Média Bottom 25%</th>
+                <th className="py-2 pr-3">{isEs ? "Promedio Bottom 25%" : isEn ? "Bottom 25% Mean" : "Média Bottom 25%"}</th>
               </tr>
             </thead>
             <tbody>
@@ -193,7 +197,7 @@ export default function AuditoriaStep3Section({ farmId }: AuditoriaStep3SectionP
               {rows.length === 0 && !errorMsg && !isLoading && (
                 <tr>
                   <td colSpan={6} className="py-6 text-muted-foreground">
-                    Nenhum dado disponível.
+                    {isEs ? "Sin datos disponibles." : isEn ? "No data available." : "Nenhum dado disponível."}
                   </td>
                 </tr>
               )}

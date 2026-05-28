@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-const TRAIT_OPTIONS = [
+const TRAIT_OPTIONS_PT = [
   { key: "PTA_MILK_KG", label: "Leite (kg)" },
   { key: "PTA_FAT_KG", label: "Gordura (kg)" },
   { key: "PTA_PROT_KG", label: "Proteína (kg)" },
@@ -25,6 +26,34 @@ const TRAIT_OPTIONS = [
   { key: "TPI_INDEX", label: "TPI (index)" },
   { key: "CM$_INDEX", label: "CM$ (index)" },
   { key: "FM$_INDEX", label: "FM$ (index)" },
+];
+
+const TRAIT_OPTIONS_EN = [
+  { key: "PTA_MILK_KG", label: "Milk (kg)" },
+  { key: "PTA_FAT_KG", label: "Fat (kg)" },
+  { key: "PTA_PROT_KG", label: "Protein (kg)" },
+  { key: "PL_MO", label: "Productive Life (months)" },
+  { key: "DPR_PP", label: "Fertility (DPR p.p.)" },
+  { key: "SCS", label: "Somatic Cell (SCS)" },
+  { key: "NM$_INDEX", label: "NM$ (index)" },
+  { key: "HHP$_INDEX", label: "HHP$ (index)" },
+  { key: "TPI_INDEX", label: "TPI (index)" },
+  { key: "CM$_INDEX", label: "CM$ (index)" },
+  { key: "FM$_INDEX", label: "FM$ (index)" },
+];
+
+const TRAIT_OPTIONS_ES = [
+  { key: "PTA_MILK_KG", label: "Leche (kg)" },
+  { key: "PTA_FAT_KG", label: "Grasa (kg)" },
+  { key: "PTA_PROT_KG", label: "Proteína (kg)" },
+  { key: "PL_MO", label: "Vida Productiva (meses)" },
+  { key: "DPR_PP", label: "Fertilidad (DPR p.p.)" },
+  { key: "SCS", label: "Célula Somática (SCS)" },
+  { key: "NM$_INDEX", label: "NM$ (índice)" },
+  { key: "HHP$_INDEX", label: "HHP$ (índice)" },
+  { key: "TPI_INDEX", label: "TPI (índice)" },
+  { key: "CM$_INDEX", label: "CM$ (índice)" },
+  { key: "FM$_INDEX", label: "FM$ (índice)" },
 ];
 
 export type IM5Config = {
@@ -49,6 +78,10 @@ export function IM5Configurator({
   defaultTraits?: string[];
   onApply: (cfg: IM5Config) => void;
 }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+  const TRAIT_OPTIONS = isEs ? TRAIT_OPTIONS_ES : isEn ? TRAIT_OPTIONS_EN : TRAIT_OPTIONS_PT;
   const supabase = useMemo(() => createClient(), []);
   const [ev, setEv] = useState<Record<string, number>>({});
   const [traits, setTraits] = useState<string[]>(defaultTraits);
@@ -89,10 +122,10 @@ export function IM5Configurator({
       <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
         {traits.map((t, i) => (
           <div key={i} className="space-y-1">
-            <Label>Traço {i + 1}</Label>
+            <Label>{isEs ? "Rasgo" : isEn ? "Trait" : "Traço"} {i + 1}</Label>
             <Select value={t} onValueChange={(v) => updateTrait(i, v)}>
               <SelectTrigger>
-                <SelectValue placeholder="Escolha o traço" />
+                <SelectValue placeholder={isEs ? "Elija el rasgo" : isEn ? "Choose trait" : "Escolha o traço"} />
               </SelectTrigger>
               <SelectContent>
                 {TRAIT_OPTIONS.map((o) => (
@@ -103,7 +136,7 @@ export function IM5Configurator({
               </SelectContent>
             </Select>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">R$/unid</span>
+              <span className="text-xs text-muted-foreground">{isEs ? "$/unid" : isEn ? "$/unit" : "R$/unid"}</span>
               <Input
                 value={ev[t] ?? 0}
                 onChange={(e) => setWeight(t, e.target.value)}
@@ -117,7 +150,7 @@ export function IM5Configurator({
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div>
-          <Label>Taxa de fêmeas (0–1)</Label>
+          <Label>{isEs ? "Tasa de hembras (0–1)" : isEn ? "Female rate (0–1)" : "Taxa de fêmeas (0–1)"}</Label>
           <Input
             type="number"
             step="0.01"
@@ -126,7 +159,7 @@ export function IM5Configurator({
           />
         </div>
         <div>
-          <Label>Taxa de concepção (0–1)</Label>
+          <Label>{isEs ? "Tasa de concepción (0–1)" : isEn ? "Conception rate (0–1)" : "Taxa de concepção (0–1)"}</Label>
           <Input
             type="number"
             step="0.01"
@@ -141,7 +174,7 @@ export function IM5Configurator({
           onApply({ traits, weights: ev, femaleRate, conceptionRate })
         }
       >
-        Aplicar IM5$
+        {isEs ? "Aplicar IM5$" : isEn ? "Apply IM5$" : "Aplicar IM5$"}
       </Button>
     </div>
   );

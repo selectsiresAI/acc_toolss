@@ -19,6 +19,7 @@ import { generateSegmentationPDF, generatePDFBlob } from '@/utils/pdfGenerator';
 import { useFileStore } from '@/hooks/useFileStore';
 import { fetchFemalesDenormByFarm, isCompleteFemaleRow, type CompleteFemaleDenormRow } from '@/supabase/queries/females';
 import { cn } from "@/lib/utils";
+import { useTranslation } from '@/hooks/useTranslation';
 import { utils as XLSXUtils, writeFile as writeXLSXFile } from "xlsx";
 interface Farm {
   id: string;
@@ -214,7 +215,7 @@ function renderPedigreeCell(code?: string | null, name?: string | null) {
       {name && <span className="text-[11px] text-muted-foreground">{name}</span>}
     </div>;
 }
-function getFonteDisplay(fonte?: string | null) {
+function getFonteDisplay(fonte: string | null | undefined, tFn: (key: string) => string) {
   if (!fonte) {
     return {
       label: '—',
@@ -224,13 +225,13 @@ function getFonteDisplay(fonte?: string | null) {
   const normalized = fonte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
   if (normalized.startsWith('genom')) {
     return {
-      label: 'Genômica',
+      label: tFn('seg.fonteGenomica'),
       className: 'border-green-200 bg-green-50 text-green-700'
     };
   }
   if (normalized.startsWith('pred')) {
     return {
-      label: 'Predição',
+      label: tFn('seg.fontePrediction'),
       className: 'border-purple-200 bg-purple-50 text-purple-700'
     };
   }
@@ -238,6 +239,18 @@ function getFonteDisplay(fonte?: string | null) {
     label: fonte,
     className: 'border-gray-200 bg-gray-50 text-gray-700'
   };
+}
+const CATEGORY_I18N_MAP: Record<string, string> = {
+  Bezerra: 'seg.catBezerra',
+  Novilha: 'seg.catNovilha',
+  'Primípara': 'seg.catPrimipara',
+  'Secundípara': 'seg.catSecundipara',
+  'Multípara': 'seg.catMultipara',
+  Indefinida: 'seg.catIndefinida',
+};
+function translateCategory(category: string, tFn: (key: string) => string): string {
+  const key = CATEGORY_I18N_MAP[category];
+  return key ? tFn(key) : category;
 }
 
 const CATEGORY_BADGE_CLASSES: Record<string, string> = {
@@ -297,6 +310,7 @@ export default function SegmentationPage({
   farm,
   onBack
 }: SegmentationPageProps) {
+  const { t, locale } = useTranslation();
   const [indexSelection, setIndexSelection] = useState<"HHP$" | "TPI" | "NM$" | "Custom">("HHP$");
   const {
     addReport
@@ -316,18 +330,19 @@ export default function SegmentationPage({
   const [superiorPercent, setSuperiorPercent] = useState([20]);
   const [intermediarioPercent, setIntermediarioPercent] = useState([60]);
   const [inferiorPercent, setInferiorPercent] = useState([20]);
+  const DEFAULT_PRESET_KEYS = ["seg.presetDefault", "seg.presetBalanced", "seg.presetQuartiles"];
   const [segmentationPresets, setSegmentationPresets] = useState<SegmentationPreset[]>([{
-    name: "Padrão 20/60/20",
+    name: "seg.presetDefault",
     superior: 20,
     intermediario: 60,
     inferior: 20
   }, {
-    name: "Equilibrado 33/34/33",
+    name: "seg.presetBalanced",
     superior: 33,
     intermediario: 34,
     inferior: 33
   }, {
-    name: "Quartis 25/50/25",
+    name: "seg.presetQuartiles",
     superior: 25,
     intermediario: 50,
     inferior: 25
@@ -387,7 +402,7 @@ export default function SegmentationPage({
       setAnimals(mapped);
     } catch (e: any) {
       console.error(e);
-      setError(e.message || 'Erro ao carregar dados do rebanho');
+      setError(e.message || t('seg.errorLoadingHerd'));
       setAnimals(DEMO_ANIMALS);
     } finally {
       setLoading(false);
@@ -708,18 +723,18 @@ export default function SegmentationPage({
 
   // Chart data
   const chartData = useMemo(() => [{
-    name: 'Superior',
+    name: t('seg.superior'),
     value: distributionStats.superior.count,
     color: '#10B981'
   }, {
-    name: 'Intermediário',
+    name: t('seg.intermediate'),
     value: distributionStats.intermediario.count,
     color: '#F59E0B'
   }, {
-    name: 'Inferior',
+    name: t('seg.inferior'),
     value: distributionStats.inferior.count,
     color: '#EF4444'
-  }], [distributionStats]);
+  }], [distributionStats, t]);
   const approvedCountDisplay = calc.approved || 0;
   const rejectedCountDisplay = calc.rejected || 0;
   function toggleTrait(t: string) {
@@ -766,7 +781,7 @@ export default function SegmentationPage({
     const metricColumns = ANIMAL_METRIC_COLUMNS;
 
     const preparedRows = sortedAnimals.map(a => {
-      const fonteInfo = getFonteDisplay((a as any).fonte);
+      const fonteInfo = getFonteDisplay((a as any).fonte, t);
       const customScore = sanitizeNumber(a.CustomScore ?? null);
 
       const metrics = metricColumns.map(column => {
@@ -789,7 +804,7 @@ export default function SegmentationPage({
         id_cdcb: (a as any).fonte === 'Predição' ? '' : ((a as any).cdcb_id ?? ""),
         data_nascimento: (a as any).birth_date ? formatDate((a as any).birth_date) : "",
         ordem_parto: (a as any).parity_order ?? "",
-        Categoria: autoCategory,
+        Categoria: translateCategory(autoCategory, t),
         Fonte: fonteInfo.label === '—' ? '' : fonteInfo.label,
         CustomScore: customScore,
         Classificacao: a.Classification ?? "",
@@ -809,16 +824,16 @@ export default function SegmentationPage({
     const metricHeaders = metricColumns.map(column => column.label);
     const headers = [
       "id",
-      "nome",
-      "identificador",
-      "id_cdcb",
-      "data_nascimento",
-      "Ordem de Parto",
-      "Categoria",
-      "Fonte",
+      t('seg.name'),
+      t('seg.identifier'),
+      t('seg.cdcbId'),
+      t('seg.birthDate'),
+      t('seg.parityOrder'),
+      t('seg.category'),
+      t('seg.source'),
       "CustomScore",
-      ...(shouldIncludeNormalized ? ["CustomScore_Normalizado"] : []),
-      "Classificacao",
+      ...(shouldIncludeNormalized ? ["CustomScore_Normalized"] : []),
+      t('seg.classification'),
       ...metricHeaders
     ];
 
@@ -852,7 +867,7 @@ export default function SegmentationPage({
 
     const range = worksheet['!ref'] ? XLSXUtils.decode_range(worksheet['!ref']) : null;
     const customScoreColumnIndex = headers.indexOf("CustomScore");
-    const normalizedColumnIndex = shouldIncludeNormalized ? headers.indexOf("CustomScore_Normalizado") : -1;
+    const normalizedColumnIndex = shouldIncludeNormalized ? headers.indexOf("CustomScore_Normalized") : -1;
 
     if (range) {
       for (let rowIdx = range.s.r + 1; rowIdx <= range.e.r; rowIdx++) {
@@ -904,12 +919,12 @@ export default function SegmentationPage({
     });
 
     const workbook = XLSXUtils.book_new();
-    XLSXUtils.book_append_sheet(workbook, worksheet, "Segmentacao");
-    writeXLSXFile(workbook, "segmentacao_custom_index.xlsx");
+    XLSXUtils.book_append_sheet(workbook, worksheet, t('seg.title'));
+    writeXLSXFile(workbook, `${t('seg.title')}_custom_index.xlsx`);
   }
   const saveSegmentationToDatabase = async () => {
     if (!segmentationEnabled || !segmentationTriggered) {
-      alert("Execute a segmentação antes de salvar.");
+      alert(t('seg.runSegmentationFirst'));
       return;
     }
     setLoading(true);
@@ -935,7 +950,7 @@ export default function SegmentationPage({
         }
       }));
       if (segmentationData.length === 0) {
-        alert("Nenhuma fêmea classificada para salvar.");
+        alert(t('seg.noClassifiedFemales'));
         return;
       }
 
@@ -944,10 +959,10 @@ export default function SegmentationPage({
         error
       } = await (supabase.from('female_segmentations') as any).insert(segmentationData);
       if (error) throw error;
-      alert(`Segmentação salva! ${segmentationData.length} fêmeas classificadas foram salvas no banco de dados.`);
+      alert(t('seg.segmentationSaved', { count: segmentationData.length }));
     } catch (error: any) {
       console.error('Erro ao salvar segmentação:', error);
-      alert(`Erro ao salvar segmentação: ${error.message}`);
+      alert(`${t('seg.errorSavingSegmentation')}: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -971,21 +986,21 @@ export default function SegmentationPage({
           weights
         } : undefined,
         femalesData: sortedAnimals,
-        date: new Date().toLocaleDateString('pt-BR')
+        date: new Date().toLocaleDateString(locale)
       };
       const pdf = await generateSegmentationPDF(reportData);
       const pdfBlob = await generatePDFBlob(pdf);
 
       // Salvar no store de arquivos
       addReport({
-        name: `Segmentação ${farm.name} - ${new Date().toLocaleDateString('pt-BR')}`,
+        name: `${t('seg.title')} ${farm.name} - ${new Date().toLocaleDateString(locale)}`,
         type: 'segmentation',
         sourceId: farm.farm_id,
         data: reportData,
         metadata: {
           createdAt: new Date().toISOString(),
           size: pdfBlob.size,
-          description: `Relatório de segmentação com ${sortedAnimals.length} fêmeas`,
+          description: t('seg.reportDescription', { count: sortedAnimals.length }),
           filters: reportData.filters,
           settings: reportData.customSettings
         },
@@ -996,7 +1011,7 @@ export default function SegmentationPage({
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Segmentacao_${farm.name}_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.download = `${t('seg.title')}_${farm.name}_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1007,7 +1022,7 @@ export default function SegmentationPage({
   };
   function savePreset() {
     if (!presetName.trim()) {
-      alert("Dê um nome ao preset.");
+      alert(t('seg.nameThePreset'));
       return;
     }
     const payload = {
@@ -1079,7 +1094,7 @@ export default function SegmentationPage({
   }
   function saveSegmentationPreset() {
     if (!newPresetName.trim()) {
-      alert("Dê um nome ao preset de segmentação.");
+      alert(t('seg.nameTheSegmentationPreset'));
       return;
     }
     const newPreset: SegmentationPreset = {
@@ -1108,7 +1123,7 @@ export default function SegmentationPage({
   function triggerSegmentation() {
     const totalPercent = superiorPercent[0] + intermediarioPercent[0] + inferiorPercent[0];
     if (totalPercent !== 100) {
-      alert("A soma das porcentagens deve ser exatamente 100% para executar a segmentação.");
+      alert(t('seg.percentagesMustSum100'));
       return;
     }
     setSegmentationTriggered(true);
@@ -1152,12 +1167,12 @@ export default function SegmentationPage({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Voltar ao painel principal da fazenda</p>
+                <p>{t('seg.backToDashboard')}</p>
               </TooltipContent>
             </Tooltip>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold">{farm.name} - Segmentação</h1>
-              <HelpHint content="Classifique o rebanho por índices customizados, gates e percentuais estratégicos" />
+              <h1 className="text-xl font-semibold">{farm.name} - {t('seg.title')}</h1>
+              <HelpHint content={t('seg.helpClassifyHerd')} />
             </div>
           </div>
         </div>
@@ -1167,8 +1182,8 @@ export default function SegmentationPage({
         <div className="rounded-2xl shadow p-4 bg-card">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold text-foreground">Segmentação — Índice</h2>
-              <HelpHint content="Escolha um índice padrão ou monte um personalizado com os traços mais relevantes" />
+              <h2 className="text-xl font-semibold text-foreground">{t('seg.titleIndex')}</h2>
+              <HelpHint content={t('seg.helpChooseIndex')} />
             </div>
             <div className="flex items-center gap-2">
               {(["HHP$", "TPI", "NM$", "Custom"] as const).map(opt => {
@@ -1192,12 +1207,12 @@ export default function SegmentationPage({
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>
-                        {isDisabled 
-                          ? `Índice ${opt} não disponível - sem dados no rebanho`
-                          : opt === "HHP$" ? "Índice econômico Health, Herd & Profit"
-                          : opt === "TPI" ? "Total Performance Index - índice geral de performance"
-                          : opt === "NM$" ? "Net Merit Dollar - mérito líquido em dólares"
-                          : "Índice personalizado com PTAs selecionadas"}
+                        {isDisabled
+                          ? t('seg.indexNotAvailable', { index: opt })
+                          : opt === "HHP$" ? t('seg.helpHHP')
+                          : opt === "TPI" ? t('seg.helpTPI')
+                          : opt === "NM$" ? t('seg.helpNM')
+                          : t('seg.helpCustom')}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -1206,24 +1221,24 @@ export default function SegmentationPage({
             </div>
           </div>
           {indexSelection !== "Custom" && <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-muted px-2 py-1 text-sm text-foreground">
-              <Settings size={16} /> Índice padrão – somente leitura
+              <Settings size={16} /> {t('seg.standardIndexReadOnly')}
             </div>}
         </div>
 
         {/* Status de dados */}
         <div className="flex items-center justify-between rounded-2xl bg-card p-4 shadow">
           <div className="text-sm text-foreground">
-            Fonte: <span className="font-semibold">Rebanho</span> {animals && animals.length ? `— ${animals.length} registros` : ""}
-            {error && <span className="ml-2 text-red-600">(erro: {error})</span>}
+            {t('seg.source')}: <span className="font-semibold">{t('seg.herd')}</span> {animals && animals.length ? `— ${animals.length} ${t('seg.records')}` : ""}
+            {error && <span className="ml-2 text-red-600">({t('seg.error')}: {error})</span>}
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={fetchAnimals} className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted">
-                <RefreshCw size={16} /> Recarregar
+                <RefreshCw size={16} /> {t('seg.reload')}
               </button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Recarregar dados do rebanho da fazenda</p>
+              <p>{t('seg.reloadHerdData')}</p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -1233,10 +1248,10 @@ export default function SegmentationPage({
             <div className="rounded-2xl bg-card p-4 shadow">
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-foreground">Quadro A — Selecione as PTAs</h3>
-                  <HelpHint content="Escolha os traços que comporão o índice customizado" />
+                  <h3 className="text-lg font-semibold text-foreground">{t('seg.panelASelectPTAs')}</h3>
+                  <HelpHint content={t('seg.helpSelectTraits')} />
                 </div>
-                <input className="w-64 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Buscar PTA…" value={ptaSearch} onChange={e => setPtaSearch(e.target.value)} />
+                <input className="w-64 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder={t('seg.searchPTA')} value={ptaSearch} onChange={e => setPtaSearch(e.target.value)} />
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-64 overflow-auto pr-2">
                 {filteredPTAs.map(p => {
@@ -1267,71 +1282,71 @@ export default function SegmentationPage({
                     </TooltipTrigger>
                     {isDisabled && (
                       <TooltipContent>
-                        <p>PTA {p} não disponível - sem dados no rebanho</p>
+                        <p>{t('seg.ptaNotAvailable', { pta: p })}</p>
                       </TooltipContent>
                     )}
                   </Tooltip>
                 );
               })}
               </div>
-              <div className="mt-3 text-sm text-foreground">✔ {selectedTraits.length} PTAs selecionadas</div>
+              <div className="mt-3 text-sm text-foreground">✔ {selectedTraits.length} {t('seg.ptasSelected')}</div>
             </div>
 
             {/* Quadro B – Pesos */}
             <div className="rounded-2xl bg-card p-4 shadow">
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-foreground">Quadro B — Pesos por PTA</h3>
-                  <HelpHint content="Defina a importância relativa (soma 100%) para cada PTA selecionada" />
+                  <h3 className="text-lg font-semibold text-foreground">{t('seg.panelBWeights')}</h3>
+                  <HelpHint content={t('seg.helpDefineWeights')} />
                 </div>
                 <div className="flex items-center gap-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button onClick={normalizeAll} className="rounded-xl border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted">Normalizar</button>
+                      <button onClick={normalizeAll} className="rounded-xl border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted">{t('seg.normalize')}</button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Distribuir pesos proporcionalmente para somar 100%</p>
+                      <p>{t('seg.helpNormalize')}</p>
                     </TooltipContent>
                   </Tooltip>
 
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button onClick={resetWeights} className="rounded-xl border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted">Resetar</button>
+                      <button onClick={resetWeights} className="rounded-xl border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted">{t('seg.reset')}</button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>Definir pesos iguais para todas as PTAs selecionadas</p>
+                      <p>{t('seg.helpReset')}</p>
                     </TooltipContent>
                   </Tooltip>
                   
                   <div className="flex items-center gap-2">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Nome do preset" value={presetName} onChange={e => setPresetName(e.target.value)} />
+                        <input className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder={t('seg.presetName')} value={presetName} onChange={e => setPresetName(e.target.value)} />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Digite um nome para salvar esta configuração</p>
+                        <p>{t('seg.helpPresetName')}</p>
                       </TooltipContent>
                     </Tooltip>
 
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button onClick={savePreset} className="rounded-xl border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted">Salvar preset</button>
+                        <button onClick={savePreset} className="rounded-xl border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted">{t('seg.savePreset')}</button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Salvar configuração atual para reutilização</p>
+                        <p>{t('seg.helpSavePreset')}</p>
                       </TooltipContent>
                     </Tooltip>
-                    <HelpHint content="Salve seus pesos favoritos para reutilizar em outras análises" side="bottom" />
+                    <HelpHint content={t('seg.helpSaveFavoriteWeights')} side="bottom" />
 
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <select className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring" onChange={e => e.target.value && loadPreset(e.target.value)} defaultValue="">
-                          <option value="" disabled>Carregar preset…</option>
+                          <option value="" disabled>{t('seg.loadPreset')}</option>
                           {presets.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
                         </select>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Carregar uma configuração previamente salva</p>
+                        <p>{t('seg.helpLoadPreset')}</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -1348,12 +1363,12 @@ export default function SegmentationPage({
               <div className="mt-3 flex items-center justify-between text-sm text-foreground">
                 <label className="flex items-center gap-2">
                   <input type="checkbox" className="accent-foreground" checked={standardize} onChange={e => setStandardize(e.target.checked)} />
-                  Padronizar variáveis (Z-score intra-rebanho)
+                  {t('seg.standardizeVariables')}
                 </label>
-                <HelpHint content="Use padronização para comparar PTAs com escalas diferentes" side="bottom" />
+                <HelpHint content={t('seg.helpStandardize')} side="bottom" />
                 <div>
-                  Soma dos pesos: <span className={cn("font-semibold", Math.abs(weightSum - 1) < 1e-6 ? "text-accent" : "text-destructive")}>{weightSum.toFixed(3)}</span>
-                  {Math.abs(weightSum - 1) >= 1e-6 && <span className="ml-2 text-xs text-foreground">(clique em Normalizar)</span>}
+                  {t('seg.weightSum')}: <span className={cn("font-semibold", Math.abs(weightSum - 1) < 1e-6 ? "text-accent" : "text-destructive")}>{weightSum.toFixed(3)}</span>
+                  {Math.abs(weightSum - 1) >= 1e-6 && <span className="ml-2 text-xs text-foreground">({t('seg.clickNormalize')})</span>}
                 </div>
               </div>
             </div>
@@ -1362,27 +1377,27 @@ export default function SegmentationPage({
             <div className="rounded-2xl bg-card p-4 shadow">
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-foreground">Quadro C — Gates de Corte / Restrição</h3>
-                  <HelpHint content="Crie filtros mínimos/máximos para excluir animais fora dos critérios" />
+                  <h3 className="text-lg font-semibold text-foreground">{t('seg.panelCGates')}</h3>
+                  <HelpHint content={t('seg.helpCreateGates')} />
                 </div>
                 <div className="flex items-center gap-3 text-sm text-foreground">
                   <span className="flex items-center gap-2">
-                    <input type="radio" className="accent-foreground" name="phase" checked={gatesPhase === "pre"} onChange={() => setGatesPhase("pre")} /> Pré-cálculo
+                    <input type="radio" className="accent-foreground" name="phase" checked={gatesPhase === "pre"} onChange={() => setGatesPhase("pre")} /> {t('seg.preCalc')}
                   </span>
                   <span className="flex items-center gap-2">
-                    <input type="radio" className="accent-foreground" name="phase" checked={gatesPhase === "post"} onChange={() => setGatesPhase("post")} /> Pós-cálculo
+                    <input type="radio" className="accent-foreground" name="phase" checked={gatesPhase === "post"} onChange={() => setGatesPhase("post")} /> {t('seg.postCalc')}
                   </span>
                   {gatesPhase === "post" && <div className="flex items-center gap-2">
                       <select className="rounded-lg border border-border bg-background px-2 py-1 text-foreground focus:outline-none focus:ring-2 focus:ring-ring" value={postGateAction} onChange={e => setPostGateAction(e.target.value as "zero" | "penalize")}>
-                        <option value="zero">zerar score</option>
-                        <option value="penalize">penalizar</option>
+                        <option value="zero">{t('seg.zeroScore')}</option>
+                        <option value="penalize">{t('seg.penalize')}</option>
                       </select>
                       {postGateAction === "penalize" && <input type="number" className="w-24 rounded-lg border border-border bg-background px-2 py-1 text-right text-foreground focus:outline-none focus:ring-2 focus:ring-ring" value={penalty} onChange={e => setPenalty(Number(e.target.value))} />}
                     </div>}
                   <button onClick={addEmptyGate} className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted">
-                    <Filter size={16} /> Adicionar gate
+                    <Filter size={16} /> {t('seg.addGate')}
                   </button>
-                  <HelpHint content="Adicione regras de corte por PTA antes ou depois do cálculo do índice" side="bottom" />
+                  <HelpHint content={t('seg.helpAddGateRules')} side="bottom" />
                 </div>
               </div>
 
@@ -1391,11 +1406,11 @@ export default function SegmentationPage({
                   <thead>
                     <tr className="text-left text-foreground">
                       <th className="py-2 pr-4">PTA</th>
-                      <th className="py-2 pr-4">Operador</th>
-                      <th className="py-2 pr-4">Valor</th>
+                      <th className="py-2 pr-4">{t('seg.operator')}</th>
+                      <th className="py-2 pr-4">{t('seg.value')}</th>
                       <th className="py-2 pr-4">Min</th>
                       <th className="py-2 pr-4">Max</th>
-                      <th className="py-2 pr-4">Ativo</th>
+                      <th className="py-2 pr-4">{t('seg.active')}</th>
                       <th className="py-2 pr-4"></th>
                     </tr>
                   </thead>
@@ -1411,7 +1426,7 @@ export default function SegmentationPage({
                             <option value=">=">≥</option>
                             <option value="<=">≤</option>
                             <option value="=">=</option>
-                            <option value="between">entre</option>
+                            <option value="between">{t('seg.between')}</option>
                           </select>
                         </td>
                         <td className="py-2 pr-4">
@@ -1442,21 +1457,21 @@ export default function SegmentationPage({
             <div className="flex items-center gap-2">
               <h3 className="flex items-center gap-2 text-lg font-semibold text-foreground">
                 <TrendingUp size={20} />
-                Segmentação Automática
+                {t('seg.autoSegmentation')}
               </h3>
-              <HelpHint content="Defina percentuais para classificar o rebanho em Superior, Intermediário e Inferior" />
+              <HelpHint content={t('seg.helpDefinePercentages')} />
             </div>
             <div className="flex items-center gap-2">
               <label className="flex items-center gap-2 text-foreground">
                 <input type="checkbox" className="accent-foreground" checked={segmentationEnabled} onChange={e => setSegmentationEnabled(e.target.checked)} />
-                Ativar Segmentação
+                {t('seg.enableSegmentation')}
               </label>
-              <HelpHint content="Ative a segmentação para aplicar o índice e dividir os animais em grupos" side="bottom" />
+              <HelpHint content={t('seg.helpEnableSegmentation')} side="bottom" />
               <Button variant="outline" size="sm" onClick={() => setShowChart(!showChart)} className="flex items-center gap-2">
                 <BarChart3 size={16} />
-                {showChart ? "Ocultar" : "Mostrar"} Gráfico
+                {showChart ? t('seg.hideChart') : t('seg.showChart')}
               </Button>
-              <HelpHint content="Visualize ou oculte os gráficos de distribuição por grupo" side="bottom" />
+              <HelpHint content={t('seg.helpToggleChart')} side="bottom" />
             </div>
           </div>
 
@@ -1465,14 +1480,14 @@ export default function SegmentationPage({
               <div className="mb-6 grid gap-6 md:grid-cols-2">
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-md font-medium text-foreground">Distribuição dos Grupos</h4>
-                    <HelpHint content="Ajuste o percentual de animais em cada grupo para refletir sua estratégia" />
+                    <h4 className="text-md font-medium text-foreground">{t('seg.groupDistribution')}</h4>
+                    <HelpHint content={t('seg.helpAdjustPercentage')} />
                   </div>
 
                   {/* Superior */}
                   <div className="mb-4 rounded-lg border border-red-500 p-3 bg-stone-200">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="font-medium text-black">Superior</span>
+                      <span className="font-medium text-black">{t('seg.superior')}</span>
                       <span className="font-semibold text-black">{superiorPercent[0]}%</span>
                     </div>
                     <Slider value={superiorPercent} onValueChange={updateSuperiorPercent} max={100} step={1} className="w-full" />
@@ -1481,7 +1496,7 @@ export default function SegmentationPage({
                   {/* Intermediário */}
                   <div className="mb-4 rounded-lg border border-red-500 p-3 dark:border-red-500 bg-slate-200">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="font-medium text-black">Intermediário</span>
+                      <span className="font-medium text-black">{t('seg.intermediate')}</span>
                       <span className="font-semibold text-black">{intermediarioPercent[0]}%</span>
                     </div>
                     <Slider value={intermediarioPercent} onValueChange={updateIntermediarioPercent} max={100} step={1} className="w-full" />
@@ -1490,7 +1505,7 @@ export default function SegmentationPage({
                   {/* Inferior */}
                   <div className="mb-4 rounded-lg border border-red-500 p-3 bg-gray-200">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="font-medium text-black">Inferior</span>
+                      <span className="font-medium text-black">{t('seg.inferior')}</span>
                       <span className="font-semibold text-black">{inferiorPercent[0]}%</span>
                     </div>
                     <Slider value={inferiorPercent} onValueChange={updateInferiorPercent} max={100} step={1} className="w-full" />
@@ -1498,25 +1513,25 @@ export default function SegmentationPage({
 
                   {/* Validação da soma */}
                   <div className={cn("rounded-lg p-2 text-center text-sm", superiorPercent[0] + intermediarioPercent[0] + inferiorPercent[0] === 100 ? "bg-accent/20 text-accent-foreground" : "bg-destructive/10 text-destructive")}>
-                    Total: {superiorPercent[0] + intermediarioPercent[0] + inferiorPercent[0]}%
-                    {superiorPercent[0] + intermediarioPercent[0] + inferiorPercent[0] === 100 ? " ✓" : " (deve ser 100%)"}
+                    {t('seg.total')}: {superiorPercent[0] + intermediarioPercent[0] + inferiorPercent[0]}%
+                    {superiorPercent[0] + intermediarioPercent[0] + inferiorPercent[0] === 100 ? " ✓" : ` (${t('seg.mustBe100')})`}
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-md font-medium mb-3 text-foreground">Presets e Estatísticas</h4>
+                  <h4 className="text-md font-medium mb-3 text-foreground">{t('seg.presetsAndStats')}</h4>
                   
                   {/* Presets rápidos */}
                   <div className="mb-4">
-                    <label className="text-sm font-medium text-foreground">Presets Rápidos:</label>
+                    <label className="text-sm font-medium text-foreground">{t('seg.quickPresets')}:</label>
                     <div className="grid grid-cols-1 gap-2 mt-2">
                       {segmentationPresets.map(preset => <div key={preset.name} className="flex items-center justify-between p-2 border border-secondary rounded-lg">
-                          <span className="text-sm text-foreground">{preset.name}</span>
+                          <span className="text-sm text-foreground">{DEFAULT_PRESET_KEYS.includes(preset.name) ? t(preset.name) : preset.name}</span>
                           <div className="flex items-center gap-2">
                             <button onClick={() => applySegmentationPreset(preset)} className="px-2 py-1 text-xs rounded border border-secondary text-foreground">
-                              Aplicar
+                              {t('seg.apply')}
                             </button>
-                            {!["Padrão 20/60/20", "Equilibrado 33/34/33", "Quartis 25/50/25"].includes(preset.name) && <button onClick={() => deleteSegmentationPreset(preset.name)} className="text-destructive hover:text-destructive/80">
+                            {!DEFAULT_PRESET_KEYS.includes(preset.name) && <button onClick={() => deleteSegmentationPreset(preset.name)} className="text-destructive hover:text-destructive/80">
                                 <X size={14} />
                               </button>}
                           </div>
@@ -1527,28 +1542,28 @@ export default function SegmentationPage({
                   {/* Salvar novo preset */}
                   <div className="mb-4">
                     <div className="flex gap-2">
-                      <input className="flex-1 border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground" placeholder="Nome do novo preset..." value={newPresetName} onChange={e => setNewPresetName(e.target.value)} />
+                      <input className="flex-1 border border-input rounded-lg px-3 py-2 text-sm bg-background text-foreground" placeholder={t('seg.newPresetName')} value={newPresetName} onChange={e => setNewPresetName(e.target.value)} />
                       <button onClick={saveSegmentationPreset} className="px-3 py-2 rounded-lg border border-secondary text-foreground text-sm">
-                        Salvar
+                        {t('seg.save')}
                       </button>
                     </div>
                   </div>
 
                   {/* Estatísticas */}
                   <div className="p-3 bg-muted rounded-lg">
-                    <h5 className="text-sm font-medium mb-2 text-foreground">Distribuição Atual:</h5>
+                    <h5 className="text-sm font-medium mb-2 text-foreground">{t('seg.currentDistribution')}:</h5>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-accent">Superior:</span>
-                        <span className="text-foreground">{distributionStats.superior.count} animais ({distributionStats.superior.percentage.toFixed(1)}%)</span>
+                        <span className="text-accent">{t('seg.superior')}:</span>
+                        <span className="text-foreground">{distributionStats.superior.count} {t('seg.animals')} ({distributionStats.superior.percentage.toFixed(1)}%)</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-amber-600 dark:text-amber-400">Intermediário:</span>
-                        <span className="text-foreground">{distributionStats.intermediario.count} animais ({distributionStats.intermediario.percentage.toFixed(1)}%)</span>
+                        <span className="text-amber-600 dark:text-amber-400">{t('seg.intermediate')}:</span>
+                        <span className="text-foreground">{distributionStats.intermediario.count} {t('seg.animals')} ({distributionStats.intermediario.percentage.toFixed(1)}%)</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-destructive">Inferior:</span>
-                        <span className="text-foreground">{distributionStats.inferior.count} animais ({distributionStats.inferior.percentage.toFixed(1)}%)</span>
+                        <span className="text-destructive">{t('seg.inferior')}:</span>
+                        <span className="text-foreground">{distributionStats.inferior.count} {t('seg.animals')} ({distributionStats.inferior.percentage.toFixed(1)}%)</span>
                       </div>
                     </div>
                   </div>
@@ -1557,11 +1572,11 @@ export default function SegmentationPage({
 
               {/* Gráfico */}
               {showChart && <div className="mb-6 p-4 border border-secondary rounded-lg bg-muted">
-                  <h4 className="text-md font-medium mb-3 text-foreground">Distribuição Visual</h4>
+                  <h4 className="text-md font-medium mb-3 text-foreground">{t('seg.visualDistribution')}</h4>
                   <div className="grid md:grid-cols-2 gap-4">
                     {/* Gráfico de Pizza */}
                     <div>
-                      <h5 className="text-sm font-medium mb-2 text-center text-foreground">Distribuição por Grupos</h5>
+                      <h5 className="text-sm font-medium mb-2 text-center text-foreground">{t('seg.distributionByGroups')}</h5>
                       <ResponsiveContainer width="100%" height={200}>
                         <RechartsPieChart>
                           <Pie data={chartData} cx="50%" cy="50%" innerRadius={40} outerRadius={80} paddingAngle={5} dataKey="value">
@@ -1575,7 +1590,7 @@ export default function SegmentationPage({
 
                     {/* Gráfico de Barras */}
                     <div>
-                      <h5 className="text-sm font-medium mb-2 text-center text-foreground">Quantidade por Grupo</h5>
+                      <h5 className="text-sm font-medium mb-2 text-center text-foreground">{t('seg.countByGroup')}</h5>
                       <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={chartData}>
                           <CartesianGrid strokeDasharray="3 3" />
@@ -1599,73 +1614,73 @@ export default function SegmentationPage({
             <Tooltip>
               <TooltipTrigger asChild>
                 <button onClick={triggerSegmentation} className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors bg-red-700 hover:bg-red-600">
-                  <Check size={18} /> Aplicar Índice
+                  <Check size={18} /> {t('seg.applyIndex')}
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Executar segmentação com o índice selecionado</p>
+                <p>{t('seg.helpApplyIndex')}</p>
               </TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
                 <button onClick={exportToExcel} className="flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted">
-                  <Download size={18} /> Exportar Excel
+                  <Download size={18} /> {t('seg.exportExcel')}
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Baixar dados da segmentação em planilha Excel</p>
+                <p>{t('seg.helpExportExcel')}</p>
               </TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
                 <button onClick={saveSegmentationToDatabase} disabled={!segmentationEnabled || !segmentationTriggered || loading} className="flex items-center gap-2 border border-accent px-4 py-2 font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 text-slate-50 rounded-xl bg-red-700 hover:bg-red-600 text-sm">
-                  <Database size={18} /> Salvar Segmentação
+                  <Database size={18} /> {t('seg.saveSegmentation')}
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Salvar classificações no banco de dados para usar no Nexus</p>
+                <p>{t('seg.helpSaveSegmentation')}</p>
               </TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
                 <button onClick={saveReportToFiles} className="flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted">
-                  <Download size={18} /> Salvar Relatório
+                  <Download size={18} /> {t('seg.saveReport')}
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Salvar relatório completo na Pasta de Arquivos</p>
+                <p>{t('seg.helpSaveReport')}</p>
               </TooltipContent>
             </Tooltip>
-            <HelpHint content="Gere um PDF com tabelas e gráficos da segmentação para compartilhar" side="bottom" />
+            <HelpHint content={t('seg.helpGeneratePDF')} side="bottom" />
             
             {/* Filtros simplificados */}
             <div className="flex items-center gap-4">
               {/* Filtro por Categoria */}
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">Categoria:</span>
+                <span className="text-sm font-medium text-foreground">{t('seg.category')}:</span>
                 <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                  <option value="all">Todas</option>
-                  {availableCategories.map(category => <option key={category} value={category}>{category}</option>)}
+                  <option value="all">{t('seg.all')}</option>
+                  {availableCategories.map(category => <option key={category} value={category}>{translateCategory(category, t)}</option>)}
                 </select>
               </div>
 
               {/* Filtro por Classificação */}
               {segmentationEnabled && segmentationTriggered && <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-foreground">Classificação:</span>
+                  <span className="text-sm font-medium text-foreground">{t('seg.classification')}:</span>
                   <select value={classificationFilter} onChange={e => setClassificationFilter(e.target.value as any)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                    <option value="all">Todas</option>
-                    <option value="Superior">Superior</option>
-                    <option value="Intermediário">Intermediário</option>
-                    <option value="Inferior">Inferior</option>
+                    <option value="all">{t('seg.all')}</option>
+                    <option value="Superior">{t('seg.superior')}</option>
+                    <option value="Intermediário">{t('seg.intermediate')}</option>
+                    <option value="Inferior">{t('seg.inferior')}</option>
                   </select>
                 </div>}
 
               <div className="text-sm text-foreground">
-                <span className="font-medium">Resultados: {sortedAnimals.length} animais</span>
-                {animalSearch.trim() && <span className="ml-2">(busca: "{animalSearch.trim()}")</span>}
+                <span className="font-medium">{t('seg.results')}: {sortedAnimals.length} {t('seg.animals')}</span>
+                {animalSearch.trim() && <span className="ml-2">({t('seg.searchLabel')}: "{animalSearch.trim()}")</span>}
               </div>
             </div>
           </div>
@@ -1674,41 +1689,41 @@ export default function SegmentationPage({
         {/* Grade de fêmeas */}
         <div className="rounded-2xl bg-card p-4 shadow">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">📊 Grade de Fêmeas</h3>
+            <h3 className="text-lg font-semibold text-foreground">{t('seg.femaleGrid')}</h3>
             <div className="flex items-center gap-4">
               {/* Search Input */}
               <div className="flex items-center gap-2">
-                <input className="w-64 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Buscar por nome ou identificação..." value={animalSearch} onChange={e => setAnimalSearch(e.target.value)} />
+                <input className="w-64 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder={t('seg.searchByNameOrId')} value={animalSearch} onChange={e => setAnimalSearch(e.target.value)} />
               </div>
               
               {/* Year Filter */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-foreground">Busca por Nome/ID:</span>
+                <span className="text-sm text-foreground">{t('seg.searchByNameId')}:</span>
               </div>
 
               {segmentationEnabled && <div className="text-sm text-foreground">
-                  Exibindo: {sortedAnimals.length} de {segmentedAnimals.length} animais
+                  {t('seg.showing')}: {sortedAnimals.length} {t('seg.of')} {segmentedAnimals.length} {t('seg.animals')}
                 </div>}
             </div>
           </div>
-          {loading ? <div className="text-sm text-foreground">Carregando…</div> : <div className="h-[600px] w-full rounded-md border border-border overflow-auto">
+          {loading ? <div className="text-sm text-foreground">{t('seg.loading')}</div> : <div className="h-[600px] w-full rounded-md border border-border overflow-auto">
               <div className="min-w-max">
                 <table className="w-full text-sm border-collapse">
                   <thead className="sticky top-0 z-20">
                     <tr className="border-b border-border bg-muted text-foreground">
-                      <SortableHeader column="farm_id" label="Fazenda" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium" />
-                      <SortableHeader column="name" label="Nome" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium" />
-                      <SortableHeader column="identifier" label="Identificador" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
-                      <SortableHeader column="cdcb_id" label="ID CDCB" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
-                      <SortableHeader column="sire_naab" label="Pai" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
-                      <SortableHeader column="mgs_naab" label="Avô Materno" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
-                      <SortableHeader column="mmgs_naab" label="Bisavô Materno" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
-                      <SortableHeader column="birth_date" label="Data de Nascimento" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
-                      <SortableHeader column="parity_order" label="Ordem de Parto" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
-                      <SortableHeader column="category" label="Categoria" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
-                      <SortableHeader column="fonte" label="Fonte" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
+                      <SortableHeader column="farm_id" label={t('seg.farm')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium" />
+                      <SortableHeader column="name" label={t('seg.name')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium" />
+                      <SortableHeader column="identifier" label={t('seg.identifier')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
+                      <SortableHeader column="cdcb_id" label={t('seg.cdcbId')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
+                      <SortableHeader column="sire_naab" label={t('seg.sire')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
+                      <SortableHeader column="mgs_naab" label={t('seg.mgs')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
+                      <SortableHeader column="mmgs_naab" label={t('seg.mmgs')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
+                      <SortableHeader column="birth_date" label={t('seg.birthDate')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
+                      <SortableHeader column="parity_order" label={t('seg.parityOrder')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
+                      <SortableHeader column="category" label={t('seg.category')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
+                      <SortableHeader column="fonte" label={t('seg.source')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
                       {segmentationEnabled && (
-                        <SortableHeader column="Classification" label="Classificação" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
+                        <SortableHeader column="Classification" label={t('seg.classification')} sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
                       )}
                       <SortableHeader column="CustomScore" label="CustomScore" sortConfig={animalSortConfig} onSort={handleSortAnimals} className="border border-border px-2 py-1 text-left text-xs font-medium bg-secondary" />
                       {ANIMAL_METRIC_COLUMNS.map(column => (
@@ -1720,7 +1735,7 @@ export default function SegmentationPage({
                     {sortedAnimals.map((a, idx) => {
                     const classificationBg = a.Classification === "Superior" ? "bg-accent/10" : a.Classification === "Intermediário" ? "bg-amber-50 dark:bg-amber-950/20" : a.Classification === "Inferior" ? "bg-destructive/10" : "";
                     const category = getAutomaticCategory((a as any).birth_date, null);
-                    const fonteInfo = getFonteDisplay((a as any).fonte);
+                    const fonteInfo = getFonteDisplay((a as any).fonte, t);
                     return (
                       <tr key={a.__idKey ? (a as any)[a.__idKey] : a.id ?? idx} className={`border-b border-secondary text-foreground hover:opacity-90 ${segmentationEnabled && a.Classification ? classificationBg : ""}`}>
                         <td className="border border-border px-2 py-1 text-xs">{farm.name || '-'}</td>
@@ -1739,7 +1754,7 @@ export default function SegmentationPage({
                          <td className="border border-border px-2 py-1 text-xs">{(a as any).parity_order || '-'}</td>
                          <td className="border border-border px-2 py-1 text-xs">
                          <span className={cn("rounded border px-2 py-1 text-xs font-medium", getCategoryBadgeClasses(category))}>
-                           {category}
+                           {translateCategory(category, t)}
                          </span>
                        </td>
                         <td className="border border-border px-2 py-1 text-xs">
@@ -1749,7 +1764,7 @@ export default function SegmentationPage({
                         </td>
                         {segmentationEnabled && <td className="border border-border px-2 py-1 text-xs">
                               {a.Classification && <span className={`px-2 py-1 rounded text-xs font-medium border ${a.Classification === "Superior" ? "bg-accent/20 text-accent border-accent" : a.Classification === "Intermediário" ? "bg-amber-100 text-amber-800 border-amber-500 dark:bg-amber-950/30 dark:text-amber-300" : "bg-destructive/20 text-destructive border-destructive"}`}>
-                                  {a.Classification}
+                                  {a.Classification === "Superior" ? t('seg.superior') : a.Classification === "Intermediário" ? t('seg.intermediate') : t('seg.inferior')}
                                 </span>}
                             </td>}
                         <td className="border border-border px-2 py-1 text-xs font-bold">{(a as any).CustomScore !== undefined ? Number((a as any).CustomScore).toFixed(1) : '-'}</td>
@@ -1767,7 +1782,7 @@ export default function SegmentationPage({
             </div>}
         </div>
 
-        <div className="pb-8 text-center text-xs text-foreground">MVP demonstrativo — dados seguros via RLS</div>
+        <div className="pb-8 text-center text-xs text-foreground">{t('seg.footer')}</div>
         </div>
       </TooltipProvider>
     </div>;

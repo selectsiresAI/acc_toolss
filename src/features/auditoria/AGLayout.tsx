@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { HelpButton } from "@/components/help/HelpButton";
 import { HelpHint } from "@/components/help/HelpHint";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface AGLayoutProps {
   children: ReactNode;
   onBack?: () => void;
   farmName?: string;
-  activeStep?: number; // Step atual (0-6 correspondendo aos 7 steps)
+  activeStep?: number;
 }
 export default function AGLayout({
   children,
@@ -19,25 +20,25 @@ export default function AGLayout({
   farmName,
   activeStep = 0
 }: AGLayoutProps) {
-  // Mapear step atual para contexto de ajuda específico
-  const helpContext = activeStep >= 0 && activeStep <= 6 
-    ? `auditoria-step${activeStep + 1}` 
+  const { t } = useTranslation();
+  const helpContext = activeStep >= 0 && activeStep <= 6
+    ? `auditoria-step${activeStep + 1}`
     : "auditoria";
-  
+
   return <div className="min-h-screen bg-background">
       <HelpButton context={helpContext} />
-      
+
       <div className="border-b">
         <div className="flex h-16 items-center px-4 gap-3">
           {onBack && <Button variant="ghost" onClick={onBack} className="mr-2 bg-slate-300 hover:bg-slate-200">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar
+              {t("ag.back")}
             </Button>}
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold">Auditoria Genética{farmName ? ` — ${farmName}` : ""}</h1>
-            <HelpHint content="Análise completa do rebanho em 7 passos: parentesco, top parents, quartis, progressão, comparação e benchmark" />
+            <h1 className="text-xl font-semibold">{t("ag.title")}{farmName ? ` — ${farmName}` : ""}</h1>
+            <HelpHint content={t("ag.helpHint")} />
           </div>
-          <p className="text-sm text-muted-foreground">7 passos sequenciais</p>
+          <p className="text-sm text-muted-foreground">{t("ag.stepsSequential")}</p>
         </div>
       </div>
       <div className="container mx-auto px-4 py-6">

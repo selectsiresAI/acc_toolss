@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Star, X, Sparkles } from "lucide-react";
 import { z } from "zod";
 import { calculateEngagementScore } from "@/utils/engagementScore";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const surveySchema = z.object({
   overall_rating: z.number().min(1).max(5),
@@ -31,6 +32,9 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState<"qualification" | "rating" | "details">("qualification");
   const { toast } = useToast();
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [user, setUser] = useState<any>(null);
   
   const [ratings, setRatings] = useState({
@@ -118,8 +122,12 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
     if (dismissalCount >= 2 && engagementScore !== null && engagementScore < 30) {
       toast({
         variant: "destructive",
-        title: "Experiência insuficiente",
-        description: "Por favor, use mais a plataforma antes de avaliar. Seu uso atual: " + engagementScore + "%",
+        title: isEs ? "Experiencia insuficiente" : isEn ? "Insufficient experience" : "Experiência insuficiente",
+        description: isEs
+          ? "Por favor, use más la plataforma antes de calificar. Su uso actual: " + engagementScore + "%"
+          : isEn
+          ? "Please use the platform more before rating. Your current usage: " + engagementScore + "%"
+          : "Por favor, use mais a plataforma antes de avaliar. Seu uso atual: " + engagementScore + "%",
       });
       handleDismissQualification("not_ready");
       return;
@@ -149,7 +157,7 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
     if (ratings.overall_rating === 0) {
       toast({
         variant: "destructive",
-        description: "Por favor, avalie a plataforma antes de continuar.",
+        description: isEs ? "Por favor, califique la plataforma antes de continuar." : isEn ? "Please rate the platform before continuing." : "Por favor, avalie a plataforma antes de continuar.",
       });
       return;
     }
@@ -174,8 +182,8 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
       if (error) throw error;
 
       toast({
-        title: "Obrigado pelo feedback!",
-        description: "Suas opiniões nos ajudam a melhorar continuamente.",
+        title: isEs ? "¡Gracias por sus comentarios!" : isEn ? "Thank you for your feedback!" : "Obrigado pelo feedback!",
+        description: isEs ? "Sus opiniones nos ayudan a mejorar continuamente." : isEn ? "Your opinions help us improve continuously." : "Suas opiniões nos ajudam a melhorar continuamente.",
       });
 
       // Registrar como completado
@@ -194,8 +202,8 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
     } catch (err) {
       toast({
         variant: "destructive",
-        title: "Erro ao enviar",
-        description: "Tente novamente.",
+        title: isEs ? "Error al enviar" : isEn ? "Error sending" : "Erro ao enviar",
+        description: isEs ? "Intente nuevamente." : isEn ? "Please try again." : "Tente novamente.",
       });
     }
   };
@@ -219,9 +227,9 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Como está sendo sua experiência?</h3>
+                <h3 className="font-semibold text-lg">{isEs ? "¿Cómo es su experiencia?" : isEn ? "How is your experience?" : "Como está sendo sua experiência?"}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Sua opinião nos ajuda a melhorar
+                  {isEs ? "Sus comentarios nos ayudan a mejorar" : isEn ? "Your feedback helps us improve" : "Sua opinião nos ajuda a melhorar"}
                 </p>
               </div>
             </div>
@@ -238,15 +246,15 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
           {step === "qualification" && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <h4 className="font-medium">Você gostaria de avaliar a plataforma?</h4>
+                <h4 className="font-medium">{isEs ? "¿Le gustaría calificar la plataforma?" : isEn ? "Would you like to rate the platform?" : "Você gostaria de avaliar a plataforma?"}</h4>
                 <p className="text-sm text-muted-foreground">
-                  Para dar uma avaliação útil, você precisa ter usado a plataforma o suficiente.
+                  {isEs ? "Para dar una calificación útil, necesita haber usado la plataforma lo suficiente." : isEn ? "To give a useful rating, you need to have used the platform enough." : "Para dar uma avaliação útil, você precisa ter usado a plataforma o suficiente."}
                 </p>
               </div>
 
               {dismissalCount >= 2 && engagementScore !== null && (
                 <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg space-y-3">
-                  <p className="text-sm font-medium">Seu nível de uso da plataforma:</p>
+                  <p className="text-sm font-medium">{isEs ? "Su nivel de uso de la plataforma:" : isEn ? "Your platform usage level:" : "Seu nível de uso da plataforma:"}</p>
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
                       <div 
@@ -259,11 +267,11 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Baseado em: tempo de uso, páginas visitadas e funcionalidades utilizadas
+                    {isEs ? "Basado en: tiempo de uso, páginas visitadas y funcionalidades utilizadas" : isEn ? "Based on: usage time, pages visited and features used" : "Baseado em: tempo de uso, páginas visitadas e funcionalidades utilizadas"}
                   </p>
                   {engagementScore < 30 && (
                     <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-                      ⚠️ Recomendamos usar mais a plataforma antes de avaliar (mínimo 30%)
+                      {isEs ? "⚠️ Recomendamos usar más la plataforma antes de calificar (mínimo 30%)" : isEn ? "⚠️ We recommend using the platform more before rating (minimum 30%)" : "⚠️ Recomendamos usar mais a plataforma antes de avaliar (mínimo 30%)"}
                     </p>
                   )}
                 </div>
@@ -275,13 +283,13 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
                   onClick={() => handleDismissQualification("not_ready")}
                   className="flex-1"
                 >
-                  Ainda não
+                  {isEs ? "Todavía no" : isEn ? "Not yet" : "Ainda não"}
                 </Button>
-                <Button 
+                <Button
                   onClick={handleAcceptQualification}
                   className="flex-1"
                 >
-                  Sim, quero avaliar
+                  {isEs ? "Sí, quiero calificar" : isEn ? "Yes, I want to rate" : "Sim, quero avaliar"}
                 </Button>
               </div>
             </div>
@@ -290,7 +298,7 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
           {step === "rating" && (
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label className="text-base font-medium">Avaliação Geral</Label>
+                <Label className="text-base font-medium">{isEs ? "Calificación General" : isEn ? "Overall Rating" : "Avaliação Geral"}</Label>
                 <div className="flex gap-2">
                   {[1, 2, 3, 4, 5].map((value) => (
                     <button
@@ -317,13 +325,13 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
                   onClick={() => setStep("qualification")}
                   className="flex-1"
                 >
-                  Voltar
+                  {isEs ? "Volver" : isEn ? "Back" : "Voltar"}
                 </Button>
                 <Button
                   onClick={handleNext}
                   className="flex-1"
                 >
-                  Continuar
+                  {isEs ? "Continuar" : isEn ? "Continue" : "Continuar"}
                 </Button>
               </div>
             </div>
@@ -333,7 +341,7 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
             <div className="space-y-5">
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-sm">Aparência</Label>
+                  <Label className="text-sm">{isEs ? "Apariencia" : isEn ? "Appearance" : "Aparência"}</Label>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((value) => (
                       <button
@@ -354,7 +362,7 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm">Gráficos</Label>
+                  <Label className="text-sm">{isEs ? "Gráficos" : isEn ? "Charts" : "Gráficos"}</Label>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((value) => (
                       <button
@@ -375,7 +383,7 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm">Clareza</Label>
+                  <Label className="text-sm">{isEs ? "Claridad" : isEn ? "Clarity" : "Clareza"}</Label>
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((value) => (
                       <button
@@ -397,12 +405,12 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="feedback">O que podemos melhorar? (opcional)</Label>
+                <Label htmlFor="feedback">{isEs ? "¿Qué podemos mejorar? (opcional)" : isEn ? "What can we improve? (optional)" : "O que podemos melhorar? (opcional)"}</Label>
                 <Textarea
                   id="feedback"
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Sua sugestão é muito importante..."
+                  placeholder={isEs ? "Su sugerencia es muy importante..." : isEn ? "Your suggestion is very important..." : "Sua sugestão é muito importante..."}
                   rows={3}
                   maxLength={500}
                   className="resize-none"
@@ -418,13 +426,13 @@ export function SatisfactionSurvey({ forceVisible = false, onClose }: Satisfacti
                   onClick={() => setStep("rating")}
                   className="flex-1"
                 >
-                  Voltar
+                  {isEs ? "Volver" : isEn ? "Back" : "Voltar"}
                 </Button>
                 <Button
                   onClick={handleSubmit}
                   className="flex-1 bg-gradient-to-r from-primary to-purple-600 hover:opacity-90"
                 >
-                  Enviar Avaliação
+                  {isEs ? "Enviar Calificación" : isEn ? "Submit Rating" : "Enviar Avaliação"}
                 </Button>
               </div>
             </div>

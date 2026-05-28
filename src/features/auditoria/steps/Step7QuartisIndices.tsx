@@ -18,6 +18,7 @@ import { BatchExportBar, SingleExportButton } from "@/components/pdf/ExportButto
 import { useRegisterChart } from "@/components/pdf/useRegisterChart";
 import { formatPtaValue } from "@/utils/ptaFormat";
 import { parseNum } from "@/lib/number";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // Traits otimizados para carregamento rápido - apenas os mais relevantes
 const CORE_PTA_COLUMNS = [
@@ -59,6 +60,7 @@ const getIndexDisplayLabel = (value: string) => {
 
 function Step7QuartisIndicesContent() {
   const { farmId } = useAGFilters();
+  const { t } = useTranslation();
   const [indexA, setIndexA] = useState("hhp_dollar");
   const [indexB, setIndexB] = useState("nm_dollar");
   const [rows, setRows] = useState<Row[]>([]);
@@ -68,7 +70,7 @@ function Step7QuartisIndicesContent() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const chartTitle = "Quartis — Índices (A vs B)";
+  const chartTitle = t("ag.quartisIdx.title");
   useRegisterChart("step7-quartis-indices", 7, chartTitle, cardRef);
 
   // Determina quais traits usar baseado no modo
@@ -121,7 +123,7 @@ function Step7QuartisIndicesContent() {
 
     setLoading(true);
     setErrorMsg(null);
-    setLoadingProgress("Buscando dados do rebanho...");
+    setLoadingProgress(t("ag.quartisIdx.fetchingHerd"));
 
     try {
       // Buscar dados incluindo os índices para ranking
@@ -129,12 +131,12 @@ function Step7QuartisIndicesContent() {
       const data = await fetchAllAnimals(String(farmId), columnsNeeded, signal);
 
       if (!data.length) {
-        setErrorMsg("Sem dados para esta fazenda.");
+        setErrorMsg(t("ag.quartisIdx.noDataFarm"));
         setRows([]);
         return;
       }
 
-      setLoadingProgress("Calculando quartis...");
+      setLoadingProgress(t("ag.quartisIdx.calculatingQuartis"));
 
       const result: Row[] = [];
 
@@ -180,7 +182,7 @@ function Step7QuartisIndicesContent() {
     } catch (err: any) {
       if (err.name !== 'AbortError') {
         console.error("Error loading quartis indices", err);
-        setErrorMsg(`Erro: ${err.message || "Tente novamente."}`);
+        setErrorMsg(`${t("common.error")} ${err.message || t("common.tryAgain")}`);
       }
     } finally {
       setLoading(false);
@@ -212,7 +214,7 @@ function Step7QuartisIndicesContent() {
       indexMap.set(idx, groupData);
     });
 
-    const diffData: any = { index: "Difference", group: "Diferença" };
+    const diffData: any = { index: "Difference", group: t("ag.quartisIdx.difference") };
     const top25A = rows.filter((r) => r.index_label === "IndexA" && r.group_label === "Top25");
     const top25B = rows.filter((r) => r.index_label === "IndexB" && r.group_label === "Top25");
 
@@ -228,14 +230,14 @@ function Step7QuartisIndicesContent() {
   return (
     <Card ref={cardRef}>
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <CardTitle>Quartis — Índices (A vs B)</CardTitle>
+        <CardTitle>{chartTitle}</CardTitle>
         <SingleExportButton targetRef={cardRef} step={7} title={chartTitle} slug="Quartis_Indices" />
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <Select value={indexA} onValueChange={setIndexA}>
             <SelectTrigger className="w-56">
-              <SelectValue placeholder="Índice A" />
+              <SelectValue placeholder={t("ag.quartisIdx.indexA")} />
             </SelectTrigger>
             <SelectContent>
               {INDEX_OPTIONS.map((option) => (
@@ -247,7 +249,7 @@ function Step7QuartisIndicesContent() {
           </Select>
           <Select value={indexB} onValueChange={setIndexB}>
             <SelectTrigger className="w-56">
-              <SelectValue placeholder="Índice B" />
+              <SelectValue placeholder={t("ag.quartisIdx.indexB")} />
             </SelectTrigger>
             <SelectContent>
               {INDEX_OPTIONS.map((option) => (
@@ -259,7 +261,7 @@ function Step7QuartisIndicesContent() {
           </Select>
           <Button variant="outline" size="sm" onClick={load} disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Atualizar
+            {t("ag.quartisIdx.refresh")}
           </Button>
           <Button
             variant={showAllTraits ? "default" : "ghost"}
@@ -267,16 +269,16 @@ function Step7QuartisIndicesContent() {
             onClick={() => setShowAllTraits((v) => !v)}
             disabled={loading}
           >
-            {showAllTraits ? "Todos os Traits (lento)" : "Traits Principais"}
+            {showAllTraits ? t("ag.quartisIdx.allTraits") : t("ag.quartisIdx.mainTraits")}
           </Button>
         </div>
 
         {loading && (
           <div className="py-6 text-center">
             <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin text-primary" />
-            <p className="text-muted-foreground">{loadingProgress || "Carregando dados..."}</p>
+            <p className="text-muted-foreground">{loadingProgress || t("ag.quartisIdx.loading")}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Isso pode levar alguns segundos para rebanhos grandes.
+              {t("ag.quartisIdx.largeHerdNote")}
             </p>
           </div>
         )}
@@ -286,7 +288,7 @@ function Step7QuartisIndicesContent() {
         )}
 
         {!loading && !errorMsg && rows.length === 0 && (
-          <div className="py-6 text-center text-muted-foreground">Sem dados.</div>
+          <div className="py-6 text-center text-muted-foreground">{t("ag.quartisIdx.noData")}</div>
         )}
 
         {!loading && !errorMsg && rows.length > 0 && (
@@ -295,8 +297,8 @@ function Step7QuartisIndicesContent() {
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="sticky left-0 z-10 border-r bg-background py-2 px-2 text-left font-semibold">Índice</th>
-                    <th className="sticky left-[80px] z-10 border-r bg-background py-2 px-2 text-left font-semibold">Grupo</th>
+                    <th className="sticky left-0 z-10 border-r bg-background py-2 px-2 text-left font-semibold">{t("ag.quartisIdx.index")}</th>
+                    <th className="sticky left-[80px] z-10 border-r bg-background py-2 px-2 text-left font-semibold">{t("ag.compare.group")}</th>
                     {activeTraits.map((t) => (
                       <th key={t} className="py-2 px-2 whitespace-nowrap text-left font-semibold">
                         {t.replace("_dollar", "$").toUpperCase()}
@@ -315,7 +317,7 @@ function Step7QuartisIndicesContent() {
                           ? getIndexDisplayLabel(indexA)
                           : row.index === "IndexB"
                           ? getIndexDisplayLabel(indexB)
-                          : "Diferença"}
+                          : t("ag.quartisIdx.difference")}
                       </td>
                       <td className="sticky left-[80px] z-10 border-r bg-background py-2 px-2">
                         {row.group === "Top25" ? "Top 25%" : row.group === "Bottom25" ? "Bottom 25%" : row.group}

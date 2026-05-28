@@ -2,8 +2,12 @@ import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { processNormalizedRowsInBatchesMultiColumn, NormalizedRow } from '@/utils/importProcessing';
 import { parseUniversalSpreadsheet } from '@/utils/headerNormalizer';
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function UploadParser() {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -60,8 +64,8 @@ export function UploadParser() {
 
   return (
     <div>
-      <p>Status: {status}</p>
-      <p>Progress: {progress}%</p>
+      <p>{isEs ? "Estado" : isEn ? "Status" : "Status"}: {status}</p>
+      <p>{isEs ? "Progreso" : isEn ? "Progress" : "Progresso"}: {progress}%</p>
       {/* Render UI de upload e chame parseFile(file) quando fizer upload */}
     </div>
   );

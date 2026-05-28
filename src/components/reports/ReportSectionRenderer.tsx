@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ReportSelection, ReportType } from '@/hooks/useGeneralReport';
 import { useAGFilters } from '@/features/auditoria/store';
+import { useTranslation } from "@/hooks/useTranslation";
 
 // Import actual step components for interactive use
 import Step1Parentesco from '@/features/auditoria/steps/Step1Parentesco';
@@ -50,13 +51,16 @@ function SectionWrapper({
 
 // Placeholder for sections not yet implemented
 function PlaceholderSection({ title, farmName }: { title: string; farmName: string }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   return (
     <div className="flex-1 flex flex-col items-center justify-center min-h-[400px]">
       <div className="text-center text-muted-foreground">
         <p className="text-lg font-medium">{title}</p>
         <p className="text-sm mt-2">{farmName}</p>
         <p className="text-xs mt-4 opacity-60">
-          Conteúdo será renderizado aqui
+          {isEs ? "El contenido se renderizará aquí" : isEn ? "Content will be rendered here" : "Conteúdo será renderizado aqui"}
         </p>
       </div>
     </div>
@@ -65,8 +69,11 @@ function PlaceholderSection({ title, farmName }: { title: string; farmName: stri
 
 // Herd Summary Section - using real component
 function HerdSummarySection({ farmId, farmName }: { farmId: string; farmName: string }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   return (
-    <SectionWrapper type="herd_summary" title="Resumo do Rebanho">
+    <SectionWrapper type="herd_summary" title={isEs ? "Resumen del Rebaño" : isEn ? "Herd Summary" : "Resumo do Rebanho"}>
       <HerdSummarySectionContent farmId={farmId} farmName={farmName} />
     </SectionWrapper>
   );
@@ -74,8 +81,11 @@ function HerdSummarySection({ farmId, farmName }: { farmId: string; farmName: st
 
 // Segmentation Section - using real component
 function SegmentationSection({ farmId, farmName }: { farmId: string; farmName: string }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   return (
-    <SectionWrapper type="segmentation" title="Segmentação do Rebanho">
+    <SectionWrapper type="segmentation" title={isEs ? "Segmentación del Rebaño" : isEn ? "Herd Segmentation" : "Segmentação do Rebanho"}>
       <SegmentationSectionContent farmId={farmId} farmName={farmName} />
     </SectionWrapper>
   );
@@ -83,14 +93,17 @@ function SegmentationSection({ farmId, farmName }: { farmId: string; farmName: s
 
 // Auditoria Step 1 - Parentesco (uses interactive component)
 function AuditoriaStep1SectionWrapper({ farmId, farmName }: { farmId: string; farmName: string }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const setFarmId = useAGFilters(state => state.setFarmId);
-  
+
   useEffect(() => {
     setFarmId(farmId);
   }, [farmId, setFarmId]);
 
   return (
-    <SectionWrapper type="auditoria_step1" title="Auditoria - Análise de Parentesco">
+    <SectionWrapper type="auditoria_step1" title={isEs ? "Auditoría - Análisis de Parentesco" : isEn ? "Audit - Kinship Analysis" : "Auditoria - Análise de Parentesco"}>
       <Step1Parentesco />
     </SectionWrapper>
   );
@@ -98,14 +111,17 @@ function AuditoriaStep1SectionWrapper({ farmId, farmName }: { farmId: string; fa
 
 // Auditoria Step 2 - Top Parents (uses interactive component)
 function AuditoriaStep2SectionWrapper({ farmId, farmName }: { farmId: string; farmName: string }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const setFarmId = useAGFilters(state => state.setFarmId);
-  
+
   useEffect(() => {
     setFarmId(farmId);
   }, [farmId, setFarmId]);
 
   return (
-    <SectionWrapper type="auditoria_step2" title="Auditoria - Top Parents">
+    <SectionWrapper type="auditoria_step2" title={isEs ? "Auditoría - Top Parents" : isEn ? "Audit - Top Parents" : "Auditoria - Top Parents"}>
       <Step2TopParents />
     </SectionWrapper>
   );
@@ -113,8 +129,11 @@ function AuditoriaStep2SectionWrapper({ farmId, farmName }: { farmId: string; fa
 
 // Auditoria Step 3 - Quartis Overview (uses SIMPLIFIED report component)
 function AuditoriaStep3SectionWrapper({ farmId, farmName }: { farmId: string; farmName: string }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   return (
-    <SectionWrapper type="auditoria_step3" title="Auditoria - Quartis Overview">
+    <SectionWrapper type="auditoria_step3" title={isEs ? "Auditoría - Resumen de Cuartiles" : isEn ? "Audit - Quartiles Overview" : "Auditoria - Quartis Overview"}>
       <AuditoriaStep3Section farmId={farmId} farmName={farmName} />
     </SectionWrapper>
   );
@@ -122,8 +141,11 @@ function AuditoriaStep3SectionWrapper({ farmId, farmName }: { farmId: string; fa
 
 // Auditoria Step 4 - Progressão (uses SIMPLIFIED report component - AuditoriaStep5Section)
 function AuditoriaStep4SectionWrapper({ farmId, farmName }: { farmId: string; farmName: string }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   return (
-    <SectionWrapper type="auditoria_step4" title="Auditoria - Progressão Genética">
+    <SectionWrapper type="auditoria_step4" title={isEs ? "Auditoría - Progresión Genética" : isEn ? "Audit - Genetic Progression" : "Auditoria - Progressão Genética"}>
       <AuditoriaStep5Section farmId={farmId} farmName={farmName} />
     </SectionWrapper>
   );
@@ -131,8 +153,11 @@ function AuditoriaStep4SectionWrapper({ farmId, farmName }: { farmId: string; fa
 
 // Auditoria Step 5 - Comparação (uses SIMPLIFIED report component - AuditoriaStep6Section)
 function AuditoriaStep5SectionWrapper({ farmId, farmName }: { farmId: string; farmName: string }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   return (
-    <SectionWrapper type="auditoria_step5" title="Auditoria - Comparação por Categoria">
+    <SectionWrapper type="auditoria_step5" title={isEs ? "Auditoría - Comparación por Categoría" : isEn ? "Audit - Comparison by Category" : "Auditoria - Comparação por Categoria"}>
       <AuditoriaStep6Section farmId={farmId} farmName={farmName} />
     </SectionWrapper>
   );
@@ -140,14 +165,17 @@ function AuditoriaStep5SectionWrapper({ farmId, farmName }: { farmId: string; fa
 
 // Auditoria Step 6 - Quartis Índices (uses interactive component)
 function AuditoriaStep6SectionWrapper({ farmId, farmName }: { farmId: string; farmName: string }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const setFarmId = useAGFilters(state => state.setFarmId);
-  
+
   useEffect(() => {
     setFarmId(farmId);
   }, [farmId, setFarmId]);
 
   return (
-    <SectionWrapper type="auditoria_step6" title="Auditoria - Quartis por Índices">
+    <SectionWrapper type="auditoria_step6" title={isEs ? "Auditoría - Cuartiles por Índices" : isEn ? "Audit - Quartiles by Index" : "Auditoria - Quartis por Índices"}>
       <Step7QuartisIndices />
     </SectionWrapper>
   );
@@ -155,8 +183,11 @@ function AuditoriaStep6SectionWrapper({ farmId, farmName }: { farmId: string; fa
 
 // Auditoria Step 7 - Distribuição (uses SIMPLIFIED report component)
 function AuditoriaStep7SectionWrapper({ farmId, farmName }: { farmId: string; farmName: string }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   return (
-    <SectionWrapper type="auditoria_step7" title="Auditoria - Distribuição de PTAs">
+    <SectionWrapper type="auditoria_step7" title={isEs ? "Auditoría - Distribución de PTAs" : isEn ? "Audit - PTA Distribution" : "Auditoria - Distribuição de PTAs"}>
       <AuditoriaStep7Section farmId={farmId} farmName={farmName} />
     </SectionWrapper>
   );
@@ -192,10 +223,14 @@ export default function ReportSectionRenderer({
     return () => clearTimeout(timer);
   }, [farmId, setFarmId]);
 
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+
   if (!mounted) {
     return (
       <div className="p-8 text-center">
-        Carregando dados...
+        {isEs ? "Cargando datos..." : isEn ? "Loading data..." : "Carregando dados..."}
       </div>
     );
   }

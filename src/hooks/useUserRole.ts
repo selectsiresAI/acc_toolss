@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocale } from "@/lib/i18n";
 
 export type UserRole = "admin" | "moderator" | "user" | null;
 
@@ -49,7 +50,7 @@ export function useUserRole() {
       setRole("user");
     } catch (err: any) {
       console.error("Erro ao verificar role do usuário", err);
-      setError(err?.message ?? "Não foi possível verificar permissões");
+      setError(err?.message ?? ({ "en-US": "Unable to verify permissions", "es": "No se pudieron verificar los permisos" }[getLocale()] ?? "Não foi possível verificar permissões"));
       setRole("user");
     } finally {
       setIsLoading(false);

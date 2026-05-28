@@ -25,7 +25,8 @@ import { useAGFilters } from "../store";
 import { ChartExportProvider } from "@/components/pdf/ChartExportProvider";
 import { BatchExportBar, SingleExportButton } from "@/components/pdf/ExportButtons";
 import { useRegisterChart } from "@/components/pdf/useRegisterChart";
- import { formatPtaValue } from "@/utils/ptaFormat";
+import { formatPtaValue } from "@/utils/ptaFormat";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /* ================== PTAs suportadas ================== */
 const PTA_LABELS: Record<string, string> = {
@@ -150,20 +151,20 @@ type MeansByCategory = Record<string, Record<string, number | null>>;
 /* ================== Componente ================== */
 function Step6ProgressCompareContent() {
   const { farmId } = useAGFilters();
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [categoryCol, setCategoryCol] = useState<string>("");
 
-  // Seleção de grupos e traits
   const [groupA, setGroupA] = useState("Novilha");
   const [groupB, setGroupB] = useState("Primípara");
   const [tableTraits, setTableTraits] = useState<string[]>(DEFAULT_TABLE_TRAITS);
   const [chartTraits, setChartTraits] = useState<string[]>(DEFAULT_CHART_TRAITS);
 
   const cardRef = useRef<HTMLDivElement>(null);
-  const chartTitle = "Comparação por Categoria";
+  const chartTitle = t("ag.compare.title");
   useRegisterChart("step6-progress-compare", 6, chartTitle, cardRef);
 
   // Busca paginada para obter todos os animais
@@ -386,14 +387,14 @@ function Step6ProgressCompareContent() {
       <CardContent className="space-y-6">
         {/* Painel de informações de debug */}
         <div className="bg-muted/50 p-3 rounded-lg text-xs space-y-1">
-          <div><strong>Fonte:</strong> {TABLE_CANDIDATES[0]} | <strong>Categoria:</strong> {categoryCol || "Não detectada"}</div>
-          <div><strong>Total registros:</strong> {rows.length} | <strong>Categorias:</strong> {categories.join(", ") || "Nenhuma"}</div>
+          <div><strong>{t("ag.compare.source")}</strong> {TABLE_CANDIDATES[0]} | <strong>{t("ag.compare.category")}</strong> {categoryCol || t("ag.compare.notDetected")}</div>
+          <div><strong>{t("ag.compare.totalRecords")}</strong> {rows.length} | <strong>{t("ag.compare.categories")}</strong> {categories.join(", ") || t("ag.compare.none")}</div>
         </div>
 
         {/* Seleção de grupos */}
         <div className="flex flex-wrap gap-4">
           <div>
-            <span className="text-xs font-semibold text-muted-foreground block mb-1">Grupo A</span>
+            <span className="text-xs font-semibold text-muted-foreground block mb-1">{t("ag.compare.groupA")}</span>
             <div className="flex gap-1 flex-wrap">
               {categories.map(cat => (
                 <Badge
@@ -408,7 +409,7 @@ function Step6ProgressCompareContent() {
             </div>
           </div>
           <div>
-            <span className="text-xs font-semibold text-muted-foreground block mb-1">Grupo B</span>
+            <span className="text-xs font-semibold text-muted-foreground block mb-1">{t("ag.compare.groupB")}</span>
             <div className="flex gap-1 flex-wrap">
               {categories.map(cat => (
                 <Badge
@@ -426,7 +427,7 @@ function Step6ProgressCompareContent() {
 
         {/* Seleção de PTAs para tabela */}
         <div>
-          <span className="text-xs font-semibold text-muted-foreground block mb-1">PTAs da Tabela</span>
+          <span className="text-xs font-semibold text-muted-foreground block mb-1">{t("ag.compare.tablePtas")}</span>
           <div className="flex gap-1 flex-wrap">
             {ALL_PTA_KEYS.filter(k => presentPTAs.includes(k)).map(key => (
               <Badge
@@ -443,7 +444,7 @@ function Step6ProgressCompareContent() {
 
         {/* Seleção de PTAs para gráfico */}
         <div>
-          <span className="text-xs font-semibold text-muted-foreground block mb-1">PTAs do Gráfico</span>
+          <span className="text-xs font-semibold text-muted-foreground block mb-1">{t("ag.compare.chartPtas")}</span>
           <div className="flex gap-1 flex-wrap">
             {ALL_PTA_KEYS.filter(k => presentPTAs.includes(k)).map(key => (
               <Badge
@@ -458,11 +459,11 @@ function Step6ProgressCompareContent() {
           </div>
         </div>
 
-        {loading && <div className="py-6 text-center text-muted-foreground">Carregando dados…</div>}
+        {loading && <div className="py-6 text-center text-muted-foreground">{t("ag.compare.loading")}</div>}
 
         {!loading && (!rows.length || !categoryCol) && (
           <div className="py-6 text-center text-muted-foreground">
-            Sem dados com categoria nas tabelas {TABLE_CANDIDATES.join(", ")}.
+            {t("ag.compare.noData")} {TABLE_CANDIDATES.join(", ")}.
           </div>
         )}
 
@@ -473,7 +474,7 @@ function Step6ProgressCompareContent() {
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="border-b bg-muted/30">
-                      <th className="py-2 px-3 text-left font-semibold">Grupo</th>
+                      <th className="py-2 px-3 text-left font-semibold">{t("ag.compare.group")}</th>
                       {tableTraits.filter(t => presentPTAs.includes(t)).map((t) => (
                         <th key={`th-${t}`} className="py-2 px-3 text-left font-semibold">
                           {(PTA_LABELS[t] ?? t).toUpperCase()}

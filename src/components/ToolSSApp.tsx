@@ -16,6 +16,7 @@ import BotijaoVirtualPage from "./BotijaoVirtual";
 import { formatPtaValue } from "@/utils/ptaFormat";
 import { parseUniversalSpreadsheet } from "@/utils/headerNormalizer";
 import { parseNum } from "@/lib/number";
+import { useTranslation } from '@/hooks/useTranslation';
 
 /**
  * ToolSS — MVP interativo (Lovable-ready)
@@ -1164,10 +1165,11 @@ function Header({
   canGoHome: boolean;
   onHome: () => void;
 }) {
+  const { t } = useTranslation();
   return <div className="sticky top-0 z-40 border-b bg-card shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
         <div className="flex items-center gap-3">
-          
+
           <div className="font-bold text-xl">
             TOOLSS <span className="font-normal text-sm text-muted-foreground">by Select Sires</span>
           </div>
@@ -1175,14 +1177,14 @@ function Header({
         <div className="ml-auto flex items-center gap-2">
           {canGoHome && <Button variant="outline" onClick={onHome} size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Clientes
+              {t("toolss.clients")}
             </Button>}
-          <NavButton icon={<Beef size={16} />} label="Rebanho" onClick={() => onGoto("rebanho")} />
-          <NavButton icon={<Layers3 size={16} />} label="Segmentação" onClick={() => onGoto("segmentacao")} />
-          <NavButton icon={<SearchIcon size={16} />} label="Busca de touros" onClick={() => onGoto("touros")} />
-          <NavButton icon={<LineIcon size={16} />} label="Gráficos" onClick={() => onGoto("graficos")} />
-          <NavButton icon={<Calculator size={16} />} label="Plano" onClick={() => onGoto("plano")} />
-          <NavButton icon={<TrendingUp size={16} />} label="Nexus" onClick={() => onGoto("nexus")} />
+          <NavButton icon={<Beef size={16} />} label={t("toolss.nav.herd")} onClick={() => onGoto("rebanho")} />
+          <NavButton icon={<Layers3 size={16} />} label={t("toolss.nav.segmentation")} onClick={() => onGoto("segmentacao")} />
+          <NavButton icon={<SearchIcon size={16} />} label={t("toolss.nav.bullSearch")} onClick={() => onGoto("touros")} />
+          <NavButton icon={<LineIcon size={16} />} label={t("toolss.nav.charts")} onClick={() => onGoto("graficos")} />
+          <NavButton icon={<Calculator size={16} />} label={t("toolss.nav.plan")} onClick={() => onGoto("plano")} />
+          <NavButton icon={<TrendingUp size={16} />} label={t("toolss.nav.nexus")} onClick={() => onGoto("nexus")} />
         </div>
       </div>
     </div>;
@@ -1207,15 +1209,16 @@ function ClientsPage({
   onQuery: (q: string) => void;
   openFarm: (c: Client, farmId: string) => void;
 }) {
+  const { t } = useTranslation();
   return <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="flex items-center gap-3 mb-6">
         <div className="relative flex-1">
-          <Input value={query} onChange={e => onQuery(e.target.value)} placeholder="Buscar cliente ou fazenda..." className="pl-10" />
+          <Input value={query} onChange={e => onQuery(e.target.value)} placeholder={t("toolss.searchClient")} className="pl-10" />
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
         </div>
         <Button>
-          <Plus size={16} className="mr-2" /> 
-          Novo cliente
+          <Plus size={16} className="mr-2" />
+          {t("toolss.newClient")}
         </Button>
       </div>
 
@@ -1235,7 +1238,7 @@ function ClientsPage({
 
       <div className="mt-8 flex justify-center">
         <Button variant="outline">
-          CARREGAR MAIS
+          {t("toolss.loadMore")}
         </Button>
       </div>
     </div>;
@@ -1249,50 +1252,51 @@ function FarmHome({
   farm: Client["farms"][number];
   open: (p: any) => void;
 }) {
+  const { t } = useTranslation();
   const cards = [{
     icon: <Beef size={32} />,
-    title: "Rebanho",
-    desc: "Fêmeas genotipadas, PTAs e filtros",
+    title: t("toolss.nav.herd"),
+    desc: t("toolss.card.herd"),
     page: "rebanho"
   }, {
     icon: <Layers3 size={32} />,
-    title: "Segmentação",
-    desc: "Doadoras, Bom, Receptoras",
+    title: t("toolss.nav.segmentation"),
+    desc: t("toolss.card.segmentation"),
     page: "segmentacao"
   }, {
     icon: <SearchIcon size={32} />,
-    title: "Busca de touros",
-    desc: "Banco de touros e índices",
+    title: t("toolss.nav.bullSearch"),
+    desc: t("toolss.card.bullSearch"),
     page: "touros"
   }, {
     icon: <Zap size={32} />,
-    title: "Botijão Virtual",
-    desc: "Montagem e gestão do botijão",
+    title: t("toolss.nav.botijao"),
+    desc: t("toolss.card.botijao"),
     page: "botijao"
   }, {
     icon: <Calculator size={32} />,
-    title: "Plano",
-    desc: "Projeção genética e calculadora",
+    title: t("toolss.nav.plan"),
+    desc: t("toolss.card.plan"),
     page: "plano"
   }, {
     icon: <LineIcon size={32} />,
-    title: "Gráficos",
-    desc: "Evolução e projeções",
+    title: t("toolss.nav.charts"),
+    desc: t("toolss.card.charts"),
     page: "graficos"
   }, {
     icon: <TrendingUp size={32} />,
-    title: "Nexus",
-    desc: "Sistema de predição genética",
+    title: t("toolss.nav.nexus"),
+    desc: t("toolss.card.nexus"),
     page: "nexus"
   }, {
     icon: <Upload size={32} />,
-    title: "Pasta de Arquivos",
-    desc: "Upload de Excel, PDF e documentos",
+    title: t("toolss.nav.files"),
+    desc: t("toolss.card.files"),
     page: "arquivos"
   }, {
     icon: <PieIcon size={32} />,
-    title: "Metas",
-    desc: "Metas e anotações da fazenda",
+    title: t("toolss.nav.goals"),
+    desc: t("toolss.card.goals"),
     page: "metas"
   }];
   return <div className="max-w-7xl mx-auto px-4 py-6">

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import AGLayout from "@/features/auditoria/AGLayout";
 import { AGStepper } from "@/features/auditoria/Stepper";
 import { useAGFilters } from "@/features/auditoria/store";
+import { useTranslation } from "@/hooks/useTranslation";
 
 // Use o barrel para evitar conflitos entre branches:
 // src/features/auditoria/steps/index.ts deve exportar todos os Steps.
@@ -28,6 +29,9 @@ interface AuditoriaGeneticaPageProps {
 }
 
 export default function AuditoriaGeneticaPage({ farm, onBack }: AuditoriaGeneticaPageProps) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [active, setActive] = useState<number>(0);
   const { setFarmId } = useAGFilters();
 
@@ -73,7 +77,7 @@ export default function AuditoriaGeneticaPage({ farm, onBack }: AuditoriaGenetic
       <div className="space-y-4" data-tour="auditoria:selectors">
         {!hasFarm ? (
           <div className="text-sm text-muted-foreground border rounded-lg p-4">
-            Selecione uma fazenda para iniciar a Auditoria Genética.
+            {isEs ? "Seleccione una finca para iniciar la Auditoría Genética." : isEn ? "Select a farm to start the Genetic Audit." : "Selecione uma fazenda para iniciar a Auditoria Genética."}
           </div>
         ) : (
           <div data-tour="auditoria:resultados" className="space-y-4">

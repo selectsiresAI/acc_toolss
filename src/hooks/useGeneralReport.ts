@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { getLocale } from '@/lib/i18n';
 
 export type ReportType =
   | 'herd_summary'
@@ -35,17 +36,23 @@ export interface GeneralReportState {
   progressMessage: string;
 }
 
-const DEFAULT_REPORTS: ReportSelection[] = [
-  { type: 'herd_summary', enabled: true, label: 'Resumo do Rebanho', description: 'Total de animais, distribuição por categoria' },
-  { type: 'segmentation', enabled: false, label: 'Segmentação', description: 'Classificação Superior/Intermediário/Inferior' },
-  { type: 'auditoria_step1', enabled: false, label: 'Auditoria - Parentesco', description: 'Análise de parentesco e consanguinidade' },
-  { type: 'auditoria_step2', enabled: false, label: 'Auditoria - Top Parents', description: 'Principais pais do rebanho' },
-  { type: 'auditoria_step3', enabled: false, label: 'Auditoria - Quartis Overview', description: 'Visão geral por quartis' },
-  { type: 'auditoria_step4', enabled: false, label: 'Auditoria - Progressão', description: 'Progressão genética ao longo do tempo' },
-  { type: 'auditoria_step5', enabled: false, label: 'Auditoria - Comparação', description: 'Comparação por categoria' },
-  { type: 'auditoria_step6', enabled: false, label: 'Auditoria - Quartis Índices', description: 'Análise de quartis por índices' },
-  { type: 'auditoria_step7', enabled: false, label: 'Auditoria - Distribuição', description: 'Distribuição de PTAs' },
-];
+const getDefaultReports = (): ReportSelection[] => {
+  const loc = getLocale();
+  const isEn = loc === 'en-US';
+  const isEs = loc === 'es';
+  const l = (pt: string, en: string, es: string) => isEs ? es : isEn ? en : pt;
+  return [
+    { type: 'herd_summary', enabled: true, label: l('Resumo do Rebanho', 'Herd Summary', 'Resumen del Rebaño'), description: l('Total de animais, distribuição por categoria', 'Total animals, distribution by category', 'Total de animales, distribución por categoría') },
+    { type: 'segmentation', enabled: false, label: l('Segmentação', 'Segmentation', 'Segmentación'), description: l('Classificação Superior/Intermediário/Inferior', 'Superior/Intermediate/Inferior classification', 'Clasificación Superior/Intermedio/Inferior') },
+    { type: 'auditoria_step1', enabled: false, label: l('Auditoria - Parentesco', 'Audit - Kinship', 'Auditoría - Parentesco'), description: l('Análise de parentesco e consanguinidade', 'Kinship and inbreeding analysis', 'Análisis de parentesco y consanguinidad') },
+    { type: 'auditoria_step2', enabled: false, label: l('Auditoria - Top Parents', 'Audit - Top Parents', 'Auditoría - Top Parents'), description: l('Principais pais do rebanho', 'Main parents of the herd', 'Principales padres del rebaño') },
+    { type: 'auditoria_step3', enabled: false, label: l('Auditoria - Quartis Overview', 'Audit - Quartiles Overview', 'Auditoría - Cuartiles'), description: l('Visão geral por quartis', 'Quartile overview', 'Visión general por cuartiles') },
+    { type: 'auditoria_step4', enabled: false, label: l('Auditoria - Progressão', 'Audit - Progression', 'Auditoría - Progresión'), description: l('Progressão genética ao longo do tempo', 'Genetic progression over time', 'Progresión genética a lo largo del tiempo') },
+    { type: 'auditoria_step5', enabled: false, label: l('Auditoria - Comparação', 'Audit - Comparison', 'Auditoría - Comparación'), description: l('Comparação por categoria', 'Comparison by category', 'Comparación por categoría') },
+    { type: 'auditoria_step6', enabled: false, label: l('Auditoria - Quartis Índices', 'Audit - Quartile Indices', 'Auditoría - Índices por Cuartiles'), description: l('Análise de quartis por índices', 'Quartile analysis by indices', 'Análisis de cuartiles por índices') },
+    { type: 'auditoria_step7', enabled: false, label: l('Auditoria - Distribuição', 'Audit - Distribution', 'Auditoría - Distribución'), description: l('Distribuição de PTAs', 'PTA distribution', 'Distribución de PTAs') },
+  ];
+};
 
 const DEFAULT_CONFIG: GeneralReportConfig = {
   orientation: 'landscape',
@@ -57,7 +64,7 @@ const DEFAULT_CONFIG: GeneralReportConfig = {
 
 export function useGeneralReport() {
   const [state, setState] = useState<GeneralReportState>({
-    reports: DEFAULT_REPORTS,
+    reports: getDefaultReports(),
     config: DEFAULT_CONFIG,
     isGenerating: false,
     progress: 0,
@@ -139,7 +146,7 @@ export function useGeneralReport() {
 
   const reset = useCallback(() => {
     setState({
-      reports: DEFAULT_REPORTS,
+      reports: getDefaultReports(),
       config: DEFAULT_CONFIG,
       isGenerating: false,
       progress: 0,

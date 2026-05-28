@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type Props = {
   targetAttr: string; // ex.: 'rebanho:cards.contadores'
@@ -17,6 +18,7 @@ type Props = {
 };
 
 export default function TourSpotlight(p: Props) {
+  const { t } = useTranslation();
   const [rect, setRect] = useState<DOMRect | null>(null);
 
   const el = useMemo(
@@ -62,10 +64,10 @@ export default function TourSpotlight(p: Props) {
           <h3 className="text-lg font-semibold mb-1">{p.headline}</h3>
           <p className="text-sm text-muted-foreground mb-2">{p.body}</p>
           <div className="text-xs text-amber-600 mb-3">
-            Âncora não encontrada no DOM: <code>{p.targetAttr}</code>. Verifique o <code>data-tour</code> na página.
+            Anchor not found in DOM: <code>{p.targetAttr}</code>. Check the <code>data-tour</code> attribute on the page.
           </div>
           <div className="flex gap-2 justify-end">
-            {p.onNext && <Button onClick={p.onNext}>{p.nextLabel ?? "Próximo"}</Button>}
+            {p.onNext && <Button onClick={p.onNext}>{p.nextLabel ?? "Next"}</Button>}
             {p.onDone && <Button onClick={p.onDone}>{p.doneLabel ?? "Concluir"}</Button>}
           </div>
         </div>
@@ -107,7 +109,7 @@ export default function TourSpotlight(p: Props) {
           )}
           {p.onNext && (
             <Button onClick={p.onNext}>
-              {p.nextLabel ?? "Próximo"}
+              {p.nextLabel ?? "Next"}
             </Button>
           )}
           {p.onDone && (

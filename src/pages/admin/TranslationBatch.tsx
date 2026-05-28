@@ -7,8 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, Download, Upload, Languages } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function TranslationBatch() {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [sourceJson, setSourceJson] = useState("");
   const [targetLocale, setTargetLocale] = useState("en-US");
   const [translatedJson, setTranslatedJson] = useState("");
@@ -17,7 +21,7 @@ export default function TranslationBatch() {
 
   const handleTranslate = async () => {
     if (!sourceJson.trim()) {
-      toast.error("Por favor, insira o JSON de origem");
+      toast.error(isEs ? "Por favor, ingrese el JSON de origen" : isEn ? "Please enter the source JSON" : "Por favor, insira o JSON de origem");
       return;
     }
 
@@ -25,7 +29,7 @@ export default function TranslationBatch() {
       // Validate JSON
       JSON.parse(sourceJson);
     } catch (error) {
-      toast.error("JSON inválido. Verifique a sintaxe.");
+      toast.error(isEs ? "JSON inválido. Verifique la sintaxis." : isEn ? "Invalid JSON. Check the syntax." : "JSON inválido. Verifique a sintaxe.");
       return;
     }
 
@@ -43,11 +47,11 @@ export default function TranslationBatch() {
 
       if (error) {
         if (error.message.includes("429")) {
-          toast.error("Limite de requisições excedido. Aguarde alguns minutos.");
+          toast.error(isEs ? "Límite de solicitudes excedido. Espere algunos minutos." : isEn ? "Request limit exceeded. Wait a few minutes." : "Limite de requisições excedido. Aguarde alguns minutos.");
         } else if (error.message.includes("402")) {
-          toast.error("Créditos insuficientes. Adicione créditos no workspace Lovable.");
+          toast.error(isEs ? "Créditos insuficientes. Agregue créditos en el workspace Lovable." : isEn ? "Insufficient credits. Add credits in the Lovable workspace." : "Créditos insuficientes. Adicione créditos no workspace Lovable.");
         } else {
-          toast.error("Erro ao traduzir: " + error.message);
+          toast.error((isEs ? "Error al traducir: " : isEn ? "Translation error: " : "Erro ao traduzir: ") + error.message);
         }
         return;
       }
@@ -58,13 +62,13 @@ export default function TranslationBatch() {
           sourceKeyCount: data.sourceKeyCount,
           targetKeyCount: data.targetKeyCount,
         });
-        toast.success("Tradução concluída com sucesso!");
+        toast.success(isEs ? "¡Traducción completada con éxito!" : isEn ? "Translation completed successfully!" : "Tradução concluída com sucesso!");
       } else {
-        toast.error("Erro ao traduzir: " + (data.error || "Erro desconhecido"));
+        toast.error((isEs ? "Error al traducir: " : isEn ? "Translation error: " : "Erro ao traduzir: ") + (data.error || (isEs ? "Error desconocido" : isEn ? "Unknown error" : "Erro desconhecido")));
       }
     } catch (error: any) {
       console.error("Translation error:", error);
-      toast.error("Erro ao chamar a função de tradução: " + error.message);
+      toast.error((isEs ? "Error al llamar la función de traducción: " : isEn ? "Error calling translation function: " : "Erro ao chamar a função de tradução: ") + error.message);
     } finally {
       setIsTranslating(false);
     }
@@ -82,7 +86,7 @@ export default function TranslationBatch() {
 
   const handleDownloadTranslation = () => {
     if (!translatedJson) {
-      toast.error("Nenhuma tradução disponível para download");
+      toast.error(isEs ? "Ninguna traducción disponible para descargar" : isEn ? "No translation available for download" : "Nenhuma tradução disponível para download");
       return;
     }
 
@@ -95,7 +99,7 @@ export default function TranslationBatch() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success("Arquivo baixado!");
+    toast.success(isEs ? "¡Archivo descargado!" : isEn ? "File downloaded!" : "Arquivo baixado!");
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,10 +110,10 @@ export default function TranslationBatch() {
     reader.onload = (e) => {
       const content = e.target?.result as string;
       setSourceJson(content);
-      toast.success("Arquivo carregado!");
+      toast.success(isEs ? "¡Archivo cargado!" : isEn ? "File loaded!" : "Arquivo carregado!");
     };
     reader.onerror = () => {
-      toast.error("Erro ao ler o arquivo");
+      toast.error(isEs ? "Error al leer el archivo" : isEn ? "Error reading the file" : "Erro ao ler o arquivo");
     };
     reader.readAsText(file);
   };
@@ -118,31 +122,30 @@ export default function TranslationBatch() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Tradução em Lote via IA</CardTitle>
+          <CardTitle>{isEs ? "Traducción en Lote vía IA" : isEn ? "AI Batch Translation" : "Tradução em Lote via IA"}</CardTitle>
           <CardDescription>
-            Use Lovable AI para traduzir arquivos JSON de i18n automaticamente
+            {isEs ? "Use Lovable AI para traducir archivos JSON de i18n automáticamente" : isEn ? "Use Lovable AI to automatically translate i18n JSON files" : "Use Lovable AI para traduzir arquivos JSON de i18n automaticamente"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <Alert>
             <Languages className="h-4 w-4" />
             <AlertDescription>
-              <strong>Instruções:</strong> A IA preservará automaticamente todos os termos técnicos (PTAs, NAABs) e traduzirá apenas o texto natural.
-              Ideal para traduzir strings de interface do usuário.
+              <strong>{isEs ? "Instrucciones:" : isEn ? "Instructions:" : "Instruções:"}</strong> {isEs ? "La IA preservará automáticamente todos los términos técnicos (PTAs, NAABs) y traducirá solo el texto natural. Ideal para traducir strings de interfaz de usuario." : isEn ? "AI will automatically preserve all technical terms (PTAs, NAABs) and translate only natural text. Ideal for translating user interface strings." : "A IA preservará automaticamente todos os termos técnicos (PTAs, NAABs) e traduzirá apenas o texto natural. Ideal para traduzir strings de interface do usuário."}
             </AlertDescription>
           </Alert>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">JSON de Origem (pt-BR)</label>
+                <label className="text-sm font-medium">{isEs ? "JSON de Origen (pt-BR)" : isEn ? "Source JSON (pt-BR)" : "JSON de Origem (pt-BR)"}</label>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleLoadExample}
                   >
-                    Carregar Exemplo
+                    {isEs ? "Cargar Ejemplo" : isEn ? "Load Example" : "Carregar Exemplo"}
                   </Button>
                   <Button
                     variant="outline"
@@ -171,7 +174,7 @@ export default function TranslationBatch() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">JSON Traduzido ({targetLocale})</label>
+                <label className="text-sm font-medium">{isEs ? `JSON Traducido (${targetLocale})` : isEn ? `Translated JSON (${targetLocale})` : `JSON Traduzido (${targetLocale})`}</label>
                 {translatedJson && (
                   <Button
                     variant="outline"
@@ -186,7 +189,7 @@ export default function TranslationBatch() {
               <Textarea
                 value={translatedJson}
                 readOnly
-                placeholder="A tradução aparecerá aqui..."
+                placeholder={isEs ? "La traducción aparecerá aquí..." : isEn ? "Translation will appear here..." : "A tradução aparecerá aqui..."}
                 className="font-mono text-sm min-h-[400px] bg-muted"
               />
             </div>
@@ -195,17 +198,17 @@ export default function TranslationBatch() {
           {stats && (
             <div className="flex gap-4 justify-center">
               <Badge variant="secondary">
-                {stats.sourceKeyCount} chaves de origem
+                {stats.sourceKeyCount} {isEs ? "claves de origen" : isEn ? "source keys" : "chaves de origem"}
               </Badge>
               <Badge variant="secondary">
-                {stats.targetKeyCount} chaves traduzidas
+                {stats.targetKeyCount} {isEs ? "claves traducidas" : isEn ? "translated keys" : "chaves traduzidas"}
               </Badge>
             </div>
           )}
 
           <div className="flex gap-4 items-center">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Idioma de Destino</label>
+              <label className="text-sm font-medium mb-2 block">{isEs ? "Idioma de Destino" : isEn ? "Target Language" : "Idioma de Destino"}</label>
               <select
                 value={targetLocale}
                 onChange={(e) => setTargetLocale(e.target.value)}
@@ -224,12 +227,12 @@ export default function TranslationBatch() {
               {isTranslating ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Traduzindo...
+                  {isEs ? "Traduciendo..." : isEn ? "Translating..." : "Traduzindo..."}
                 </>
               ) : (
                 <>
                   <Languages className="h-4 w-4 mr-2" />
-                  Traduzir com IA
+                  {isEs ? "Traducir con IA" : isEn ? "Translate with AI" : "Traduzir com IA"}
                 </>
               )}
             </Button>
@@ -237,8 +240,7 @@ export default function TranslationBatch() {
 
           <Alert>
             <AlertDescription className="text-sm text-muted-foreground">
-              <strong>Dica:</strong> Após a tradução, revise manualmente os termos técnicos para garantir que não foram alterados.
-              A IA é instruída a preservar PTAs e termos técnicos, mas sempre verifique o resultado.
+              <strong>{isEs ? "Consejo:" : isEn ? "Tip:" : "Dica:"}</strong> {isEs ? "Después de la traducción, revise manualmente los términos técnicos para asegurarse de que no fueron alterados. La IA está instruida para preservar PTAs y términos técnicos, pero siempre verifique el resultado." : isEn ? "After translation, manually review technical terms to ensure they were not altered. AI is instructed to preserve PTAs and technical terms, but always verify the result." : "Após a tradução, revise manualmente os termos técnicos para garantir que não foram alterados. A IA é instruída a preservar PTAs e termos técnicos, mas sempre verifique o resultado."}
             </AlertDescription>
           </Alert>
         </CardContent>

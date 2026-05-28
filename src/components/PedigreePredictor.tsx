@@ -22,6 +22,7 @@ import { Calculator, Upload, Download } from 'lucide-react';
 import { utils, writeFileXLSX } from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { parseUniversalSpreadsheet } from '@/utils/headerNormalizer';
+import { useTranslation } from "@/hooks/useTranslation";
 
 type BatchResultColumn = {
   header: string;
@@ -29,52 +30,56 @@ type BatchResultColumn = {
   exportValue: (result: BatchResult) => string;
 };
 
-const BATCH_RESULT_BASE_COLUMNS: BatchResultColumn[] = [
-  {
-    header: 'ID_Fazenda',
-    render: (result) => result.idFazenda || '—',
-    exportValue: (result) => result.idFazenda || '—'
-  },
-  {
-    header: 'Nome',
-    render: (result) => result.nome || '—',
-    exportValue: (result) => result.nome || '—'
-  },
-  {
-    header: 'Data_de_Nascimento',
-    render: (result) => result.dataNascimento || '—',
-    exportValue: (result) => result.dataNascimento || '—'
-  },
-  {
-    header: 'naab_pai',
-    render: (result) => result.naabPai || '—',
-    exportValue: (result) => result.naabPai || '—'
-  },
-  {
-    header: 'naab_avo_materno',
-    render: (result) => result.naabAvoMaterno || '—',
-    exportValue: (result) => result.naabAvoMaterno || '—'
-  },
-  {
-    header: 'naab_bisavo_materno',
-    render: (result) => result.naabBisavoMaterno || '—',
-    exportValue: (result) => result.naabBisavoMaterno || '—'
-  },
-  {
-    header: 'Status',
-    render: (result) => (
-      <Badge variant={result.status === 'success' ? 'default' : 'destructive'}>
-        {result.status === 'success' ? 'Válido' : 'Erro'}
-      </Badge>
-    ),
-    exportValue: (result) => (result.status === 'success' ? 'Válido' : 'Erro')
-  },
-  {
-    header: 'Erros',
-    render: (result) => (result.errors?.length ? result.errors.join('; ') : '—'),
-    exportValue: (result) => (result.errors?.length ? result.errors.join('; ') : '—')
-  }
-];
+function getBatchResultBaseColumns(locale: string): BatchResultColumn[] {
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+  return [
+    {
+      header: isEs ? 'ID_Finca' : isEn ? 'Farm_ID' : 'ID_Fazenda',
+      render: (result) => result.idFazenda || '—',
+      exportValue: (result) => result.idFazenda || '—'
+    },
+    {
+      header: isEs ? 'Nombre' : isEn ? 'Name' : 'Nome',
+      render: (result) => result.nome || '—',
+      exportValue: (result) => result.nome || '—'
+    },
+    {
+      header: isEs ? 'Fecha_de_Nacimiento' : isEn ? 'Birth_Date' : 'Data_de_Nascimento',
+      render: (result) => result.dataNascimento || '—',
+      exportValue: (result) => result.dataNascimento || '—'
+    },
+    {
+      header: 'naab_pai',
+      render: (result) => result.naabPai || '—',
+      exportValue: (result) => result.naabPai || '—'
+    },
+    {
+      header: 'naab_avo_materno',
+      render: (result) => result.naabAvoMaterno || '—',
+      exportValue: (result) => result.naabAvoMaterno || '—'
+    },
+    {
+      header: 'naab_bisavo_materno',
+      render: (result) => result.naabBisavoMaterno || '—',
+      exportValue: (result) => result.naabBisavoMaterno || '—'
+    },
+    {
+      header: 'Status',
+      render: (result) => (
+        <Badge variant={result.status === 'success' ? 'default' : 'destructive'}>
+          {result.status === 'success' ? (isEs ? 'Válido' : isEn ? 'Valid' : 'Válido') : (isEs ? 'Error' : isEn ? 'Error' : 'Erro')}
+        </Badge>
+      ),
+      exportValue: (result) => (result.status === 'success' ? (isEs ? 'Válido' : isEn ? 'Valid' : 'Válido') : (isEs ? 'Error' : isEn ? 'Error' : 'Erro'))
+    },
+    {
+      header: isEs ? 'Errores' : isEn ? 'Errors' : 'Erros',
+      render: (result) => (result.errors?.length ? result.errors.join('; ') : '—'),
+      exportValue: (result) => (result.errors?.length ? result.errors.join('; ') : '—')
+    }
+  ];
+}
 
 // Estado para armazenar dados do ToolSSApp - idêntico ao ProjecaoGenetica
 interface ToolSSBull {
@@ -139,8 +144,8 @@ const fetchBullFromDatabase = async (naab: string): Promise<Bull | null> => {
       const bullData = data as any;
       const convertedBull: Bull = {
         naab: bullData.code,
-        name: bullData.name || 'Nome não informado',
-        company: bullData.company || 'Empresa não informada',
+        name: bullData.name || 'N/A',
+        company: bullData.company || 'N/A',
         ptas: {
           // Índices Econômicos
           hhp_dollar: bullData.hhp_dollar ?? null,
@@ -229,6 +234,10 @@ const fetchBullFromDatabase = async (naab: string): Promise<Bull | null> => {
 };
 
 const PedigreePredictor: React.FC = () => {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+  const BATCH_RESULT_BASE_COLUMNS = getBatchResultBaseColumns(locale);
   const { toast } = useToast();
   const { 
     pedigreeInput,
@@ -255,8 +264,8 @@ const PedigreePredictor: React.FC = () => {
       if (bull) {
         setBullCache(value, bull);
         toast({
-          title: "✅ PTAs carregadas automaticamente!",
-          description: `${bull.name} (${bull.company}) - Todas as PTAs foram carregadas`,
+          title: isEs ? "PTAs cargadas automáticamente!" : isEn ? "PTAs loaded automatically!" : "PTAs carregadas automaticamente!",
+          description: isEs ? `${bull.name} (${bull.company}) - Todas las PTAs fueron cargadas` : isEn ? `${bull.name} (${bull.company}) - All PTAs were loaded` : `${bull.name} (${bull.company}) - Todas as PTAs foram carregadas`,
         });
       }
     }
@@ -267,8 +276,8 @@ const PedigreePredictor: React.FC = () => {
   const handleGeneratePrediction = () => {
     if (!pedigreeInput.sireNaab.trim()) {
       toast({
-        title: "Erro",
-        description: "Digite o NAAB do pai para gerar a predição.",
+        title: isEs ? "Error" : isEn ? "Error" : "Erro",
+        description: isEs ? "Ingrese el NAAB del padre para generar la predicción." : isEn ? "Enter the sire NAAB to generate the prediction." : "Digite o NAAB do pai para gerar a predição.",
         variant: "destructive",
       });
       return;
@@ -280,7 +289,7 @@ const PedigreePredictor: React.FC = () => {
     
     if (errors.length > 0) {
       toast({
-        title: "Erro de Validação",
+        title: isEs ? "Error de Validación" : isEn ? "Validation Error" : "Erro de Validação",
         description: errors.join('\n'),
         variant: "destructive",
       });
@@ -295,8 +304,8 @@ const PedigreePredictor: React.FC = () => {
 
     if (!sire) {
       toast({
-        title: "Erro",
-        description: "Dados do pai não encontrados. Verifique o NAAB.",
+        title: isEs ? "Error" : isEn ? "Error" : "Erro",
+        description: isEs ? "Datos del padre no encontrados. Verifique el NAAB." : isEn ? "Sire data not found. Check the NAAB." : "Dados do pai não encontrados. Verifique o NAAB.",
         variant: "destructive",
       });
       setIsCalculating(false);
@@ -315,8 +324,8 @@ const PedigreePredictor: React.FC = () => {
     setIsCalculating(false);
     
     toast({
-      title: "Predição Gerada!",
-      description: "As PTAs da filha foram calculadas baseadas no pedigree.",
+      title: isEs ? "Predicción Generada!" : isEn ? "Prediction Generated!" : "Predição Gerada!",
+      description: isEs ? "Las PTAs de la hija fueron calculadas basadas en el pedigrí." : isEn ? "The daughter's PTAs were calculated based on the pedigree." : "As PTAs da filha foram calculadas baseadas no pedigree.",
     });
   };
 
@@ -325,8 +334,8 @@ const PedigreePredictor: React.FC = () => {
     setPredictionResult(null);
     
     toast({
-      title: "Dados Limpos",
-      description: "Todos os campos foram resetados.",
+      title: isEs ? "Datos Borrados" : isEn ? "Data Cleared" : "Dados Limpos",
+      description: isEs ? "Todos los campos fueron restablecidos." : isEn ? "All fields were reset." : "Todos os campos foram resetados.",
     });
   };
 
@@ -418,7 +427,7 @@ const PedigreePredictor: React.FC = () => {
             results.push({
               ...input,
               status: 'error',
-              errors: [`Pai com NAAB ${input.naabPai} não encontrado no banco de dados`]
+              errors: [isEs ? `Padre con NAAB ${input.naabPai} no encontrado en la base de datos` : isEn ? `Sire with NAAB ${input.naabPai} not found in database` : `Pai com NAAB ${input.naabPai} não encontrado no banco de dados`]
             });
           }
         } else {
@@ -433,14 +442,14 @@ const PedigreePredictor: React.FC = () => {
       setBatchResults(results);
       
       toast({
-        title: "Processamento Concluído!",
-        description: `${results.length} linhas processadas.`,
+        title: isEs ? "Procesamiento Completado!" : isEn ? "Processing Complete!" : "Processamento Concluído!",
+        description: isEs ? `${results.length} líneas procesadas.` : isEn ? `${results.length} rows processed.` : `${results.length} linhas processadas.`,
       });
       
     } catch (error) {
       toast({
-        title: "Erro no Processamento",
-        description: "Erro ao processar o arquivo. Verifique o formato.",
+        title: isEs ? "Error en el Procesamiento" : isEn ? "Processing Error" : "Erro no Processamento",
+        description: isEs ? "Error al procesar el archivo. Verifique el formato." : isEn ? "Error processing file. Check the format." : "Erro ao processar o arquivo. Verifique o formato.",
         variant: "destructive",
       });
     } finally {
@@ -472,13 +481,13 @@ const PedigreePredictor: React.FC = () => {
     });
     
     const workbook = utils.book_new();
-    utils.book_append_sheet(workbook, worksheet, 'Predições');
+    utils.book_append_sheet(workbook, worksheet, isEs ? 'Predicciones' : isEn ? 'Predictions' : 'Predições');
 
     writeFileXLSX(workbook, `predicoes_pedigree_${new Date().toISOString().split('T')[0]}.xlsx`);
-    
+
     toast({
-      title: "Arquivo Exportado!",
-      description: "As predições foram exportadas para Excel.",
+      title: isEs ? "Archivo Exportado!" : isEn ? "File Exported!" : "Arquivo Exportado!",
+      description: isEs ? "Las predicciones fueron exportadas a Excel." : isEn ? "Predictions were exported to Excel." : "As predições foram exportadas para Excel.",
     });
   };
 
@@ -502,10 +511,10 @@ const PedigreePredictor: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Calculator className="w-8 h-8" />
-            Nexus 2: Predição por Pedigree
+            {isEs ? "Nexus 2: Predicción por Pedigrí" : isEn ? "Nexus 2: Pedigree Prediction" : "Nexus 2: Predição por Pedigree"}
           </h1>
           <p className="text-muted-foreground mt-2">
-            Baseado no pedigree - Pai (57%) + Avô Materno (28%) + Bisavô Materno (15%)
+            {isEs ? "Basado en el pedigrí - Padre (57%) + Abuelo Materno (28%) + Bisabuelo Materno (15%)" : isEn ? "Based on pedigree - Sire (57%) + MGS (28%) + MMGS (15%)" : "Baseado no pedigree - Pai (57%) + Avô Materno (28%) + Bisavô Materno (15%)"}
           </p>
         </div>
         <Button 
@@ -513,25 +522,25 @@ const PedigreePredictor: React.FC = () => {
           variant="outline"
           className="text-sm"
         >
-          Limpar localStorage
+          {isEs ? "Limpiar localStorage" : isEn ? "Clear localStorage" : "Limpar localStorage"}
         </Button>
       </div>
 
       <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'individual' | 'batch')}>
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="individual">Predição Individual</TabsTrigger>
-          <TabsTrigger value="batch">Processamento em Lote</TabsTrigger>
+          <TabsTrigger value="individual">{isEs ? "Predicción Individual" : isEn ? "Individual Prediction" : "Predição Individual"}</TabsTrigger>
+          <TabsTrigger value="batch">{isEs ? "Procesamiento en Lote" : isEn ? "Batch Processing" : "Processamento em Lote"}</TabsTrigger>
         </TabsList>
         
         <TabsContent value="individual" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Dados do Pedigree</CardTitle>
+              <CardTitle>{isEs ? "Datos del Pedigrí" : isEn ? "Pedigree Data" : "Dados do Pedigree"}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="sire">NAAB do Pai (57%)</Label>
+                  <Label htmlFor="sire">{isEs ? "NAAB del Padre (57%)" : isEn ? "Sire NAAB (57%)" : "NAAB do Pai (57%)"}</Label>
                   <Input
                     id="sire"
                     value={pedigreeInput.sireNaab}
@@ -539,11 +548,11 @@ const PedigreePredictor: React.FC = () => {
                     placeholder="Ex: 007HO17508"
                     className="font-mono"
                   />
-                  <Badge variant="secondary" className="text-xs">Obrigatório</Badge>
+                  <Badge variant="secondary" className="text-xs">{isEs ? "Obligatorio" : isEn ? "Required" : "Obrigatório"}</Badge>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="mgs">NAAB do Avô Materno (28%)</Label>
+                  <Label htmlFor="mgs">{isEs ? "NAAB del Abuelo Materno (28%)" : isEn ? "MGS NAAB (28%)" : "NAAB do Avô Materno (28%)"}</Label>
                   <Input
                     id="mgs"
                     value={pedigreeInput.mgsNaab}
@@ -551,11 +560,11 @@ const PedigreePredictor: React.FC = () => {
                     placeholder="Ex: 007HO15225"
                     className="font-mono"
                   />
-                  <Badge variant="outline" className="text-xs">Opcional</Badge>
+                  <Badge variant="outline" className="text-xs">{isEs ? "Opcional" : isEn ? "Optional" : "Opcional"}</Badge>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="mmgs">NAAB do Bisavô Materno (15%)</Label>
+                  <Label htmlFor="mmgs">{isEs ? "NAAB del Bisabuelo Materno (15%)" : isEn ? "MMGS NAAB (15%)" : "NAAB do Bisavô Materno (15%)"}</Label>
                   <Input
                     id="mmgs"
                     value={pedigreeInput.mmgsNaab}
@@ -563,17 +572,17 @@ const PedigreePredictor: React.FC = () => {
                     placeholder="Ex: 007HO12345"
                     className="font-mono"
                   />
-                  <Badge variant="outline" className="text-xs">Opcional</Badge>
+                  <Badge variant="outline" className="text-xs">{isEs ? "Opcional" : isEn ? "Optional" : "Opcional"}</Badge>
                 </div>
               </div>
-              
+
               <div className="flex gap-2">
                 <Button onClick={handleGeneratePrediction} disabled={isCalculating} className="flex-1">
                   <Calculator className="w-4 h-4 mr-2" />
-                  {isCalculating ? 'Calculando...' : 'Calcular PTAs da Filha'}
+                  {isCalculating ? (isEs ? 'Calculando...' : isEn ? 'Calculating...' : 'Calculando...') : (isEs ? 'Calcular PTAs de la Hija' : isEn ? 'Calculate Daughter PTAs' : 'Calcular PTAs da Filha')}
                 </Button>
                 <Button onClick={handleReset} variant="outline">
-                  Limpar
+                  {isEs ? "Limpiar" : isEn ? "Clear" : "Limpar"}
                 </Button>
               </div>
             </CardContent>
@@ -582,7 +591,7 @@ const PedigreePredictor: React.FC = () => {
           {displayedPTAs.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Predições das PTAs da Filha</CardTitle>
+                <CardTitle>{isEs ? "Predicciones de PTAs de la Hija" : isEn ? "Daughter PTA Predictions" : "Predições das PTAs da Filha"}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -590,10 +599,10 @@ const PedigreePredictor: React.FC = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="font-bold">PTA</TableHead>
-                        <TableHead className="text-center">Pai (57%)</TableHead>
-                        <TableHead className="text-center">Avô Mat. (28%)</TableHead>
-                        <TableHead className="text-center">Bisavô Mat. (15%)</TableHead>
-                        <TableHead className="text-center font-bold bg-primary/10">Filha</TableHead>
+                        <TableHead className="text-center">{isEs ? "Padre (57%)" : isEn ? "Sire (57%)" : "Pai (57%)"}</TableHead>
+                        <TableHead className="text-center">{isEs ? "Abuelo Mat. (28%)" : isEn ? "MGS (28%)" : "Avô Mat. (28%)"}</TableHead>
+                        <TableHead className="text-center">{isEs ? "Bisabuelo Mat. (15%)" : isEn ? "MMGS (15%)" : "Bisavô Mat. (15%)"}</TableHead>
+                        <TableHead className="text-center font-bold bg-primary/10">{isEs ? "Hija" : isEn ? "Daughter" : "Filha"}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -625,11 +634,11 @@ const PedigreePredictor: React.FC = () => {
         <TabsContent value="batch" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Processamento em Lote</CardTitle>
+              <CardTitle>{isEs ? "Procesamiento en Lote" : isEn ? "Batch Processing" : "Processamento em Lote"}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="batch-file">Arquivo Excel ou CSV (.xlsx, .xls, .xlsm, .csv)</Label>
+                <Label htmlFor="batch-file">{isEs ? "Archivo Excel o CSV (.xlsx, .xls, .xlsm, .csv)" : isEn ? "Excel or CSV file (.xlsx, .xls, .xlsm, .csv)" : "Arquivo Excel ou CSV (.xlsx, .xls, .xlsm, .csv)"}</Label>
                 <Input
                   id="batch-file"
                   type="file"
@@ -637,7 +646,7 @@ const PedigreePredictor: React.FC = () => {
                   onChange={handleFileUpload}
                 />
                 <p className="text-sm text-muted-foreground">
-                  O arquivo deve conter as colunas: idFazenda, nome, dataNascimento, naabPai, naabAvoMaterno, naabBisavoMaterno
+                  {isEs ? "El archivo debe contener las columnas: idFazenda, nome, dataNascimento, naabPai, naabAvoMaterno, naabBisavoMaterno" : isEn ? "The file must contain the columns: idFazenda, nome, dataNascimento, naabPai, naabAvoMaterno, naabBisavoMaterno" : "O arquivo deve conter as colunas: idFazenda, nome, dataNascimento, naabPai, naabAvoMaterno, naabBisavoMaterno"}
                 </p>
               </div>
               
@@ -648,20 +657,20 @@ const PedigreePredictor: React.FC = () => {
                   className="flex-1"
                 >
                   <Upload className="w-4 h-4 mr-2" />
-                  {isProcessing ? 'Processando...' : 'Processar Arquivo'}
+                  {isProcessing ? (isEs ? 'Procesando...' : isEn ? 'Processing...' : 'Processando...') : (isEs ? 'Procesar Archivo' : isEn ? 'Process File' : 'Processar Arquivo')}
                 </Button>
                 
                 {batchResults.length > 0 && (
                   <Button onClick={exportBatchResults} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
-                    Exportar Resultados
+                    {isEs ? "Exportar Resultados" : isEn ? "Export Results" : "Exportar Resultados"}
                   </Button>
                 )}
               </div>
               
               {batchResults.length > 0 && (
                 <div className="mt-4">
-                  <h3 className="font-semibold mb-2">Resultados ({batchResults.length} animais)</h3>
+                  <h3 className="font-semibold mb-2">{isEs ? "Resultados" : isEn ? "Results" : "Resultados"} ({batchResults.length} {isEs ? "animales" : isEn ? "animals" : "animais"})</h3>
                   <div className="max-h-96 overflow-auto border rounded-lg">
                     <Table>
                       <TableHeader>

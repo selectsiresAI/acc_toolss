@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { IM5Config } from "./IM5Configurator";
 import type { PlanBull } from "@/hooks/usePlanBulls";
@@ -34,6 +35,9 @@ export function IM5Results({
   config: IM5Config | null;
   onComputed?: (rows: IM5Row[]) => void;
 }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState<IM5Row[]>([]);
   const [loading, setLoading] = useState(false);
@@ -87,13 +91,13 @@ export function IM5Results({
   return (
     <Card>
       <CardHeader className="flex items-center justify-between">
-        <CardTitle>IM5$ — Custo-benefício por Touro</CardTitle>
+        <CardTitle>{isEs ? "IM5$ — Costo-beneficio por Toro" : isEn ? "IM5$ — Cost-Benefit per Bull" : "IM5$ — Custo-benefício por Touro"}</CardTitle>
         <button
           onClick={compute}
           className="text-sm underline"
           disabled={loading || !config}
         >
-          {loading ? "Calculando..." : "Calcular"}
+          {loading ? (isEs ? "Calculando..." : isEn ? "Calculating..." : "Calculando...") : (isEs ? "Calcular" : isEn ? "Calculate" : "Calcular")}
         </button>
       </CardHeader>
       <CardContent>
@@ -101,12 +105,12 @@ export function IM5Results({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-t">
-                <th className="p-2 text-left">Touro</th>
-                <th className="p-2 text-right">IM5$ / filha</th>
-                <th className="p-2 text-right">R$ / prenhez</th>
-                <th className="p-2 text-right">R$ / dose (Conv.)</th>
-                <th className="p-2 text-right">R$ / dose (Sexado)</th>
-                <th className="p-2 text-right">Qualidade PTA</th>
+                <th className="p-2 text-left">{isEs ? "Toro" : isEn ? "Bull" : "Touro"}</th>
+                <th className="p-2 text-right">{isEs ? "IM5$ / hija" : isEn ? "IM5$ / daughter" : "IM5$ / filha"}</th>
+                <th className="p-2 text-right">{isEs ? "$ / preñez" : isEn ? "$ / pregnancy" : "R$ / prenhez"}</th>
+                <th className="p-2 text-right">{isEs ? "$ / dosis (Conv.)" : isEn ? "$ / dose (Conv.)" : "R$ / dose (Conv.)"}</th>
+                <th className="p-2 text-right">{isEs ? "$ / dosis (Sexado)" : isEn ? "$ / dose (Sexed)" : "R$ / dose (Sexado)"}</th>
+                <th className="p-2 text-right">{isEs ? "Calidad PTA" : isEn ? "PTA Quality" : "Qualidade PTA"}</th>
               </tr>
             </thead>
             <tbody>
@@ -139,7 +143,7 @@ export function IM5Results({
                   </td>
                   <td className="p-2 text-right">
                     {r.missingPTA ? (
-                      <span className="text-amber-700">PTA incompleta</span>
+                      <span className="text-amber-700">{isEs ? "PTA incompleta" : isEn ? "Incomplete PTA" : "PTA incompleta"}</span>
                     ) : (
                       <span className="text-green-700">OK</span>
                     )}
@@ -152,7 +156,7 @@ export function IM5Results({
                     className="p-4 text-sm text-muted-foreground"
                     colSpan={6}
                   >
-                    Clique em “Calcular”.
+                    {isEs ? 'Haga clic en “Calcular”.' : isEn ? 'Click “Calculate”.' : 'Clique em “Calcular”.'}
                   </td>
                 </tr>
               )}
@@ -160,8 +164,11 @@ export function IM5Results({
           </table>
         </div>
         <div className="mt-2 text-xs text-muted-foreground">
-          IM5$ = Σ(ΔPTA_i × R$/unid_i). ΔPTA_i = PTA_touro − média das mães (fazenda).
-          Valores nulos são tratados como 0 para não travar o cálculo.
+          {isEs
+            ? "IM5$ = Σ(ΔPTA_i × $/unid_i). ΔPTA_i = PTA_toro − promedio de madres (finca). Los valores nulos se tratan como 0 para no bloquear el cálculo."
+            : isEn
+            ? "IM5$ = Σ(ΔPTA_i × $/unit_i). ΔPTA_i = PTA_bull − dam average (farm). Null values are treated as 0 to avoid blocking calculation."
+            : "IM5$ = Σ(ΔPTA_i × R$/unid_i). ΔPTA_i = PTA_touro − média das mães (fazenda). Valores nulos são tratados como 0 para não travar o cálculo."}
         </div>
       </CardContent>
     </Card>

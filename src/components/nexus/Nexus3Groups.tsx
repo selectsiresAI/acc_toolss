@@ -21,6 +21,7 @@ import { getAdaptiveYAxisDomainMultiple } from "../../lib/chart-utils";
 import { formatPtaValue } from "@/utils/ptaFormat";
 import { exportSingleChartToPDF } from "@/lib/pdf/exportCharts";
 import { format } from "date-fns";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /**
  * Componente Vite-friendly (sem Next helpers, sem shadcn, sem aliases).
@@ -56,6 +57,9 @@ interface Nexus3GroupsProps {
 
 export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsProps = {}) {
   const supabase = useSupabase();
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
 
   const [farmId, setFarmId] = useState<string | null>(null);
   const [traits, setTraits] = useState<string[]>([]);
@@ -87,7 +91,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
 
         const { data: auth } = await supabase.auth.getUser();
         const uid = auth.user?.id;
-        if (!uid) throw new Error("Faça login para acessar o Nexus 3.");
+        if (!uid) throw new Error(isEs ? "Inicie sesión para acceder a Nexus 3." : isEn ? "Log in to access Nexus 3." : "Faça login para acessar o Nexus 3.");
 
         const { data, error } = await supabase
           .from("profiles")
@@ -95,7 +99,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
           .eq("id", uid)
           .single();
         if (error) throw error;
-        if (!data?.default_farm_id) throw new Error("Seu perfil não tem uma fazenda padrão.");
+        if (!data?.default_farm_id) throw new Error(isEs ? "Su perfil no tiene una finca predeterminada." : isEn ? "Your profile has no default farm." : "Seu perfil não tem uma fazenda padrão.");
         setFarmId(data.default_farm_id);
       } catch (e: any) {
         setErr(e.message || String(e));
@@ -215,14 +219,14 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
     const dau = payload.find((item) => item.dataKey === "daughters_pred")?.value;
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-lg text-sm">
-        <div className="font-medium text-gray-900">Ano: {label}</div>
+        <div className="font-medium text-gray-900">{isEs ? "Año" : isEn ? "Year" : "Ano"}: {label}</div>
         <div className="mt-2 space-y-1">
           <div className="flex items-center justify-between text-[#ED1C24]">
-            <span>Mães (média)</span>
+            <span>{isEs ? "Madres (prom.)" : isEn ? "Dams (avg)" : "Mães (média)"}</span>
             <span className="font-semibold">{formatPtaValue(trait, mom)}</span>
           </div>
           <div className="flex items-center justify-between text-gray-900">
-            <span>Filhas (predição)</span>
+            <span>{isEs ? "Hijas (predicción)" : isEn ? "Daughters (prediction)" : "Filhas (predição)"}</span>
             <span className="font-semibold">{formatPtaValue(trait, dau)}</span>
           </div>
         </div>
@@ -260,10 +264,14 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
         <div className="flex flex-col gap-4 border-b border-gray-200 pb-6 md:flex-row md:items-start md:justify-between">
           <div className="space-y-2">
             <h1 className="text-3xl font-bold tracking-tight">
-              Nexus 3 — Acasalamento em Grupos (Etapa 1)
+              {isEs ? "Nexus 3 — Apareamiento por Grupos (Etapa 1)" : isEn ? "Nexus 3 — Group Mating (Step 1)" : "Nexus 3 — Acasalamento em Grupos (Etapa 1)"}
             </h1>
             <p className="max-w-3xl text-sm text-muted-foreground">
-              Compare a média genética das mães por ano com touros selecionados. Predição: ((Mãe + MédiaTouros)/2) × 0,93
+              {isEs
+                ? "Compare el promedio genético de las madres por año con los toros seleccionados. Predicción: ((Madre + PromedioToros)/2) × 0,93"
+                : isEn
+                ? "Compare the genetic average of dams by year with selected sires. Prediction: ((Dam + SiresAvg)/2) × 0.93"
+                : "Compare a média genética das mães por ano com touros selecionados. Predição: ((Mãe + MédiaTouros)/2) × 0,93"}
             </p>
           </div>
           {onBack && (
@@ -273,7 +281,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
               className="ml-auto inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
             >
               <ChevronLeft className="h-4 w-4" />
-              Voltar
+              {isEs ? "Volver" : isEn ? "Back" : "Voltar"}
             </button>
           )}
         </div>
@@ -287,7 +295,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
       <section className="space-y-6">
         <div className="grid gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_auto] md:items-end">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Trait (PTA)</label>
+            <label className="text-sm font-medium text-gray-700">{isEn ? "Trait (PTA)" : "Trait (PTA)"}</label>
             <select
               className="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 shadow-sm focus:border-gray-900 focus:outline-none"
               value={trait}
@@ -305,7 +313,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Fazenda ativa</label>
+            <label className="text-sm font-medium text-gray-700">{isEs ? "Finca activa" : isEn ? "Active farm" : "Fazenda ativa"}</label>
             <input
               className="h-11 w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700"
               value={farmId ?? ""}
@@ -319,7 +327,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 md:w-auto"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin text-gray-500" />}
-              Atualizar
+              {isEs ? "Actualizar" : isEn ? "Refresh" : "Atualizar"}
             </button>
           </div>
         </div>
@@ -328,7 +336,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-1">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Média dos Touros</p>
+                <p className="text-sm font-medium text-gray-600">{isEs ? "Promedio de Toros" : isEn ? "Sires Average" : "Média dos Touros"}</p>
                 <p className="mt-2 text-3xl font-bold text-gray-900">{formatPtaValue(trait, bullsAvg)}</p>
               </div>
               <div className="rounded-full bg-gray-50 p-3 text-[#ED1C24]">
@@ -336,7 +344,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
               </div>
             </div>
             <p className="mt-4 text-sm text-gray-500">
-              Etapa 1: média aritmética ponderada dos touros informados.
+              {isEs ? "Etapa 1: promedio aritmético ponderado de los toros informados." : isEn ? "Step 1: weighted arithmetic average of the informed sires." : "Etapa 1: média aritmética ponderada dos touros informados."}
             </p>
           </div>
 
@@ -349,13 +357,13 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
                     className="flex min-w-[160px] flex-col gap-1 rounded-xl border border-[#ED1C24]/40 bg-white px-4 py-3 text-gray-900 shadow-sm transition hover:shadow-md"
                   >
                     <span className="text-sm font-semibold">{m.birth_year}</span>
-                    <span className="text-xs uppercase text-gray-500">média {trait.toUpperCase()}</span>
+                    <span className="text-xs uppercase text-gray-500">{isEs ? "prom." : isEn ? "avg" : "média"} {trait.toUpperCase()}</span>
                     <span className="text-xl font-semibold">{formatPtaValue(trait, m.avg_value)}</span>
                   </div>
                 ))
               ) : (
                 <div className="rounded-xl border border-dashed border-gray-300 px-4 py-6 text-sm text-gray-500">
-                  Sem dados de mães para o PTA selecionado.
+                  {isEs ? "Sin datos de madres para el PTA seleccionado." : isEn ? "No dam data for the selected PTA." : "Sem dados de mães para o PTA selecionado."}
                 </div>
               )}
             </div>
@@ -366,7 +374,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="flex-1 space-y-2">
               <label className="text-sm font-medium text-gray-700" htmlFor="bull-search">
-                Buscar touros
+                {isEs ? "Buscar toros" : isEn ? "Search sires" : "Buscar touros"}
               </label>
               <div className="relative">
                 <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -385,7 +393,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
               className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-gray-800"
             >
               <SearchIcon className="h-4 w-4" />
-              Buscar
+              {isEs ? "Buscar" : isEn ? "Search" : "Buscar"}
             </button>
           </div>
 
@@ -413,14 +421,14 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
           ) : (
             <p className="mt-6 text-sm text-gray-500">
               {bullQuery
-                ? "Nenhum touro encontrado para a busca atual."
-                : "Digite um termo de código ou nome para iniciar a busca."}
+                ? (isEs ? "Ningún toro encontrado para la búsqueda actual." : isEn ? "No sire found for the current search." : "Nenhum touro encontrado para a busca atual.")
+                : (isEs ? "Escriba un código o nombre para iniciar la búsqueda." : isEn ? "Type a code or name to start searching." : "Digite um termo de código ou nome para iniciar a busca.")}
             </p>
           )}
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900">Touros selecionados</h3>
+          <h3 className="text-sm font-semibold text-gray-900">{isEs ? "Toros seleccionados" : isEn ? "Selected sires" : "Touros selecionados"}</h3>
           {chosen.length ? (
             <div className="mt-4 space-y-3">
               {chosen.map((b, idx) => (
@@ -452,26 +460,30 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
                       onClick={() => removeBull(b.id)}
                       className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                     >
-                      Remover
+                      {isEs ? "Eliminar" : isEn ? "Remove" : "Remover"}
                     </button>
                   </div>
                 </div>
               ))}
               <div className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-4 py-2 text-sm text-gray-700">
-                Média ponderada dos touros: <span className="font-semibold">{Math.round(bullsAvg)}</span>
+                {isEs ? "Promedio ponderado de toros:" : isEn ? "Weighted average of sires:" : "Média ponderada dos touros:"} <span className="font-semibold">{Math.round(bullsAvg)}</span>
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-gray-500">Nenhum touro selecionado.</p>
+            <p className="mt-4 text-sm text-gray-500">{isEs ? "Ningún toro seleccionado." : isEn ? "No sire selected." : "Nenhum touro selecionado."}</p>
           )}
         </div>
 
         <div ref={chartRef} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Mães vs. Filhas — Predição</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{isEs ? "Madres vs. Hijas — Predicción" : isEn ? "Dams vs. Daughters — Prediction" : "Mães vs. Filhas — Predição"}</h3>
               <p className="text-sm text-gray-500">
-                Comparação anual entre as médias das mães e a predição das filhas considerando os touros escolhidos.
+                {isEs
+                  ? "Comparación anual entre los promedios de las madres y la predicción de las hijas considerando los toros seleccionados."
+                  : isEn
+                  ? "Yearly comparison between dam averages and daughter predictions considering the chosen sires."
+                  : "Comparação anual entre as médias das mães e a predição das filhas considerando os touros escolhidos."}
               </p>
             </div>
             <button
@@ -500,7 +512,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
               ) : (
                 <Download className="h-4 w-4" />
               )}
-              Exportar PDF
+              {isEs ? "Exportar PDF" : isEn ? "Export PDF" : "Exportar PDF"}
             </button>
           </div>
           <div className="mt-6 h-[360px] w-full">
@@ -522,7 +534,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
                   wrapperStyle={{ paddingBottom: 16 }}
                   formatter={(value) => (
                     <span className="text-sm text-gray-600">
-                      {value === "mothers_avg" ? "Mães (média)" : "Filhas (predição)"}
+                      {value === "mothers_avg" ? (isEs ? "Madres (prom.)" : isEn ? "Dams (avg)" : "Mães (média)") : (isEs ? "Hijas (predicción)" : isEn ? "Daughters (prediction)" : "Filhas (predição)")}
                     </span>
                   )}
                 />

@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Search, Mail, User, Calendar, MessageSquare, ArrowLeft } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS, es } from "date-fns/locale";
+import { useTranslation } from "@/hooks/useTranslation";
 import { SupportTicketDetail } from "@/components/admin/SupportTicketDetail";
 import { useNavigate } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -28,6 +29,10 @@ interface SupportTicket {
 }
 
 export function SupportTicketsPage() {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+  const dateFnsLocale = isEs ? es : isEn ? enUS : ptBR;
   const navigate = useNavigate();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [filteredTickets, setFilteredTickets] = useState<SupportTicket[]>([]);
@@ -100,22 +105,22 @@ export function SupportTicketsPage() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
-      new: { variant: "destructive", label: "Novo" },
-      in_progress: { variant: "default", label: "Em Andamento" },
-      resolved: { variant: "secondary", label: "Resolvido" },
-      closed: { variant: "outline", label: "Fechado" }
+      new: { variant: "destructive", label: isEs ? "Nuevo" : isEn ? "New" : "Novo" },
+      in_progress: { variant: "default", label: isEs ? "En Progreso" : isEn ? "In Progress" : "Em Andamento" },
+      resolved: { variant: "secondary", label: isEs ? "Resuelto" : isEn ? "Resolved" : "Resolvido" },
+      closed: { variant: "outline", label: isEs ? "Cerrado" : isEn ? "Closed" : "Fechado" }
     };
-    
+
     const config = variants[status] || variants.new;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
-      technical: "Técnico",
-      billing: "Financeiro",
-      feature: "Funcionalidade",
-      other: "Outro"
+      technical: isEs ? "Técnico" : isEn ? "Technical" : "Técnico",
+      billing: isEs ? "Financiero" : isEn ? "Billing" : "Financeiro",
+      feature: isEs ? "Funcionalidad" : isEn ? "Feature" : "Funcionalidade",
+      other: isEs ? "Otro" : isEn ? "Other" : "Outro"
     };
     return labels[category] || category;
   };
@@ -134,7 +139,7 @@ export function SupportTicketsPage() {
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Você não tem permissão para acessar esta página.
+            {isEs ? "No tiene permiso para acceder a esta página." : isEn ? "You do not have permission to access this page." : "Você não tem permissão para acessar esta página."}
           </AlertDescription>
         </Alert>
       </div>
@@ -163,25 +168,25 @@ export function SupportTicketsPage() {
             onClick={() => navigate('/')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar
+            {isEs ? "Volver" : isEn ? "Back" : "Voltar"}
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Tickets de Suporte</h1>
-            <p className="text-muted-foreground">Gerencie as solicitações de suporte dos usuários</p>
+            <h1 className="text-3xl font-bold">{isEs ? "Tickets de Soporte" : isEn ? "Support Tickets" : "Tickets de Suporte"}</h1>
+            <p className="text-muted-foreground">{isEs ? "Gestione las solicitudes de soporte de los usuarios" : isEn ? "Manage user support requests" : "Gerencie as solicitações de suporte dos usuários"}</p>
           </div>
         </div>
 
         {/* Filtros */}
         <Card>
           <CardHeader>
-            <CardTitle>Filtros</CardTitle>
+            <CardTitle>{isEs ? "Filtros" : isEn ? "Filters" : "Filtros"}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por nome, email, assunto..."
+                  placeholder={isEs ? "Buscar por nombre, email, asunto..." : isEn ? "Search by name, email, subject..." : "Buscar por nome, email, assunto..."}
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                   className="pl-9"
@@ -196,11 +201,11 @@ export function SupportTicketsPage() {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos os Status</SelectItem>
-                  <SelectItem value="new">Novo</SelectItem>
-                  <SelectItem value="in_progress">Em Andamento</SelectItem>
-                  <SelectItem value="resolved">Resolvido</SelectItem>
-                  <SelectItem value="closed">Fechado</SelectItem>
+                  <SelectItem value="all">{isEs ? "Todos los Estados" : isEn ? "All Statuses" : "Todos os Status"}</SelectItem>
+                  <SelectItem value="new">{isEs ? "Nuevo" : isEn ? "New" : "Novo"}</SelectItem>
+                  <SelectItem value="in_progress">{isEs ? "En Progreso" : isEn ? "In Progress" : "Em Andamento"}</SelectItem>
+                  <SelectItem value="resolved">{isEs ? "Resuelto" : isEn ? "Resolved" : "Resolvido"}</SelectItem>
+                  <SelectItem value="closed">{isEs ? "Cerrado" : isEn ? "Closed" : "Fechado"}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -212,11 +217,11 @@ export function SupportTicketsPage() {
                   <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas as Categorias</SelectItem>
-                  <SelectItem value="technical">Técnico</SelectItem>
-                  <SelectItem value="billing">Financeiro</SelectItem>
-                  <SelectItem value="feature">Funcionalidade</SelectItem>
-                  <SelectItem value="other">Outro</SelectItem>
+                  <SelectItem value="all">{isEs ? "Todas las Categorías" : isEn ? "All Categories" : "Todas as Categorias"}</SelectItem>
+                  <SelectItem value="technical">{isEs ? "Técnico" : isEn ? "Technical" : "Técnico"}</SelectItem>
+                  <SelectItem value="billing">{isEs ? "Financiero" : isEn ? "Billing" : "Financeiro"}</SelectItem>
+                  <SelectItem value="feature">{isEs ? "Funcionalidad" : isEn ? "Feature" : "Funcionalidade"}</SelectItem>
+                  <SelectItem value="other">{isEs ? "Otro" : isEn ? "Other" : "Outro"}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -228,7 +233,7 @@ export function SupportTicketsPage() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">{tickets.length}</div>
-              <div className="text-sm text-muted-foreground">Total de Tickets</div>
+              <div className="text-sm text-muted-foreground">{isEs ? "Total de Tickets" : isEn ? "Total Tickets" : "Total de Tickets"}</div>
             </CardContent>
           </Card>
           <Card>
@@ -236,7 +241,7 @@ export function SupportTicketsPage() {
               <div className="text-2xl font-bold text-destructive">
                 {tickets.filter(t => t.status === 'new').length}
               </div>
-              <div className="text-sm text-muted-foreground">Novos</div>
+              <div className="text-sm text-muted-foreground">{isEs ? "Nuevos" : isEn ? "New" : "Novos"}</div>
             </CardContent>
           </Card>
           <Card>
@@ -244,7 +249,7 @@ export function SupportTicketsPage() {
               <div className="text-2xl font-bold text-primary">
                 {tickets.filter(t => t.status === 'in_progress').length}
               </div>
-              <div className="text-sm text-muted-foreground">Em Andamento</div>
+              <div className="text-sm text-muted-foreground">{isEs ? "En Progreso" : isEn ? "In Progress" : "Em Andamento"}</div>
             </CardContent>
           </Card>
           <Card>
@@ -252,7 +257,7 @@ export function SupportTicketsPage() {
               <div className="text-2xl font-bold text-secondary">
                 {tickets.filter(t => t.status === 'resolved').length}
               </div>
-              <div className="text-sm text-muted-foreground">Resolvidos</div>
+              <div className="text-sm text-muted-foreground">{isEs ? "Resueltos" : isEn ? "Resolved" : "Resolvidos"}</div>
             </CardContent>
           </Card>
         </div>
@@ -262,7 +267,7 @@ export function SupportTicketsPage() {
           {filteredTickets.length === 0 ? (
             <Card>
               <CardContent className="pt-6 text-center text-muted-foreground">
-                Nenhum ticket encontrado com os filtros aplicados.
+                {isEs ? "Ningún ticket encontrado con los filtros aplicados." : isEn ? "No tickets found with the applied filters." : "Nenhum ticket encontrado com os filtros aplicados."}
               </CardContent>
             </Card>
           ) : (
@@ -293,7 +298,7 @@ export function SupportTicketsPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
-                          {format(new Date(ticket.created_at), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                          {format(new Date(ticket.created_at), isEn ? "MMMM dd 'at' HH:mm" : "dd 'de' MMMM 'às' HH:mm", { locale: dateFnsLocale })}
                         </div>
                       </div>
 
@@ -304,7 +309,7 @@ export function SupportTicketsPage() {
 
                     <Button variant="outline" size="sm">
                       <MessageSquare className="h-4 w-4 mr-2" />
-                      Ver Detalhes
+                      {isEs ? "Ver Detalles" : isEn ? "View Details" : "Ver Detalhes"}
                     </Button>
                   </div>
                 </CardContent>

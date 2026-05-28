@@ -20,8 +20,12 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import GlossaryManager from "@/pages/admin/GlossaryManager";
 import TranslationBatch from "@/pages/admin/TranslationBatch";
 import I18nDashboard from "@/pages/admin/I18nDashboard";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const AppContent = () => {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +66,7 @@ const AppContent = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 via-background to-secondary/20">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Carregando ToolSS...</p>
+          <p className="text-muted-foreground">{isEs ? "Cargando ToolSS..." : isEn ? "Loading ToolSS..." : "Carregando ToolSS..."}</p>
         </div>
       </div>
     );

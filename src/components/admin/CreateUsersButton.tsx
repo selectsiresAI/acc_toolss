@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface NewUser {
   email: string;
@@ -13,6 +14,9 @@ interface NewUser {
 }
 
 export function CreateUsersButton() {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState<NewUser[]>([
     { email: "", password: "", full_name: "" },
@@ -38,12 +42,12 @@ export function CreateUsersButton() {
     );
 
     if (validUsers.length === 0) {
-      toast.error("Preencha pelo menos um usuário completo.");
+      toast.error(isEs ? "Complete al menos un usuario." : isEn ? "Fill at least one complete user." : "Preencha pelo menos um usuário completo.");
       return;
     }
 
     if (validUsers.some((u) => u.password.length < 10)) {
-      toast.error("Todas as senhas devem ter pelo menos 10 caracteres.");
+      toast.error(isEs ? "Todas las contraseñas deben tener al menos 10 caracteres." : isEn ? "All passwords must be at least 10 characters." : "Todas as senhas devem ter pelo menos 10 caracteres.");
       return;
     }
 
@@ -60,7 +64,7 @@ export function CreateUsersButton() {
       const failCount = results.length - successCount;
 
       if (successCount > 0) {
-        toast.success(`${successCount} usuário(s) criado(s) com sucesso!`);
+        toast.success(isEs ? `${successCount} usuario(s) creado(s) con éxito!` : isEn ? `${successCount} user(s) created successfully!` : `${successCount} usuário(s) criado(s) com sucesso!`);
         setUsers([{ email: "", password: "", full_name: "" }]);
       }
 
@@ -69,10 +73,10 @@ export function CreateUsersButton() {
           .filter((r: any) => !r.success)
           .map((r: any) => `${r.email}: ${r.error}`)
           .join(", ");
-        toast.error(`${failCount} usuário(s) falharam: ${failedEmails}`);
+        toast.error(isEs ? `${failCount} usuario(s) fallaron: ${failedEmails}` : isEn ? `${failCount} user(s) failed: ${failedEmails}` : `${failCount} usuário(s) falharam: ${failedEmails}`);
       }
     } catch (error: any) {
-      toast.error(`Erro ao criar usuários: ${error.message}`);
+      toast.error(isEs ? `Error al crear usuarios: ${error.message}` : isEn ? `Error creating users: ${error.message}` : `Erro ao criar usuários: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -83,9 +87,9 @@ export function CreateUsersButton() {
       {users.map((user, index) => (
         <div key={index} className="flex items-end gap-2">
           <div className="flex-1 space-y-1">
-            <Label>Nome completo</Label>
+            <Label>{isEs ? "Nombre completo" : isEn ? "Full name" : "Nome completo"}</Label>
             <Input
-              placeholder="Nome completo"
+              placeholder={isEs ? "Nombre completo" : isEn ? "Full name" : "Nome completo"}
               value={user.full_name}
               onChange={(e) => updateUser(index, "full_name", e.target.value)}
             />
@@ -100,10 +104,10 @@ export function CreateUsersButton() {
             />
           </div>
           <div className="flex-1 space-y-1">
-            <Label>Senha (min. 10 caracteres)</Label>
+            <Label>{isEs ? "Contraseña (mín. 10 caracteres)" : isEn ? "Password (min. 10 characters)" : "Senha (min. 10 caracteres)"}</Label>
             <Input
               type="password"
-              placeholder="Senha segura"
+              placeholder={isEs ? "Contraseña segura" : isEn ? "Secure password" : "Senha segura"}
               value={user.password}
               onChange={(e) => updateUser(index, "password", e.target.value)}
             />
@@ -123,17 +127,17 @@ export function CreateUsersButton() {
       <div className="flex gap-2">
         <Button variant="outline" size="sm" onClick={addUser}>
           <Plus className="mr-1 h-4 w-4" />
-          Adicionar usuário
+          {isEs ? "Agregar usuario" : isEn ? "Add user" : "Adicionar usuário"}
         </Button>
 
         <Button onClick={createUsers} disabled={isLoading}>
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Criando usuários...
+              {isEs ? "Creando usuarios..." : isEn ? "Creating users..." : "Criando usuários..."}
             </>
           ) : (
-            "Criar Usuários"
+            isEs ? "Crear Usuarios" : isEn ? "Create Users" : "Criar Usuários"
           )}
         </Button>
       </div>

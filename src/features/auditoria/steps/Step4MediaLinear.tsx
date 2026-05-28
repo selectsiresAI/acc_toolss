@@ -17,6 +17,7 @@ import { ChartExportProvider } from "@/components/pdf/ChartExportProvider";
 import { BatchExportBar, SingleExportButton } from "@/components/pdf/ExportButtons";
 import { useRegisterChart } from "@/components/pdf/useRegisterChart";
 import { formatPtaValue } from "@/utils/ptaFormat";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type Mode = "coarse" | "full";
 
@@ -67,6 +68,7 @@ const SCS_FIXED_DOMAIN: [number, number] = [
 
 function Step4MediaLinearContent() {
   const { farmId } = useAGFilters();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>("coarse");
   const [normalize, setNormalize] = useState(false);
   const [ptaOptions, setPtaOptions] = useState<string[]>([]);
@@ -77,7 +79,7 @@ function Step4MediaLinearContent() {
 
   const aliveRef = useRef(true);
   const cardRef = useRef<HTMLDivElement>(null);
-  const chartTitle = "Média Linear";
+  const chartTitle = t("ag.linear.title");
   useRegisterChart("step4-media-linear", 4, chartTitle, cardRef);
   useEffect(() => {
     aliveRef.current = true;
@@ -97,7 +99,7 @@ function Step4MediaLinearContent() {
       if (error) {
         console.error("Failed to list PTA columns", error);
         setPtaOptions([]);
-        setErr("Falha ao carregar colunas de PTA.");
+        setErr(t("ag.linear.failColumns"));
         return;
       }
 
@@ -140,7 +142,7 @@ function Step4MediaLinearContent() {
       if (error) {
         console.error("Failed to load linear means", error);
         setRows([]);
-        setErr("Falha ao carregar as médias.");
+        setErr(t("ag.linear.failMeans"));
         return;
       }
 
@@ -317,11 +319,11 @@ function Step4MediaLinearContent() {
         <div className="flex flex-wrap items-center gap-3">
           <Select value={mode} onValueChange={(v) => setMode(v as Mode)}>
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Agrupamento" />
+              <SelectValue placeholder={t("ag.linear.grouping")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="coarse">Novilhas x Vacas</SelectItem>
-              <SelectItem value="full">Grupos (Bezerra/…)</SelectItem>
+              <SelectItem value="coarse">{t("ag.linear.coarse")}</SelectItem>
+              <SelectItem value="full">{t("ag.linear.full")}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -332,7 +334,7 @@ function Step4MediaLinearContent() {
               checked={normalize}
               onChange={(e) => setNormalize(e.target.checked)}
             />
-            Normalizar pela média da fazenda
+            {t("ag.linear.normalize")}
           </label>
         </div>
 
@@ -353,18 +355,18 @@ function Step4MediaLinearContent() {
             );
           })}
           {badges.length === 0 && (
-            <span className="text-sm text-muted-foreground">Nenhuma PTA disponível.</span>
+            <span className="text-sm text-muted-foreground">{t("ag.linear.noPta")}</span>
           )}
         </div>
 
         {loading && (
-          <div className="py-6 text-center text-muted-foreground">Carregando…</div>
+          <div className="py-6 text-center text-muted-foreground">{t("ag.linear.loading")}</div>
         )}
 
         {err && <div className="py-6 text-center text-destructive">{err}</div>}
 
         {!loading && !err && rows.length === 0 && (
-          <div className="py-6 text-center text-muted-foreground">Sem dados.</div>
+          <div className="py-6 text-center text-muted-foreground">{t("ag.linear.noData")}</div>
         )}
 
         {!loading && !err && chartData.length > 0 && (

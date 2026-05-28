@@ -19,6 +19,7 @@ import { HelpHint } from '@/components/help/HelpHint';
 import { getAutomaticCategory } from '@/utils/femaleCategories';
 import { formatPtaValue } from '@/utils/ptaFormat';
 import { fetchFemalesDenormByFarm } from '@/supabase/queries/females';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { searchBulls } from '@/supabase/queries/bulls';
 import type { BullsDenormSelection } from '@/supabase/queries/bulls';
@@ -50,6 +51,9 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
   const {
     toast
   } = useToast();
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const currentFarmId = useHerdStore(state => state.selectedHerdId);
 
   // Estados principais
@@ -107,13 +111,13 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       const data = await parseFile(file);
       setFemales(data);
       toast({
-        title: 'Fêmeas carregadas',
-        description: `${data.length} fêmeas carregadas com sucesso`
+        title: isEs ? 'Hembras cargadas' : isEn ? 'Females loaded' : 'Fêmeas carregadas',
+        description: isEs ? `${data.length} hembras cargadas con éxito` : isEn ? `${data.length} females loaded successfully` : `${data.length} fêmeas carregadas com sucesso`
       });
     } catch (error) {
       toast({
-        title: 'Erro no arquivo',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        title: isEs ? 'Error en el archivo' : isEn ? 'File error' : 'Erro no arquivo',
+        description: error instanceof Error ? error.message : (isEs ? 'Error desconocido' : isEn ? 'Unknown error' : 'Erro desconhecido'),
         variant: 'destructive'
       });
     }
@@ -128,13 +132,13 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       const data = await parseFile(file);
       setBulls(data);
       toast({
-        title: 'Touros carregados',
-        description: `${data.length} touros carregados com sucesso`
+        title: isEs ? 'Toros cargados' : isEn ? 'Bulls loaded' : 'Touros carregados',
+        description: isEs ? `${data.length} toros cargados con éxito` : isEn ? `${data.length} bulls loaded successfully` : `${data.length} touros carregados com sucesso`
       });
     } catch (error) {
       toast({
-        title: 'Erro no arquivo',
-        description: error instanceof Error ? error.message : 'Erro desconhecido',
+        title: isEs ? 'Error en el archivo' : isEn ? 'File error' : 'Erro no arquivo',
+        description: error instanceof Error ? error.message : (isEs ? 'Error desconocido' : isEn ? 'Unknown error' : 'Erro desconhecido'),
         variant: 'destructive'
       });
     }
@@ -145,8 +149,8 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
   const calculatePredictions = () => {
     if (females.length === 0) {
       toast({
-        title: 'Dados insuficientes',
-        description: 'Carregue fêmeas antes de calcular',
+        title: isEs ? 'Datos insuficientes' : isEn ? 'Insufficient data' : 'Dados insuficientes',
+        description: isEs ? 'Cargue hembras antes de calcular' : isEn ? 'Load females before calculating' : 'Carregue fêmeas antes de calcular',
         variant: 'destructive'
       });
       return;
@@ -155,8 +159,8 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
     if (bullSource === 'upload') {
       if (bulls.length === 0) {
         toast({
-          title: 'Dados insuficientes',
-          description: 'Carregue touros antes de calcular',
+          title: isEs ? 'Datos insuficientes' : isEn ? 'Insufficient data' : 'Dados insuficientes',
+          description: isEs ? 'Cargue toros antes de calcular' : isEn ? 'Load bulls before calculating' : 'Carregue touros antes de calcular',
           variant: 'destructive'
         });
         return;
@@ -164,8 +168,8 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       const validBullIds = selectedBullIds.filter(id => id.trim() !== '');
       if (validBullIds.length === 0) {
         toast({
-          title: 'Touros não selecionados',
-          description: 'Selecione pelo menos um touro para acasalamento',
+          title: isEs ? 'Toros no seleccionados' : isEn ? 'No bulls selected' : 'Touros não selecionados',
+          description: isEs ? 'Seleccione al menos un toro para apareamiento' : isEn ? 'Select at least one bull for mating' : 'Selecione pelo menos um touro para acasalamento',
           variant: 'destructive'
         });
         return;
@@ -174,8 +178,8 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
     } else {
       if (selectedBullsFromSearch.length === 0) {
         toast({
-          title: 'Touros não selecionados',
-          description: 'Selecione pelo menos um touro para acasalamento',
+          title: isEs ? 'Toros no seleccionados' : isEn ? 'No bulls selected' : 'Touros não selecionados',
+          description: isEs ? 'Seleccione al menos un toro para apareamiento' : isEn ? 'Select at least one bull for mating' : 'Selecione pelo menos um touro para acasalamento',
           variant: 'destructive'
         });
         return;
@@ -235,13 +239,13 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       });
       setPredictions(results);
       toast({
-        title: 'Predições calculadas',
-        description: `${results.length} predições geradas com sucesso`
+        title: isEs ? 'Predicciones calculadas' : isEn ? 'Predictions calculated' : 'Predições calculadas',
+        description: isEs ? `${results.length} predicciones generadas con éxito` : isEn ? `${results.length} predictions generated successfully` : `${results.length} predições geradas com sucesso`
       });
     } catch (error) {
       toast({
-        title: 'Erro no cálculo',
-        description: 'Erro ao calcular predições',
+        title: isEs ? 'Error en el cálculo' : isEn ? 'Calculation error' : 'Erro no cálculo',
+        description: isEs ? 'Error al calcular predicciones' : isEn ? 'Error calculating predictions' : 'Erro ao calcular predições',
         variant: 'destructive'
       });
     } finally {
@@ -272,8 +276,8 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
     utils.book_append_sheet(wb, ws, 'Predições Nexus 1');
     writeFileXLSX(wb, 'Predicoes_Nexus1.xlsx');
     toast({
-      title: 'Exportação concluída',
-      description: 'Arquivo exportado com sucesso'
+      title: isEs ? 'Exportación completada' : isEn ? 'Export completed' : 'Exportação concluída',
+      description: isEs ? 'Archivo exportado con éxito' : isEn ? 'File exported successfully' : 'Arquivo exportado com sucesso'
     });
   };
 
@@ -281,8 +285,8 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
   const searchBullsByNAAB = async () => {
     if (!naabSearch.trim()) {
       toast({
-        title: 'Digite um NAAB',
-        description: 'Digite o código NAAB para buscar touros',
+        title: isEs ? 'Ingrese un NAAB' : isEn ? 'Enter a NAAB' : 'Digite um NAAB',
+        description: isEs ? 'Ingrese el código NAAB para buscar toros' : isEn ? 'Enter the NAAB code to search for bulls' : 'Digite o código NAAB para buscar touros',
         variant: 'destructive'
       });
       return;
@@ -294,21 +298,21 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       setSearchResults(data);
       if (!data || data.length === 0) {
         toast({
-          title: 'Nenhum touro encontrado',
-          description: 'Não foi encontrado nenhum touro com esse NAAB',
+          title: isEs ? 'Ningún toro encontrado' : isEn ? 'No bull found' : 'Nenhum touro encontrado',
+          description: isEs ? 'No se encontró ningún toro con este NAAB' : isEn ? 'No bull found with this NAAB' : 'Não foi encontrado nenhum touro com esse NAAB',
           variant: 'destructive'
         });
       } else {
         toast({
-          title: 'Touros encontrados',
-          description: `${data.length} touros encontrados`
+          title: isEs ? 'Toros encontrados' : isEn ? 'Bulls found' : 'Touros encontrados',
+          description: isEs ? `${data.length} toros encontrados` : isEn ? `${data.length} bulls found` : `${data.length} touros encontrados`
         });
       }
     } catch (error) {
       console.error('Erro ao buscar touros:', error);
       toast({
-        title: 'Erro na busca',
-        description: 'Erro ao buscar touros no banco de dados',
+        title: isEs ? 'Error en la búsqueda' : isEn ? 'Search error' : 'Erro na busca',
+        description: isEs ? 'Error al buscar toros en la base de datos' : isEn ? 'Error searching bulls in the database' : 'Erro ao buscar touros no banco de dados',
         variant: 'destructive'
       });
     } finally {
@@ -320,16 +324,16 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
   const addBullFromSearch = (bull: BullsDenormSelection) => {
     if (selectedBullsFromSearch.some(b => b.code === bull.code)) {
       toast({
-        title: 'Touro já selecionado',
-        description: 'Este touro já foi adicionado à seleção',
+        title: isEs ? 'Toro ya seleccionado' : isEn ? 'Bull already selected' : 'Touro já selecionado',
+        description: isEs ? 'Este toro ya fue agregado a la selección' : isEn ? 'This bull was already added to the selection' : 'Este touro já foi adicionado à seleção',
         variant: 'destructive'
       });
       return;
     }
     setSelectedBullsFromSearch(prev => [...prev, bull]);
     toast({
-      title: 'Touro adicionado',
-      description: `${bull.name} foi adicionado à seleção`
+      title: isEs ? 'Toro agregado' : isEn ? 'Bull added' : 'Touro adicionado',
+      description: isEs ? `${bull.name} fue agregado a la selección` : isEn ? `${bull.name} was added to the selection` : `${bull.name} foi adicionado à seleção`
     });
   };
 
@@ -420,8 +424,8 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
     if (lastFarmId && lastFarmId !== currentFarmId) {
       resetStateForFarmChange();
       toast({
-        title: 'Seleção de rebanho atualizada',
-        description: 'As seleções anteriores foram limpas porque você alterou o rebanho.'
+        title: isEs ? 'Selección de hato actualizada' : isEn ? 'Herd selection updated' : 'Seleção de rebanho atualizada',
+        description: isEs ? 'Las selecciones anteriores fueron borradas porque cambió el hato.' : isEn ? 'Previous selections were cleared because you changed the herd.' : 'As seleções anteriores foram limpas porque você alterou o rebanho.'
       });
     }
     if (lastFarmId !== currentFarmId) {
@@ -431,16 +435,16 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
   const loadFemalesFromDatabase = async () => {
     if (selectedClassifications.length === 0 || selectedCategories.length === 0) {
       toast({
-        title: 'Filtros obrigatórios',
-        description: 'Selecione ao menos uma classificação e uma categoria',
+        title: isEs ? 'Filtros obligatorios' : isEn ? 'Required filters' : 'Filtros obrigatórios',
+        description: isEs ? 'Seleccione al menos una clasificación y una categoría' : isEn ? 'Select at least one classification and one category' : 'Selecione ao menos uma classificação e uma categoria',
         variant: 'destructive'
       });
       return;
     }
     if (!currentFarmId) {
       toast({
-        title: 'Selecione um rebanho',
-        description: 'Escolha um rebanho no dashboard antes de carregar as fêmeas segmentadas.',
+        title: isEs ? 'Seleccione un hato' : isEn ? 'Select a herd' : 'Selecione um rebanho',
+        description: isEs ? 'Elija un hato en el dashboard antes de cargar las hembras segmentadas.' : isEn ? 'Choose a herd in the dashboard before loading segmented females.' : 'Escolha um rebanho no dashboard antes de carregar as fêmeas segmentadas.',
         variant: 'destructive'
       });
       return;
@@ -454,8 +458,8 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       if (error) throw error;
       if (!data || data.length === 0) {
         toast({
-          title: 'Nenhuma fêmea encontrada',
-          description: 'Não há fêmeas segmentadas com os filtros selecionados. Execute a segmentação primeiro na página de Segmentação.',
+          title: isEs ? 'Ninguna hembra encontrada' : isEn ? 'No females found' : 'Nenhuma fêmea encontrada',
+          description: isEs ? 'No hay hembras segmentadas con los filtros seleccionados. Ejecute la segmentación primero en la página de Segmentación.' : isEn ? 'No segmented females with the selected filters. Run segmentation first on the Segmentation page.' : 'Não há fêmeas segmentadas com os filtros selecionados. Execute a segmentação primeiro na página de Segmentação.',
           variant: 'destructive'
         });
         setFemales([]);
@@ -477,8 +481,8 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       });
       if (sanitizedSegmentations.length === 0) {
         toast({
-          title: 'Nenhuma fêmea disponível',
-          description: 'As fêmeas segmentadas encontradas não pertencem ao rebanho selecionado.',
+          title: isEs ? 'Ninguna hembra disponible' : isEn ? 'No females available' : 'Nenhuma fêmea disponível',
+          description: isEs ? 'Las hembras segmentadas encontradas no pertenecen al hato seleccionado.' : isEn ? 'Segmented females found do not belong to the selected herd.' : 'As fêmeas segmentadas encontradas não pertencem ao rebanho selecionado.',
           variant: 'destructive'
         });
         setFemales([]);
@@ -486,8 +490,8 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       }
       if ((data?.length ?? 0) > sanitizedSegmentations.length) {
         toast({
-          title: 'Fêmeas ajustadas',
-          description: 'Algumas fêmeas foram desconsideradas por pertencerem a outro rebanho.'
+          title: isEs ? 'Hembras ajustadas' : isEn ? 'Females adjusted' : 'Fêmeas ajustadas',
+          description: isEs ? 'Algunas hembras fueron excluidas porque pertenecen a otro hato.' : isEn ? 'Some females were excluded because they belong to another herd.' : 'Algumas fêmeas foram desconsideradas por pertencerem a outro rebanho.'
         });
       }
 
@@ -565,14 +569,14 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       });
       setFemales(convertedFemales);
       toast({
-        title: 'Fêmeas carregadas',
-        description: `${convertedFemales.length} fêmeas carregadas do banco de dados`
+        title: isEs ? 'Hembras cargadas' : isEn ? 'Females loaded' : 'Fêmeas carregadas',
+        description: isEs ? `${convertedFemales.length} hembras cargadas de la base de datos` : isEn ? `${convertedFemales.length} females loaded from database` : `${convertedFemales.length} fêmeas carregadas do banco de dados`
       });
     } catch (error) {
       console.error('Erro ao carregar fêmeas:', error);
       toast({
-        title: 'Erro ao carregar',
-        description: 'Erro ao carregar fêmeas do banco de dados',
+        title: isEs ? 'Error al cargar' : isEn ? 'Loading error' : 'Erro ao carregar',
+        description: isEs ? 'Error al cargar hembras de la base de datos' : isEn ? 'Error loading females from database' : 'Erro ao carregar fêmeas do banco de dados',
         variant: 'destructive'
       });
     } finally {
@@ -612,7 +616,7 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
         </div>
       </div>
       <div className="ml-6 text-sm text-muted-foreground">
-        Passo {currentStep} de 3: {currentStep === 1 ? 'Escolher Fêmeas' : currentStep === 2 ? 'Escolher Touros' : 'Calcular Predições'}
+        {isEs ? `Paso ${currentStep} de 3: ` : isEn ? `Step ${currentStep} of 3: ` : `Passo ${currentStep} de 3: `}{currentStep === 1 ? (isEs ? 'Elegir Hembras' : isEn ? 'Choose Females' : 'Escolher Fêmeas') : currentStep === 2 ? (isEs ? 'Elegir Toros' : isEn ? 'Choose Bulls' : 'Escolher Touros') : (isEs ? 'Calcular Predicciones' : isEn ? 'Calculate Predictions' : 'Calcular Predições')}
       </div>
     </div>;
   const updateSelectedBulls = (count: number) => {
@@ -637,16 +641,16 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       <div className="flex flex-wrap items-center gap-4">
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
+          {isEs ? "Volver" : isEn ? "Back" : "Voltar"}
         </Button>
         <div className="min-w-0 flex-1 space-y-1">
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Target className="w-6 h-6" />
-            Nexus 1: Predição Genômica
-            <HelpHint content="Importe dados genômicos, valide e gere PTAs projetadas com alta confiabilidade" />
+            {isEs ? "Nexus 1: Predicción Genómica" : isEn ? "Nexus 1: Genomic Prediction" : "Nexus 1: Predição Genômica"}
+            <HelpHint content={isEs ? "Importe datos genómicos, valide y genere PTAs proyectadas con alta confiabilidad" : isEn ? "Import genomic data, validate and generate projected PTAs with high reliability" : "Importe dados genômicos, valide e gere PTAs projetadas com alta confiabilidade"} />
           </h2>
           <p className="text-muted-foreground">
-            Baseado em dados genômicos completos - Fórmula: ((PTA Fêmea + PTA Touro) / 2) × 0,93
+            {isEs ? "Basado en datos genómicos completos - Fórmula: ((PTA Hembra + PTA Toro) / 2) × 0,93" : isEn ? "Based on full genomic data - Formula: ((Female PTA + Bull PTA) / 2) × 0.93" : "Baseado em dados genômicos completos - Fórmula: ((PTA Fêmea + PTA Touro) / 2) × 0,93"}
           </p>
         </div>
       </div>
@@ -659,7 +663,7 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
-              Passo 1: Escolher Fêmeas
+              {isEs ? "Paso 1: Elegir Hembras" : isEn ? "Step 1: Choose Females" : "Passo 1: Escolher Fêmeas"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -667,42 +671,42 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
             <div className="flex gap-4 items-center">
               <Button variant={dataSource === 'upload' ? 'default' : 'outline'} onClick={() => setDataSource('upload')} className="flex-1">
                 <FileUp className="w-4 h-4 mr-2" />
-                Upload de Arquivo
+                {isEs ? "Subir Archivo" : isEn ? "File Upload" : "Upload de Arquivo"}
               </Button>
               <Button variant={dataSource === 'database' ? 'default' : 'outline'} onClick={() => setDataSource('database')} className="flex-1 bg-gray-300 hover:bg-gray-200">
                 <Database className="w-4 h-4 mr-2" />
-                Fêmeas Segmentadas
+                {isEs ? "Hembras Segmentadas" : isEn ? "Segmented Females" : "Fêmeas Segmentadas"}
               </Button>
-              <HelpHint content="Escolha entre subir um lote de genótipos ou usar listas segmentadas já salvas" side="bottom" />
+              <HelpHint content={isEs ? "Elija entre subir un lote de genotipos o usar listas segmentadas previamente guardadas" : isEn ? "Choose between uploading a genotype batch or using previously saved segmented lists" : "Escolha entre subir um lote de genótipos ou usar listas segmentadas já salvas"} side="bottom" />
             </div>
 
             {dataSource === 'upload' ? <div className="space-y-4">
               <div>
-                <Label htmlFor="female-upload">Carregar arquivo (.xlsx, .xls, .xlsm, .csv)</Label>
+                <Label htmlFor="female-upload">{isEs ? "Cargar archivo (.xlsx, .xls, .xlsm, .csv)" : isEn ? "Load file (.xlsx, .xls, .xlsm, .csv)" : "Carregar arquivo (.xlsx, .xls, .xlsm, .csv)"}</Label>
                 <Input id="female-upload" type="file" accept=".xlsx,.xls,.xlsm,.csv" onChange={handleFemaleUpload} className="mt-1" />
               </div>
               <p className="text-sm text-muted-foreground">
-                Arquivo deve conter as colunas: ID Fazenda, Nome e todos os PTAs necessários
+                {isEs ? "El archivo debe contener las columnas: ID Finca, Nombre y todos los PTAs requeridos" : isEn ? "File must contain columns: ID Fazenda, Nome and all required PTAs" : "Arquivo deve conter as colunas: ID Fazenda, Nome e todos os PTAs necessários"}
               </p>
-              <HelpHint content="Utilize o template Nexus 1 e valide colunas obrigatórias antes de importar" side="bottom" />
+              <HelpHint content={isEs ? "Utilice la plantilla Nexus 1 y valide las columnas obligatorias antes de importar" : isEn ? "Use the Nexus 1 template and validate required columns before importing" : "Utilize o template Nexus 1 e valide colunas obrigatórias antes de importar"} side="bottom" />
             </div> : <div className="space-y-4">
                 <div>
-                  {currentFarmId ? <Badge variant="outline">Rebanho ativo: {currentFarmId}</Badge> : <p className="text-sm text-muted-foreground">
-                      Selecione um rebanho no dashboard para habilitar a listagem de fêmeas segmentadas.
+                  {currentFarmId ? <Badge variant="outline">{isEs ? "Hato activo:" : isEn ? "Active herd:" : "Rebanho ativo:"} {currentFarmId}</Badge> : <p className="text-sm text-muted-foreground">
+                      {isEs ? "Seleccione un hato en el dashboard para habilitar el listado de hembras segmentadas." : isEn ? "Select a herd on the dashboard to enable segmented female listing." : "Selecione um rebanho no dashboard para habilitar a listagem de fêmeas segmentadas."}
                     </p>}
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Classificações</Label>
+                  <Label className="text-sm font-medium">{isEs ? "Clasificaciones" : isEn ? "Classifications" : "Classificações"}</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {[{
                 value: 'donor',
-                label: 'Doadora'
+                label: isEs ? 'Donante' : isEn ? 'Donor' : 'Doadora'
               }, {
                 value: 'inter',
-                label: 'Intermediária'
+                label: isEs ? 'Intermedia' : isEn ? 'Intermediate' : 'Intermediária'
               }, {
                 value: 'recipient',
-                label: 'Receptora'
+                label: isEs ? 'Receptora' : isEn ? 'Recipient' : 'Receptora'
               }].map(({
                 value,
                 label
@@ -719,27 +723,27 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
                         </Label>
                       </div>)}
                   </div>
-                  <HelpHint content="Combine categorias estratégicas (doadoras, receptoras) para direcionar o cálculo" side="bottom" />
+                  <HelpHint content={isEs ? "Combine categorías estratégicas (donantes, receptoras) para orientar el cálculo" : isEn ? "Combine strategic categories (donors, recipients) to guide the calculation" : "Combine categorias estratégicas (doadoras, receptoras) para direcionar o cálculo"} side="bottom" />
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium">Categorias</Label>
+                  <Label className="text-sm font-medium">{isEs ? "Categorías" : isEn ? "Categories" : "Categorias"}</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {[{
                 value: 'bezerra',
-                label: 'Bezerra'
+                label: isEs ? 'Ternera' : isEn ? 'Calf' : 'Bezerra'
               }, {
                 value: 'novilha',
-                label: 'Novilha'
+                label: isEs ? 'Novilla' : isEn ? 'Heifer' : 'Novilha'
               }, {
                 value: 'primipara',
-                label: 'Primípara'
+                label: isEs ? 'Primípara' : isEn ? 'Primiparous' : 'Primípara'
               }, {
                 value: 'secundipara',
-                label: 'Secundípara'
+                label: isEs ? 'Secundípara' : isEn ? 'Secundiparous' : 'Secundípara'
               }, {
                 value: 'multipara',
-                label: 'Multípara'
+                label: isEs ? 'Multípara' : isEn ? 'Multiparous' : 'Multípara'
               }].map(({
                 value,
                 label
@@ -760,17 +764,17 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
 
                 <Button onClick={loadFemalesFromDatabase} disabled={loadingDatabase || !currentFarmId} className="w-full">
                   <Database className="w-4 h-4 mr-2" />
-                  {loadingDatabase ? 'Carregando...' : 'Carregar Fêmeas'}
+                  {loadingDatabase ? (isEs ? 'Cargando...' : isEn ? 'Loading...' : 'Carregando...') : (isEs ? 'Cargar Hembras' : isEn ? 'Load Females' : 'Carregar Fêmeas')}
                 </Button>
               </div>}
 
             {females.length > 0 && <div className="space-y-2">
                 <Badge variant="secondary">
-                  {females.length} fêmeas carregadas
+                  {isEs ? `${females.length} hembras cargadas` : isEn ? `${females.length} females loaded` : `${females.length} fêmeas carregadas`}
                 </Badge>
                 <div className="flex justify-end">
                   <Button onClick={nextStep} disabled={!canProceedToStep2}>
-                    Próximo Passo
+                    {isEs ? "Siguiente Paso" : isEn ? "Next Step" : "Próximo Passo"}
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -783,7 +787,7 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="w-5 h-5" />
-              Passo 2: Escolher Touros
+              {isEs ? "Paso 2: Elegir Toros" : isEn ? "Step 2: Choose Bulls" : "Passo 2: Escolher Touros"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -791,52 +795,52 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
             <div className="flex gap-4">
               <Button variant={bullSource === 'upload' ? 'default' : 'outline'} onClick={() => setBullSource('upload')} className="flex-1">
                 <FileUp className="w-4 h-4 mr-2" />
-                Upload de Arquivo
+                {isEs ? "Subir Archivo" : isEn ? "File Upload" : "Upload de Arquivo"}
               </Button>
               <Button variant={bullSource === 'search' ? 'default' : 'outline'} onClick={() => setBullSource('search')} className="flex-1">
                 <Search className="w-4 h-4 mr-2" />
-                Buscar por NAAB
+                {isEs ? "Buscar por NAAB" : isEn ? "Search by NAAB" : "Buscar por NAAB"}
               </Button>
             </div>
 
             {bullSource === 'upload' ? <div className="space-y-4">
                 <div>
-                  <Label htmlFor="bull-upload">Carregar arquivo (.xlsx, .xls, .xlsm, .csv)</Label>
+                  <Label htmlFor="bull-upload">{isEs ? "Cargar archivo (.xlsx, .xls, .xlsm, .csv)" : isEn ? "Load file (.xlsx, .xls, .xlsm, .csv)" : "Carregar arquivo (.xlsx, .xls, .xlsm, .csv)"}</Label>
                   <Input id="bull-upload" type="file" accept=".xlsx,.xls,.xlsm,.csv" onChange={handleBullUpload} className="mt-1" />
                 </div>
                 {bulls.length > 0 && <Badge variant="secondary">
-                    {bulls.length} touros carregados
+                    {isEs ? `${bulls.length} toros cargados` : isEn ? `${bulls.length} bulls loaded` : `${bulls.length} touros carregados`}
                   </Badge>}
                 <p className="text-sm text-muted-foreground">
-                  Arquivo deve conter as colunas: ID Fazenda, Nome e todos os PTAs necessários
+                  {isEs ? "El archivo debe contener las columnas: ID Finca, Nombre y todos los PTAs requeridos" : isEn ? "File must contain columns: ID Fazenda, Nome and all required PTAs" : "Arquivo deve conter as colunas: ID Fazenda, Nome e todos os PTAs necessários"}
                 </p>
 
                 {bulls.length > 0 && <div className="space-y-4">
                     <div>
-                      <Label htmlFor="bull-count">Número de touros por fêmea</Label>
+                      <Label htmlFor="bull-count">{isEs ? "Número de toros por hembra" : isEn ? "Number of bulls per female" : "Número de touros por fêmea"}</Label>
                       <Select value={selectedBulls.toString()} onValueChange={value => updateSelectedBulls(parseInt(value))}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1">1 touro</SelectItem>
-                          <SelectItem value="2">2 touros</SelectItem>
-                          <SelectItem value="3">3 touros</SelectItem>
+                          <SelectItem value="1">{isEs ? "1 toro" : isEn ? "1 bull" : "1 touro"}</SelectItem>
+                          <SelectItem value="2">{isEs ? "2 toros" : isEn ? "2 bulls" : "2 touros"}</SelectItem>
+                          <SelectItem value="3">{isEs ? "3 toros" : isEn ? "3 bulls" : "3 touros"}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Selecionar Touros</Label>
+                      <Label>{isEs ? "Seleccionar Toros" : isEn ? "Select Bulls" : "Selecionar Touros"}</Label>
                       {selectedBullIds.map((bullId, index) => <div key={index} className="flex items-center gap-2">
-                          <Label className="min-w-[80px]">Touro {index + 1}:</Label>
+                          <Label className="min-w-[80px]">{isEs ? "Toro" : isEn ? "Bull" : "Touro"} {index + 1}:</Label>
                           <Select value={bullId} onValueChange={value => {
                   const newIds = [...selectedBullIds];
                   newIds[index] = value;
                   setSelectedBullIds(newIds);
                 }}>
                             <SelectTrigger>
-                              <SelectValue placeholder="Selecione um touro" />
+                              <SelectValue placeholder={isEs ? "Seleccione un toro" : isEn ? "Select a bull" : "Selecione um touro"} />
                             </SelectTrigger>
                             <SelectContent>
                               {bulls.map((bull, bullIndex) => <SelectItem key={bullIndex} value={bull['ID Fazenda'] || bull['Nome']}>
@@ -850,16 +854,16 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
               </div> : <div className="space-y-4">
                 {/* Busca por NAAB */}
                 <div className="flex gap-2">
-                  <Input placeholder="Digite o código NAAB do touro" value={naabSearch} onChange={e => setNaabSearch(e.target.value)} onKeyPress={e => e.key === 'Enter' && searchBullsByNAAB()} />
+                  <Input placeholder={isEs ? "Ingrese el código NAAB del toro" : isEn ? "Enter the bull NAAB code" : "Digite o código NAAB do touro"} value={naabSearch} onChange={e => setNaabSearch(e.target.value)} onKeyPress={e => e.key === 'Enter' && searchBullsByNAAB()} />
                   <Button onClick={searchBullsByNAAB} disabled={searchingBulls}>
                     <Search className="w-4 h-4 mr-2" />
-                    {searchingBulls ? 'Buscando...' : 'Buscar'}
+                    {searchingBulls ? (isEs ? 'Buscando...' : isEn ? 'Searching...' : 'Buscando...') : (isEs ? 'Buscar' : isEn ? 'Search' : 'Buscar')}
                   </Button>
                 </div>
 
                 {/* Resultados da busca */}
                 {searchResults.length > 0 && <div className="space-y-2">
-                    <Label>Resultados da Busca:</Label>
+                    <Label>{isEs ? "Resultados de la Búsqueda:" : isEn ? "Search Results:" : "Resultados da Busca:"}</Label>
                     <div className="max-h-60 overflow-y-auto space-y-2">
                        {searchResults.map((bull, index) => <div key={bull.code || bull.id || index} className="flex items-center justify-between p-3 border rounded-lg">
                           <div>
@@ -870,7 +874,7 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
                           </div>
                           <Button size="sm" onClick={() => addBullFromSearch(bull)} disabled={selectedBullsFromSearch.some(b => b.code === bull.code)}>
                             <Plus className="w-4 h-4 mr-1" />
-                            Adicionar
+                            {isEs ? "Agregar" : isEn ? "Add" : "Adicionar"}
                           </Button>
                         </div>)}
                     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,9 @@ interface OriginalChartsPageProps {
 }
 
 const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], daughters = [], onBack }) => {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [chartType, setChartType] = useState<"panorama" | "evolucao" | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("geral");
   const [selectedPTAs, setSelectedPTAs] = useState<string[]>(["TPI"]);
@@ -42,7 +46,19 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
     ];
   }, [daughters]);
 
-  const categories = [
+  const categories = isEs ? [
+    { key: "geral", name: "General" },
+    { key: "novilhas", name: "Vaquillas" },
+    { key: "primiparas", name: "Primíparas" },
+    { key: "secundiparas", name: "Secundíparas" },
+    { key: "multiparas", name: "Multíparas" },
+  ] : isEn ? [
+    { key: "geral", name: "General" },
+    { key: "novilhas", name: "Heifers" },
+    { key: "primiparas", name: "Primiparous" },
+    { key: "secundiparas", name: "Secundiparous" },
+    { key: "multiparas", name: "Multiparous" },
+  ] : [
     { key: "geral", name: "Geral" },
     { key: "novilhas", name: "Novilhas" },
     { key: "primiparas", name: "Primíparas" },
@@ -71,7 +87,15 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
 
   // Panorama view
   if (chartType === "panorama") {
-    const distributionData = [
+    const distributionData = isEs ? [
+      { name: "Sobre el Promedio", value: 35, color: "#22c55e" },
+      { name: "Promedio", value: 45, color: "#eab308" },
+      { name: "Bajo el Promedio", value: 20, color: "#ef4444" },
+    ] : isEn ? [
+      { name: "Above Average", value: 35, color: "#22c55e" },
+      { name: "Average", value: 45, color: "#eab308" },
+      { name: "Below Average", value: 20, color: "#ef4444" },
+    ] : [
       { name: "Acima da Média", value: 35, color: "#22c55e" },
       { name: "Média", value: 45, color: "#eab308" },
       { name: "Abaixo da Média", value: 20, color: "#ef4444" },
@@ -83,9 +107,9 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
           <div className="flex h-16 items-center px-4">
             <Button variant="ghost" onClick={() => setChartType(null)} className="mr-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar aos Gráficos
+              {isEs ? "Volver a Gráficos" : isEn ? "Back to Charts" : "Voltar aos Gráficos"}
             </Button>
-            <h1 className="text-xl font-semibold">Panorama do Rebanho</h1>
+            <h1 className="text-xl font-semibold">{isEs ? "Panorama del Hato" : isEn ? "Herd Overview" : "Panorama do Rebanho"}</h1>
           </div>
         </div>
         
@@ -93,7 +117,7 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
           <div className="grid gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Distribuição por Performance</CardTitle>
+                <CardTitle>{isEs ? "Distribución por Rendimiento" : isEn ? "Distribution by Performance" : "Distribuição por Performance"}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -119,7 +143,7 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
 
             <Card>
               <CardHeader>
-                <CardTitle>Média dos Índices Principais</CardTitle>
+                <CardTitle>{isEs ? "Promedios de Índices Principales" : isEn ? "Main Index Averages" : "Média dos Índices Principais"}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -130,7 +154,7 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
                     <Legend />
                     <Bar dataKey="TPI" fill="hsl(var(--primary))" name="TPI" />
                     <Bar dataKey="NM_dollar" fill="hsl(var(--chart-2))" name="NM$" />
-                    <Bar dataKey="Milk" fill="hsl(var(--chart-3))" name="Leite" />
+                    <Bar dataKey="Milk" fill="hsl(var(--chart-3))" name={isEs ? "Leche" : isEn ? "Milk" : "Leite"} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -149,9 +173,9 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
           <div className="flex h-16 items-center px-4">
             <Button variant="ghost" onClick={() => setChartType(null)} className="mr-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar aos Gráficos
+              {isEs ? "Volver a Gráficos" : isEn ? "Back to Charts" : "Voltar aos Gráficos"}
             </Button>
-            <h1 className="text-xl font-semibold">Evolução do Rebanho</h1>
+            <h1 className="text-xl font-semibold">{isEs ? "Evolución del Hato" : isEn ? "Herd Evolution" : "Evolução do Rebanho"}</h1>
           </div>
         </div>
         
@@ -161,7 +185,7 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
             <div className="flex gap-4 items-center">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Categoria" />
+                  <SelectValue placeholder={isEs ? "Categoría" : isEn ? "Category" : "Categoria"} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -193,7 +217,7 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
             {/* Evolution Chart */}
             <Card>
               <CardHeader>
-                <CardTitle>Evolução Genética - Mães vs Filhas (Projeção)</CardTitle>
+                <CardTitle>{isEs ? "Evolución Genética - Madres vs Hijas (Proyección)" : isEn ? "Genetic Evolution - Dams vs Daughters (Projection)" : "Evolução Genética - Mães vs Filhas (Projeção)"}</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
@@ -208,7 +232,7 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
                       stroke="#DC2626" 
                       strokeWidth={2} 
                       dot={{ fill: "#DC2626", strokeWidth: 2, r: 4 }} 
-                      name="Mães" 
+                      name={isEs ? "Madres" : isEn ? "Dams" : "Mães"}
                     />
                     <Line 
                       type="monotone" 
@@ -216,15 +240,15 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
                       stroke="#1F2937" 
                       strokeWidth={2} 
                       dot={{ fill: "#1F2937", strokeWidth: 2, r: 4 }} 
-                      name="Filhas (Projeção)" 
+                      name={isEs ? "Hijas (Proyección)" : isEn ? "Daughters (Projection)" : "Filhas (Projeção)"}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               </CardContent>
               <div className="bg-red-600 text-white px-4 py-2">
                 <p className="text-sm font-medium">
-                  Ganho genético médio: {totalGeneticGain > 0 ? '+' : ''}{totalGeneticGain.toFixed(1)} pontos | 
-                  Animais abaixo da média: {Math.floor(Math.random() * 30 + 20)}%
+                  {isEs ? "Ganancia genética promedio" : isEn ? "Average genetic gain" : "Ganho genético médio"}: {totalGeneticGain > 0 ? '+' : ''}{totalGeneticGain.toFixed(1)} {isEs ? "puntos" : isEn ? "points" : "pontos"} |
+                  {isEs ? "Animales bajo el promedio" : isEn ? "Animals below average" : "Animais abaixo da média"}: {Math.floor(Math.random() * 30 + 20)}%
                 </p>
               </div>
             </Card>
@@ -241,9 +265,9 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
         <div className="flex h-16 items-center px-4">
           <Button variant="ghost" onClick={onBack} className="mr-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
+            {isEs ? "Volver" : isEn ? "Back" : "Voltar"}
           </Button>
-          <h1 className="text-xl font-semibold">Gráficos e Análises</h1>
+          <h1 className="text-xl font-semibold">{isEs ? "Gráficos y Análisis" : isEn ? "Charts & Analyses" : "Gráficos e Análises"}</h1>
         </div>
       </div>
       
@@ -254,9 +278,9 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
               <TrendingUp className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="text-2xl font-bold">Análises Genéticas</h2>
+            <h2 className="text-2xl font-bold">{isEs ? "Análisis Genéticos" : isEn ? "Genetic Analyses" : "Análises Genéticas"}</h2>
             <p className="text-muted-foreground">
-              Visualize tendências genéticas e projeções do rebanho
+              {isEs ? "Visualice tendencias genéticas y proyecciones del hato" : isEn ? "View genetic trends and herd projections" : "Visualize tendências genéticas e projeções do rebanho"}
             </p>
           </div>
 
@@ -266,12 +290,12 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <PieChartIcon className="w-5 h-5 text-primary" />
-                  Panorama do Rebanho
+                  {isEs ? "Panorama del Hato" : isEn ? "Herd Overview" : "Panorama do Rebanho"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Visão geral da distribuição do rebanho por performance e categorias
+                  {isEs ? "Visión general de la distribución del hato por rendimiento y categorías" : isEn ? "Overview of herd distribution by performance and categories" : "Visão geral da distribuição do rebanho por performance e categorias"}
                 </p>
               </CardContent>
             </Card>
@@ -280,12 +304,12 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-primary" />
-                  Evolução Genética
+                  {isEs ? "Evolución Genética" : isEn ? "Genetic Evolution" : "Evolução Genética"}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Acompanhe a evolução anual com comparação mães × filhas (projeção)
+                  {isEs ? "Siga la evolución anual con comparación madres × hijas (proyección)" : isEn ? "Track annual evolution with dam × daughter comparison (projection)" : "Acompanhe a evolução anual com comparação mães × filhas (projeção)"}
                 </p>
               </CardContent>
             </Card>
@@ -296,9 +320,13 @@ const OriginalChartsPage: React.FC<OriginalChartsPageProps> = ({ mothers = [], d
             <CardContent className="pt-6">
               <div className="text-center space-y-2">
                 <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto" />
-                <h3 className="text-lg font-semibold">Análises Avançadas</h3>
+                <h3 className="text-lg font-semibold">{isEs ? "Análisis Avanzados" : isEn ? "Advanced Analyses" : "Análises Avançadas"}</h3>
                 <p className="text-muted-foreground">
-                  Sistema completo de análise genética com evolução anual do rebanho e comparação de mães × filhas (projeção).
+                  {isEs
+                    ? "Sistema completo de análisis genético con evolución anual del hato y comparación de madres × hijas (proyección)."
+                    : isEn
+                    ? "Complete genetic analysis system with annual herd evolution and dam × daughter comparison (projection)."
+                    : "Sistema completo de análise genética com evolução anual do rebanho e comparação de mães × filhas (projeção)."}
                 </p>
               </div>
             </CardContent>

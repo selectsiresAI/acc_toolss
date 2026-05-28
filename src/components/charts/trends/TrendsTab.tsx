@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -131,6 +132,9 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({
   showTrendLine,
   colors,
 }) => {
+  const { locale } = useTranslation();
+  const isEn = locale === 'en-US';
+  const isEs = locale === 'es';
   const [loadState, setLoadState] = React.useState<LoadState>('idle');
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [rpcData, setRpcData] = React.useState<RpcRow[]>([]);
@@ -205,7 +209,7 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({
         if (isCancelled) return;
         console.error('Erro ao carregar tendências', error);
         setRpcData([]);
-        setErrorMessage(error instanceof Error ? error.message : 'Erro desconhecido');
+        setErrorMessage(error instanceof Error ? error.message : (isEs ? 'Error desconocido' : isEn ? 'Unknown error' : 'Erro desconhecido'));
         setLoadState('error');
       }
     };
@@ -321,7 +325,7 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({
     if (!farmId) {
       return (
         <div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">
-          Selecione uma fazenda para visualizar as tendências.
+          {isEs ? 'Seleccione una finca para ver las tendencias.' : isEn ? 'Select a farm to view trends.' : 'Selecione uma fazenda para visualizar as tendências.'}
         </div>
       );
     }
@@ -329,7 +333,7 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({
     if (!normalizedTraits.length) {
       return (
         <div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">
-          Selecione ao menos uma característica para visualizar as tendências.
+          {isEs ? 'Seleccione al menos una característica para ver las tendencias.' : isEn ? 'Select at least one trait to view trends.' : 'Selecione ao menos uma característica para visualizar as tendências.'}
         </div>
       );
     }
@@ -337,7 +341,7 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({
     if (loadState === 'loading') {
       return (
         <div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">
-          Carregando tendências…
+          {isEs ? 'Cargando tendencias…' : isEn ? 'Loading trends…' : 'Carregando tendências…'}
         </div>
       );
     }
@@ -345,10 +349,10 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({
     if (loadState === 'error') {
       return (
         <div className="flex h-[320px] flex-col items-center justify-center space-y-3 text-center text-sm text-muted-foreground">
-          <div>Falha ao carregar Tendências — tente novamente.</div>
-          {errorMessage && <div className="text-xs">Detalhes: {errorMessage}</div>}
+          <div>{isEs ? 'Error al cargar Tendencias — intente nuevamente.' : isEn ? 'Failed to load Trends — try again.' : 'Falha ao carregar Tendências — tente novamente.'}</div>
+          {errorMessage && <div className="text-xs">{isEs ? 'Detalles' : isEn ? 'Details' : 'Detalhes'}: {errorMessage}</div>}
           <Button variant="outline" size="sm" onClick={handleRetry}>
-            Tentar novamente
+            {isEs ? 'Intentar nuevamente' : isEn ? 'Try again' : 'Tentar novamente'}
           </Button>
         </div>
       );
@@ -357,7 +361,7 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({
     if (loadState === 'empty' || !prepared.chartRows.length) {
       return (
         <div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">
-          Sem dados para a fazenda atual.
+          {isEs ? 'Sin datos para la finca actual.' : isEn ? 'No data for the current farm.' : 'Sem dados para a fazenda atual.'}
         </div>
       );
     }
@@ -365,13 +369,13 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({
     if (!isClient) {
       return (
         <div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">
-          Preparando gráfico…
+          {isEs ? 'Preparando gráfico…' : isEn ? 'Preparing chart…' : 'Preparando gráfico…'}
         </div>
       );
     }
 
     return (
-      <React.Suspense fallback={<div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">Carregando gráfico…</div>}>
+      <React.Suspense fallback={<div className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">{isEs ? 'Cargando gráfico…' : isEn ? 'Loading chart…' : 'Carregando gráfico…'}</div>}>
         <TrendsChartLazy
           data={prepared.chartRows}
           traits={prepared.traitSeries}
@@ -386,7 +390,7 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Gráfico de Tendência (Z-score)</CardTitle>
+          <CardTitle>{isEs ? 'Gráfico de Tendencia (Z-score)' : isEn ? 'Trend Chart (Z-score)' : 'Gráfico de Tendência (Z-score)'}</CardTitle>
         </CardHeader>
         <CardContent>{renderContent()}</CardContent>
       </Card>
@@ -405,24 +409,24 @@ export const TrendsTab: React.FC<TrendsTabProps> = ({
                 <CardContent className="space-y-2 text-sm">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-muted-foreground">Média:</span>
+                      <span className="text-muted-foreground">{isEs ? 'Promedio:' : isEn ? 'Mean:' : 'Média:'}</span>
                       <div className="font-medium">{formatValue(series.key, stats?.mean ?? null)}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Mediana:</span>
+                      <span className="text-muted-foreground">{isEs ? 'Mediana:' : isEn ? 'Median:' : 'Mediana:'}</span>
                       <div className="font-medium">{formatValue(series.key, stats?.median ?? null)}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Mín:</span>
+                      <span className="text-muted-foreground">{isEs ? 'Mín:' : isEn ? 'Min:' : 'Mín:'}</span>
                       <div className="font-medium">{formatValue(series.key, stats?.min ?? null)}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Máx:</span>
+                      <span className="text-muted-foreground">{isEs ? 'Máx:' : isEn ? 'Max:' : 'Máx:'}</span>
                       <div className="font-medium">{formatValue(series.key, stats?.max ?? null)}</div>
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Desvio Padrão: {formatValue(series.key, stats?.sd ?? null)} | {stats?.n ?? 0} animais
+                    {isEs ? 'Desv. Estándar' : isEn ? 'Std Dev' : 'Desvio Padrão'}: {formatValue(series.key, stats?.sd ?? null)} | {stats?.n ?? 0} {isEs ? 'animales' : isEn ? 'animals' : 'animais'}
                   </div>
                 </CardContent>
               </Card>

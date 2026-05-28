@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,21 +39,49 @@ interface UserTicket {
   updated_at?: string | null;
 }
 
-const CATEGORY_OPTIONS = [
+const CATEGORY_OPTIONS_PT = [
   { value: "bug" as TicketCategory, label: "Bug" },
   { value: "feature" as TicketCategory, label: "Funcionalidade" },
   { value: "question" as TicketCategory, label: "Pergunta" },
   { value: "other" as TicketCategory, label: "Outro" },
 ];
 
+const CATEGORY_OPTIONS_EN = [
+  { value: "bug" as TicketCategory, label: "Bug" },
+  { value: "feature" as TicketCategory, label: "Feature" },
+  { value: "question" as TicketCategory, label: "Question" },
+  { value: "other" as TicketCategory, label: "Other" },
+];
+
+const CATEGORY_OPTIONS_ES = [
+  { value: "bug" as TicketCategory, label: "Bug" },
+  { value: "feature" as TicketCategory, label: "Funcionalidad" },
+  { value: "question" as TicketCategory, label: "Pregunta" },
+  { value: "other" as TicketCategory, label: "Otro" },
+];
+
 const ALLOWED_CATEGORIES = new Set<TicketCategory>(["bug", "feature", "question", "other"]);
 const ALLOWED_STATUSES = new Set<TicketStatus>(["open", "in_progress", "resolved", "closed"]);
 
-const STATUS_LABELS: Record<TicketStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" | "success" }> = {
+const STATUS_LABELS_PT: Record<TicketStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" | "success" }> = {
   open: { label: "Aberto", variant: "destructive" },
   in_progress: { label: "Em andamento", variant: "default" },
   resolved: { label: "Resolvido", variant: "success" },
   closed: { label: "Fechado", variant: "outline" },
+};
+
+const STATUS_LABELS_EN: Record<TicketStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" | "success" }> = {
+  open: { label: "Open", variant: "destructive" },
+  in_progress: { label: "In Progress", variant: "default" },
+  resolved: { label: "Resolved", variant: "success" },
+  closed: { label: "Closed", variant: "outline" },
+};
+
+const STATUS_LABELS_ES: Record<TicketStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" | "success" }> = {
+  open: { label: "Abierto", variant: "destructive" },
+  in_progress: { label: "En progreso", variant: "default" },
+  resolved: { label: "Resuelto", variant: "success" },
+  closed: { label: "Cerrado", variant: "outline" },
 };
 
 const normalizeCategory = (category: string | null | undefined): TicketCategory => {
@@ -69,9 +98,9 @@ const normalizeStatus = (status: string | null | undefined): TicketStatus => {
   return "open";
 };
 
-const formatDate = (date: string) => {
+const formatDate = (date: string, dateFnsLocale: typeof ptBR) => {
   try {
-    return format(new Date(date), "PPPp", { locale: ptBR });
+    return format(new Date(date), "PPPp", { locale: dateFnsLocale });
   } catch (error) {
     // Could not format date
     return date;
@@ -80,6 +109,12 @@ const formatDate = (date: string) => {
 
 export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps) {
   const { toast } = useToast();
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+  const dateFnsLocale = isEn ? enUS : ptBR;
+  const CATEGORY_OPTIONS = isEs ? CATEGORY_OPTIONS_ES : isEn ? CATEGORY_OPTIONS_EN : CATEGORY_OPTIONS_PT;
+  const STATUS_LABELS = isEs ? STATUS_LABELS_ES : isEn ? STATUS_LABELS_EN : STATUS_LABELS_PT;
   const [tickets, setTickets] = useState<UserTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -140,11 +175,19 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
     const normalizedMessage = message.toLowerCase();
 
     if (status === 401 || normalizedMessage.includes("jwt")) {
-      return "Sessão expirada. Faça login novamente para acessar seus chamados.";
+      return isEs
+        ? "Sesión expirada. Inicie sesión nuevamente para acceder a sus tickets."
+        : isEn
+        ? "Session expired. Please log in again to access your tickets."
+        : "Sessão expirada. Faça login novamente para acessar seus chamados.";
     }
 
     if (status === 403 || normalizedMessage.includes("permission")) {
-      return "Você não possui permissão para acessar os chamados. Entre em contato com o suporte se o problema persistir.";
+      return isEs
+        ? "No tiene permiso para acceder a los tickets. Contacte al soporte si el problema persiste."
+        : isEn
+        ? "You don't have permission to access tickets. Contact support if the issue persists."
+        : "Você não possui permissão para acessar os chamados. Entre em contato com o suporte se o problema persistir.";
     }
 
     return message || defaultMessage;
@@ -163,8 +206,8 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
     if (error) {
       console.error("Error fetching support tickets", error);
       toast({
-        title: "Erro ao carregar chamados",
-        description: resolveErrorDescription(error, "Tente novamente em instantes."),
+        title: isEs ? "Error al cargar tickets" : isEn ? "Error loading tickets" : "Erro ao carregar chamados",
+        description: resolveErrorDescription(error, isEs ? "Intente nuevamente en unos instantes." : isEn ? "Please try again shortly." : "Tente novamente em instantes."),
         variant: "destructive",
       });
       setTickets([]);
@@ -200,8 +243,8 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
     if (error) {
       console.error("Error fetching ticket responses", error);
       toast({
-        title: "Erro ao carregar respostas",
-        description: resolveErrorDescription(error, "Não foi possível carregar as respostas."),
+        title: isEs ? "Error al cargar respuestas" : isEn ? "Error loading responses" : "Erro ao carregar respostas",
+        description: resolveErrorDescription(error, isEs ? "No fue posible cargar las respuestas." : isEn ? "Could not load responses." : "Não foi possível carregar as respostas."),
         variant: "destructive",
       });
       setSelectedTicketResponses([]);
@@ -215,8 +258,8 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
   const handleCreateTicket = async () => {
     if (!createForm.subject.trim() || !createForm.message.trim()) {
       toast({
-        title: "Preencha os campos obrigatórios",
-        description: "Informe assunto e mensagem para abrir um chamado.",
+        title: isEs ? "Complete los campos obligatorios" : isEn ? "Fill in the required fields" : "Preencha os campos obrigatórios",
+        description: isEs ? "Ingrese asunto y mensaje para abrir un ticket." : isEn ? "Provide a subject and message to open a ticket." : "Informe assunto e mensagem para abrir um chamado.",
         variant: "destructive",
       });
       return;
@@ -230,8 +273,8 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
     if (sessionError) {
       console.error("Error retrieving session", sessionError);
       toast({
-        title: "Sessão inválida",
-        description: resolveErrorDescription(sessionError, "Não foi possível validar sua sessão."),
+        title: isEs ? "Sesión inválida" : isEn ? "Invalid session" : "Sessão inválida",
+        description: resolveErrorDescription(sessionError, isEs ? "No fue posible validar su sesión." : isEn ? "Could not validate your session." : "Não foi possível validar sua sessão."),
         variant: "destructive",
       });
       setCreating(false);
@@ -240,8 +283,8 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
 
     if (!sessionUserId) {
       toast({
-        title: "Sessão expirada",
-        description: "Faça login novamente para abrir um chamado.",
+        title: isEs ? "Sesión expirada" : isEn ? "Session expired" : "Sessão expirada",
+        description: isEs ? "Inicie sesión nuevamente para abrir un ticket." : isEn ? "Please log in again to open a ticket." : "Faça login novamente para abrir um chamado.",
         variant: "destructive",
       });
       setCreating(false);
@@ -264,14 +307,14 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
     if (error) {
       console.error("Error creating ticket", error);
       toast({
-        title: "Não foi possível abrir o chamado",
-        description: resolveErrorDescription(error, "Verifique os dados e tente novamente."),
+        title: isEs ? "No fue posible abrir el ticket" : isEn ? "Could not open the ticket" : "Não foi possível abrir o chamado",
+        description: resolveErrorDescription(error, isEs ? "Verifique los datos e intente nuevamente." : isEn ? "Check the data and try again." : "Verifique os dados e tente novamente."),
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Chamado criado com sucesso",
-        description: "Nossa equipe entrará em contato em breve.",
+        title: isEs ? "Ticket creado con éxito" : isEn ? "Ticket created successfully" : "Chamado criado com sucesso",
+        description: isEs ? "Nuestro equipo lo contactará pronto." : isEn ? "Our team will contact you shortly." : "Nossa equipe entrará em contato em breve.",
       });
       setCreateDialogOpen(false);
       setCreateForm({ subject: "", category: "bug" as TicketCategory, message: "" });
@@ -296,14 +339,14 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
     if (error) {
       console.error("Error updating ticket status", error);
       toast({
-        title: "Não foi possível atualizar o status",
-        description: resolveErrorDescription(error, "Tente novamente em instantes."),
+        title: isEs ? "No fue posible actualizar el estado" : isEn ? "Could not update status" : "Não foi possível atualizar o status",
+        description: resolveErrorDescription(error, isEs ? "Intente nuevamente en unos instantes." : isEn ? "Please try again shortly." : "Tente novamente em instantes."),
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Status atualizado",
-        description: "O status do chamado foi alterado.",
+        title: isEs ? "Estado actualizado" : isEn ? "Status updated" : "Status atualizado",
+        description: isEs ? "El estado del ticket ha sido cambiado." : isEn ? "The ticket status has been changed." : "O status do chamado foi alterado.",
       });
       await fetchTickets();
     }
@@ -324,8 +367,8 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
     if (sessionError || !sessionUserId) {
       console.error("Error retrieving session", sessionError);
       toast({
-        title: "Sessão inválida",
-        description: resolveErrorDescription(sessionError, "Faça login novamente para enviar uma mensagem."),
+        title: isEs ? "Sesión inválida" : isEn ? "Invalid session" : "Sessão inválida",
+        description: resolveErrorDescription(sessionError, isEs ? "Inicie sesión nuevamente para enviar un mensaje." : isEn ? "Please log in again to send a message." : "Faça login novamente para enviar uma mensagem."),
         variant: "destructive",
       });
       setSendingReply(false);
@@ -339,14 +382,14 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
     if (error) {
       console.error("Error sending response", error);
       toast({
-        title: "Não foi possível enviar a mensagem",
-        description: resolveErrorDescription(error, "Tente novamente em instantes."),
+        title: isEs ? "No fue posible enviar el mensaje" : isEn ? "Could not send the message" : "Não foi possível enviar a mensagem",
+        description: resolveErrorDescription(error, isEs ? "Intente nuevamente en unos instantes." : isEn ? "Please try again shortly." : "Tente novamente em instantes."),
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Mensagem enviada",
-        description: "Sua atualização foi registrada.",
+        title: isEs ? "Mensaje enviado" : isEn ? "Message sent" : "Mensagem enviada",
+        description: isEs ? "Su actualización ha sido registrada." : isEn ? "Your update has been recorded." : "Sua atualização foi registrada.",
       });
       setReplyMessage("");
       await fetchTickets();
@@ -374,11 +417,11 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Chamados</CardTitle>
-          <CardDescription>Entre para visualizar e abrir chamados de suporte.</CardDescription>
+          <CardTitle>{isEs ? "Tickets" : isEn ? "Tickets" : "Chamados"}</CardTitle>
+          <CardDescription>{isEs ? "Inicie sesión para ver y abrir tickets de soporte." : isEn ? "Log in to view and open support tickets." : "Entre para visualizar e abrir chamados de suporte."}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">É necessário estar autenticado para acessar os chamados.</p>
+          <p className="text-sm text-muted-foreground">{isEs ? "Es necesario iniciar sesión para acceder a los tickets." : isEn ? "You must be logged in to access tickets." : "É necessário estar autenticado para acessar os chamados."}</p>
         </CardContent>
       </Card>
     );
@@ -388,15 +431,15 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
     <div className="space-y-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Seus chamados</h2>
+          <h2 className="text-2xl font-bold">{isEs ? "Sus tickets" : isEn ? "Your tickets" : "Seus chamados"}</h2>
           <p className="text-muted-foreground text-sm">
-            {firstName ? `Olá, ${firstName}! ` : ''}Acompanhe pedidos de suporte, abra novos chamados e visualize respostas.
+            {firstName ? (isEs ? `Hola, ${firstName}! ` : isEn ? `Hi, ${firstName}! ` : `Olá, ${firstName}! `) : ''}{isEs ? "Acompañe solicitudes de soporte, abra nuevos tickets y vea respuestas." : isEn ? "Track support requests, open new tickets and view responses." : "Acompanhe pedidos de suporte, abra novos chamados e visualize respostas."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={fetchTickets} disabled={refreshing}>
             {refreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            Atualizar
+            {isEs ? "Actualizar" : isEn ? "Refresh" : "Atualizar"}
           </Button>
           <Dialog
             open={createDialogOpen}
@@ -519,7 +562,7 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
                           {renderStatusBadge(ticket.status)}
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {formatDate(ticket.created_at)}
+                          {formatDate(ticket.created_at, dateFnsLocale)}
                         </p>
                         <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
                           {ticket.message}
@@ -542,7 +585,7 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
                   <div>
                     <CardTitle className="text-xl">{selectedTicket.subject}</CardTitle>
                     <CardDescription>
-                      Aberto em {formatDate(selectedTicket.created_at)}
+                      Aberto em {formatDate(selectedTicket.created_at, dateFnsLocale)}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
@@ -583,7 +626,7 @@ export function UserSupportTickets({ userId, userName }: UserSupportTicketsProps
                             <span>
                               {response.responder_id === userId ? "Você" : "Equipe ToolSS"}
                             </span>
-                            <span>{formatDate(response.created_at)}</span>
+                            <span>{formatDate(response.created_at, dateFnsLocale)}</span>
                           </div>
                           <p className="mt-2 text-sm whitespace-pre-line">{response.message}</p>
                         </div>

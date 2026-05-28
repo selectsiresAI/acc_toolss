@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { CreateUsersButton } from "@/components/admin/CreateUsersButton";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface SupportTicketSummary {
   id: string;
@@ -51,6 +52,9 @@ const normalizeTicketStats = (value: Record<string, any>): TicketStats => ({
 });
 
 export function AdminDashboard() {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const { role, isAdmin, isLoading: roleLoading, refetch } = useUserRole();
   const [stats, setStats] = useState<TicketStats | null>(null);
   const [recentTickets, setRecentTickets] = useState<SupportTicketSummary[]>([]);
@@ -136,7 +140,7 @@ export function AdminDashboard() {
       }
     } catch (error: any) {
       console.error("Erro ao carregar dashboard administrativo", error);
-      toast.error(error?.message ?? "Não foi possível carregar as métricas administrativas");
+      toast.error(error?.message ?? (isEs ? "No fue posible cargar las métricas administrativas" : isEn ? "Could not load admin metrics" : "Não foi possível carregar as métricas administrativas"));
       setStats(null);
       setRecentTickets([]);
     } finally {
@@ -161,7 +165,7 @@ export function AdminDashboard() {
       setStorageFiles(data ?? []);
     } catch (error: any) {
       // Error loading files from admin bucket
-      setStorageError(error?.message ?? "Não foi possível acessar o bucket informado.");
+      setStorageError(error?.message ?? (isEs ? "No fue posible acceder al bucket configurado." : isEn ? "Could not access the configured bucket." : "Não foi possível acessar o bucket informado."));
       setStorageFiles([]);
     } finally {
       setStorageLoading(false);
@@ -181,7 +185,7 @@ export function AdminDashboard() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        throw new Error("Usuário não autenticado");
+        throw new Error(isEs ? "Usuario no autenticado" : isEn ? "User not authenticated" : "Usuário não autenticado");
       }
 
       const path = `${user.id}/${Date.now()}-${file.name}`;
@@ -194,11 +198,11 @@ export function AdminDashboard() {
         throw error;
       }
 
-      toast.success("Arquivo enviado com sucesso");
+      toast.success(isEs ? "Archivo enviado con éxito" : isEn ? "File uploaded successfully" : "Arquivo enviado com sucesso");
       loadStorageFiles();
     } catch (error: any) {
       console.error("Erro ao enviar arquivo", error);
-      setStorageError(error?.message ?? "Não foi possível enviar o arquivo");
+      setStorageError(error?.message ?? (isEs ? "No fue posible enviar el archivo" : isEn ? "Could not upload the file" : "Não foi possível enviar o arquivo"));
     } finally {
       setStorageLoading(false);
       event.target.value = "";
@@ -222,10 +226,10 @@ export function AdminDashboard() {
       }
 
       setEdgeResult(JSON.stringify(data, null, 2));
-      toast.success("Função Edge executada com sucesso");
+      toast.success(isEs ? "Función Edge ejecutada con éxito" : isEn ? "Edge function executed successfully" : "Função Edge executada com sucesso");
     } catch (error: any) {
       // Optional edge function unavailable
-      setEdgeResult(error?.message ?? "Não foi possível executar a função configurada");
+      setEdgeResult(error?.message ?? (isEs ? "No fue posible ejecutar la función configurada" : isEn ? "Could not execute the configured function" : "Não foi possível executar a função configurada"));
     } finally {
       setEdgeLoading(false);
     }
@@ -233,7 +237,7 @@ export function AdminDashboard() {
 
   const handleCreateNote = async () => {
     if (!noteSubject.trim() || !noteContent.trim()) {
-      setNoteError("Informe assunto e conteúdo para registrar um comunicado interno");
+      setNoteError(isEs ? "Informe asunto y contenido para registrar un comunicado interno" : isEn ? "Please provide subject and content for the internal notice" : "Informe assunto e conteúdo para registrar um comunicado interno");
       return;
     }
 
@@ -246,7 +250,7 @@ export function AdminDashboard() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        throw new Error("Usuário não autenticado");
+        throw new Error(isEs ? "Usuario no autenticado" : isEn ? "User not authenticated" : "Usuário não autenticado");
       }
 
       const { error } = await (supabase as any).from("admin_notes").insert({
@@ -259,12 +263,12 @@ export function AdminDashboard() {
         throw error;
       }
 
-      toast.success("Comunicado registrado com sucesso");
+      toast.success(isEs ? "Comunicado registrado con éxito" : isEn ? "Notice registered successfully" : "Comunicado registrado com sucesso");
       setNoteSubject("");
       setNoteContent("");
     } catch (error: any) {
       // Optional admin_notes table unavailable
-      setNoteError(error?.message ?? "Não foi possível registrar o comunicado. Verifique se a tabela admin_notes existe.");
+      setNoteError(error?.message ?? (isEs ? "No fue posible registrar el comunicado. Verifique si la tabla admin_notes existe." : isEn ? "Could not register the notice. Check if the admin_notes table exists." : "Não foi possível registrar o comunicado. Verifique se a tabela admin_notes existe."));
     } finally {
       setNoteLoading(false);
     }
@@ -277,32 +281,32 @@ export function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tickets totais</CardTitle>
+            <CardTitle className="text-sm font-medium">{isEs ? "Tickets totales" : isEn ? "Total tickets" : "Tickets totais"}</CardTitle>
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">Quantidade total de tickets registrados</p>
+            <p className="text-xs text-muted-foreground">{isEs ? "Cantidad total de tickets registrados" : isEn ? "Total registered tickets" : "Quantidade total de tickets registrados"}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Em atendimento</CardTitle>
+            <CardTitle className="text-sm font-medium">{isEs ? "En atención" : isEn ? "In progress" : "Em atendimento"}</CardTitle>
             <RefreshCcw className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.open}</div>
-            <p className="text-xs text-muted-foreground">Tickets com status diferente de resolvido/fechado</p>
+            <p className="text-xs text-muted-foreground">{isEs ? "Tickets con estado diferente a resuelto/cerrado" : isEn ? "Tickets not resolved or closed" : "Tickets com status diferente de resolvido/fechado"}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolvidos</CardTitle>
+            <CardTitle className="text-sm font-medium">{isEs ? "Resueltos" : isEn ? "Resolved" : "Resolvidos"}</CardTitle>
             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.resolved}</div>
-            <p className="text-xs text-muted-foreground">Tickets marcados como resolvidos ou fechados</p>
+            <p className="text-xs text-muted-foreground">{isEs ? "Tickets marcados como resueltos o cerrados" : isEn ? "Tickets marked as resolved or closed" : "Tickets marcados como resolvidos ou fechados"}</p>
           </CardContent>
         </Card>
       </div>
@@ -312,13 +316,16 @@ export function AdminDashboard() {
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-3">
-        <Badge variant="outline" className="w-fit">Role atual: {role ?? "desconhecido"}</Badge>
+        <Badge variant="outline" className="w-fit">{isEs ? "Rol actual" : isEn ? "Current role" : "Role atual"}: {role ?? (isEs ? "desconocido" : isEn ? "unknown" : "desconhecido")}</Badge>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Bem-vindo ao painel administrativo</h2>
+            <h2 className="text-3xl font-bold tracking-tight">{isEs ? "Bienvenido al panel de administración" : isEn ? "Welcome to the admin panel" : "Bem-vindo ao painel administrativo"}</h2>
             <p className="text-muted-foreground max-w-2xl mt-2">
-              Todas as chamadas abaixo utilizam o cliente oficial <code>@supabase/supabase-js</code>, demonstrando como combinar
-              autenticação, RPC, tabelas, Storage e funções Edge com o Supabase.
+              {isEs
+                ? <>Todas las llamadas a continuación utilizan el cliente oficial <code>@supabase/supabase-js</code>, demostrando cómo combinar autenticación, RPC, tablas, Storage y funciones Edge con Supabase.</>
+                : isEn
+                ? <>All calls below use the official <code>@supabase/supabase-js</code> client, demonstrating how to combine authentication, RPC, tables, Storage and Edge functions with Supabase.</>
+                : <>Todas as chamadas abaixo utilizam o cliente oficial <code>@supabase/supabase-js</code>, demonstrando como combinar autenticação, RPC, tabelas, Storage e funções Edge com o Supabase.</>}
             </p>
           </div>
           <CreateUsersButton />
@@ -330,7 +337,7 @@ export function AdminDashboard() {
           <CardContent className="flex h-32 items-center justify-center text-muted-foreground">
             <div className="flex items-center gap-2">
               <span className="h-5 w-5 animate-spin rounded-full border-b-2 border-primary" />
-              Carregando métricas…
+              {isEs ? "Cargando métricas…" : isEn ? "Loading metrics…" : "Carregando métricas…"}
             </div>
           </CardContent>
         </Card>
@@ -341,14 +348,18 @@ export function AdminDashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Tickets recentes</CardTitle>
+            <CardTitle>{isEs ? "Tickets recientes" : isEn ? "Recent tickets" : "Tickets recentes"}</CardTitle>
             <CardDescription>
-              Dados carregados diretamente da tabela <code>support_tickets</code> com políticas de RLS aplicadas no Supabase.
+              {isEs
+                ? <>Datos cargados directamente de la tabla <code>support_tickets</code> con políticas de RLS aplicadas en Supabase.</>
+                : isEn
+                ? <>Data loaded directly from the <code>support_tickets</code> table with RLS policies applied in Supabase.</>
+                : <>Dados carregados diretamente da tabela <code>support_tickets</code> com políticas de RLS aplicadas no Supabase.</>}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {recentTickets.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum ticket recente encontrado.</p>
+              <p className="text-sm text-muted-foreground">{isEs ? "No se encontraron tickets recientes." : isEn ? "No recent tickets found." : "Nenhum ticket recente encontrado."}</p>
             ) : (
               recentTickets.map((ticket) => {
                 const lastUpdated = ticket.updated_at ?? new Date().toISOString();
@@ -359,7 +370,7 @@ export function AdminDashboard() {
                       <Badge variant="secondary">{ticket.status}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Atualizado {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true, locale: ptBR })}
+                      {isEs ? "Actualizado" : isEn ? "Updated" : "Atualizado"} {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true, locale: isEn ? undefined : ptBR })}
                     </p>
                   </div>
                 );
@@ -370,20 +381,26 @@ export function AdminDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Função RPC de papel</CardTitle>
+            <CardTitle>{isEs ? "Función RPC de rol" : isEn ? "Role RPC function" : "Função RPC de papel"}</CardTitle>
             <CardDescription>
-              A verificação utiliza a função <code>has_role_v2</code>. Utilize o botão abaixo para refazer a checagem.
+              {isEs
+                ? <>La verificación utiliza la función <code>has_role_v2</code>. Utilice el botón a continuación para volver a verificar.</>
+                : isEn
+                ? <>Verification uses the <code>has_role_v2</code> function. Use the button below to recheck.</>
+                : <>A verificação utiliza a função <code>has_role_v2</code>. Utilize o botão abaixo para refazer a checagem.</>}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Zap className="h-4 w-4 text-primary" />
-              {isAdmin ? "Você possui direitos administrativos." : "Nenhuma role administrativa confirmada."}
+              {isAdmin
+                ? (isEs ? "Usted tiene derechos administrativos." : isEn ? "You have administrative rights." : "Você possui direitos administrativos.")
+                : (isEs ? "No se confirmó un rol administrativo." : isEn ? "No administrative role confirmed." : "Nenhuma role administrativa confirmada.")}
             </p>
             <Button variant="outline" onClick={() => refetch()} disabled={roleLoading}>
-              Revalidar role via RPC
+              {isEs ? "Revalidar rol vía RPC" : isEn ? "Revalidate role via RPC" : "Revalidar role via RPC"}
             </Button>
-            {roleLoading && <p className="text-xs text-muted-foreground">Validando…</p>}
+            {roleLoading && <p className="text-xs text-muted-foreground">{isEs ? "Validando…" : isEn ? "Validating…" : "Validando…"}</p>}
           </CardContent>
         </Card>
       </div>
@@ -393,10 +410,13 @@ export function AdminDashboard() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Upload seguro de arquivos</CardTitle>
+            <CardTitle>{isEs ? "Carga segura de archivos" : isEn ? "Secure file upload" : "Upload seguro de arquivos"}</CardTitle>
             <CardDescription>
-              Arquivos armazenados no bucket <code>{ADMIN_BUCKET}</code>. Certifique-se de conceder permissão de leitura/escrita
-              via RLS/Storage Policies.
+              {isEs
+                ? <>Archivos almacenados en el bucket <code>{ADMIN_BUCKET}</code>. Asegúrese de otorgar permisos de lectura/escritura vía RLS/Storage Policies.</>
+                : isEn
+                ? <>Files stored in bucket <code>{ADMIN_BUCKET}</code>. Make sure to grant read/write permissions via RLS/Storage Policies.</>
+                : <>Arquivos armazenados no bucket <code>{ADMIN_BUCKET}</code>. Certifique-se de conceder permissão de leitura/escrita via RLS/Storage Policies.</>}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -408,11 +428,11 @@ export function AdminDashboard() {
               </div>
             )}
             <div className="space-y-2">
-              <h3 className="text-sm font-medium">Arquivos recentes</h3>
+              <h3 className="text-sm font-medium">{isEs ? "Archivos recientes" : isEn ? "Recent files" : "Arquivos recentes"}</h3>
               {storageLoading ? (
-                <p className="text-xs text-muted-foreground">Carregando lista…</p>
+                <p className="text-xs text-muted-foreground">{isEs ? "Cargando lista…" : isEn ? "Loading list…" : "Carregando lista…"}</p>
               ) : storageFiles.length === 0 ? (
-                <p className="text-xs text-muted-foreground">Nenhum arquivo encontrado no bucket configurado.</p>
+                <p className="text-xs text-muted-foreground">{isEs ? "No se encontraron archivos en el bucket configurado." : isEn ? "No files found in the configured bucket." : "Nenhum arquivo encontrado no bucket configurado."}</p>
               ) : (
                 <ul className="space-y-2 text-xs text-muted-foreground">
                   {storageFiles.map((file) => (
@@ -421,7 +441,7 @@ export function AdminDashboard() {
                       <span>
                         {formatDistanceToNow(new Date(file.updated_at ?? file.created_at), {
                           addSuffix: true,
-                          locale: ptBR
+                          locale: isEn ? undefined : ptBR
                         })}
                       </span>
                     </li>
@@ -434,29 +454,37 @@ export function AdminDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Registrar comunicado interno</CardTitle>
+            <CardTitle>{isEs ? "Registrar comunicado interno" : isEn ? "Register internal notice" : "Registrar comunicado interno"}</CardTitle>
             <CardDescription>
-              Exemplo de escrita em tabela protegida (espera-se uma tabela <code>admin_notes</code> com política RLS apropriada).
+              {isEs
+                ? <>Ejemplo de escritura en tabla protegida (se espera una tabla <code>admin_notes</code> con política RLS apropiada).</>
+                : isEn
+                ? <>Example of writing to a protected table (expects an <code>admin_notes</code> table with appropriate RLS policy).</>
+                : <>Exemplo de escrita em tabela protegida (espera-se uma tabela <code>admin_notes</code> com política RLS apropriada).</>}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <Input
-              placeholder="Assunto do comunicado"
+              placeholder={isEs ? "Asunto del comunicado" : isEn ? "Notice subject" : "Assunto do comunicado"}
               value={noteSubject}
               onChange={(event) => setNoteSubject(event.target.value)}
             />
             <Textarea
-              placeholder="Detalhes e próximos passos"
+              placeholder={isEs ? "Detalles y próximos pasos" : isEn ? "Details and next steps" : "Detalhes e próximos passos"}
               value={noteContent}
               onChange={(event) => setNoteContent(event.target.value)}
               rows={4}
             />
             {noteError && <p className="text-xs text-destructive">{noteError}</p>}
             <Button onClick={handleCreateNote} disabled={noteLoading}>
-              Registrar comunicado
+              {isEs ? "Registrar comunicado" : isEn ? "Register notice" : "Registrar comunicado"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Caso a tabela não exista, uma mensagem amigável indicará a necessidade de criá-la no Supabase.
+              {isEs
+                ? "Si la tabla no existe, un mensaje amigable indicará la necesidad de crearla en Supabase."
+                : isEn
+                ? "If the table does not exist, a friendly message will indicate the need to create it in Supabase."
+                : "Caso a tabela não exista, uma mensagem amigável indicará a necessidade de criá-la no Supabase."}
             </p>
           </CardContent>
         </Card>
@@ -464,24 +492,31 @@ export function AdminDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Função Edge opcional</CardTitle>
+          <CardTitle>{isEs ? "Función Edge opcional" : isEn ? "Optional Edge function" : "Função Edge opcional"}</CardTitle>
           <CardDescription>
-            Demonstração de chamada para <code>{EDGE_FUNCTION_NAME}</code>. Configure uma Edge Function para executar verificações
-            sensíveis com a Service Key.
+            {isEs
+              ? <>Demostración de llamada a <code>{EDGE_FUNCTION_NAME}</code>. Configure una Edge Function para ejecutar verificaciones sensibles con la Service Key.</>
+              : isEn
+              ? <>Demo call to <code>{EDGE_FUNCTION_NAME}</code>. Configure an Edge Function to run sensitive checks with the Service Key.</>
+              : <>Demonstração de chamada para <code>{EDGE_FUNCTION_NAME}</code>. Configure uma Edge Function para executar verificações sensíveis com a Service Key.</>}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Button variant="secondary" onClick={handleEdgeFunctionCall} disabled={edgeLoading}>
-            Executar função Edge
+            {isEs ? "Ejecutar función Edge" : isEn ? "Execute Edge function" : "Executar função Edge"}
           </Button>
-          {edgeLoading && <p className="text-xs text-muted-foreground">Chamando função Edge…</p>}
+          {edgeLoading && <p className="text-xs text-muted-foreground">{isEs ? "Llamando función Edge…" : isEn ? "Calling Edge function…" : "Chamando função Edge…"}</p>}
           {edgeResult && (
             <pre className="max-h-60 overflow-auto rounded-md bg-muted/50 p-3 text-xs">
               {edgeResult}
             </pre>
           )}
           <p className="text-xs text-muted-foreground">
-            Utilize a resposta para habilitar fluxos que exigem privilégios elevados sem expor a Service Role ao cliente.
+            {isEs
+              ? "Utilice la respuesta para habilitar flujos que requieren privilegios elevados sin exponer la Service Role al cliente."
+              : isEn
+              ? "Use the response to enable flows that require elevated privileges without exposing the Service Role to the client."
+              : "Utilize a resposta para habilitar fluxos que exigem privilégios elevados sem expor a Service Role ao cliente."}
           </p>
         </CardContent>
       </Card>

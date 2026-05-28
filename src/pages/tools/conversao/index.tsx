@@ -15,6 +15,7 @@ import { DetectionTable, type MappingRow, type MappingMethod } from "./component
 import { HelpButton } from "@/components/help/HelpButton";
 import { HelpHint } from "@/components/help/HelpHint";
 import { HhpRequiredTraitsCard } from "@/components/HhpRequiredTraitsCard";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface ParsedWorkbook {
   headers: string[];
@@ -98,6 +99,9 @@ const regexHeuristics: Array<{ pattern: RegExp; target: string; mode: "normalize
 ];
 
 const ConversaoPage: React.FC = () => {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const { toast } = useToast();
   const [modelHeaders, setModelHeaders] = useState<string[]>([]);
   const [legendEntries, setLegendEntries] = useState<LegendEntry[]>([]);
@@ -226,21 +230,21 @@ const ConversaoPage: React.FC = () => {
       const workbook = await readWorkbook(file);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       if (!sheet) {
-        throw new Error("Não foi possível ler a primeira aba do arquivo.");
+        throw new Error(isEs ? "No se pudo leer la primera hoja del archivo." : isEn ? "Could not read the first sheet of the file." : "Não foi possível ler a primeira aba do arquivo.");
       }
       const { headers } = extractHeadersAndRows(sheet);
       if (headers.length === 0) {
-        throw new Error("Não encontramos cabeçalhos na primeira linha do arquivo modelo.");
+        throw new Error(isEs ? "No encontramos encabezados en la primera fila del archivo modelo." : isEn ? "No headers found in the first row of the model file." : "Não encontramos cabeçalhos na primeira linha do arquivo modelo.");
       }
       setModelHeaders(headers);
       setModelFileName(file.name);
-      toast({ 
-        title: "✨ Modelo ToolSS carregado!", 
-        description: `Pronto para converter! ${headers.length} campos disponíveis.`,
+      toast({
+        title: isEs ? "Modelo ToolSS cargado!" : isEn ? "ToolSS Model loaded!" : "✨ Modelo ToolSS carregado!",
+        description: isEs ? `Listo para convertir! ${headers.length} campos disponibles.` : isEn ? `Ready to convert! ${headers.length} fields available.` : `Pronto para converter! ${headers.length} campos disponíveis.`,
         duration: 4000
       });
     } catch (error: any) {
-      toast({ title: "Erro ao carregar modelo", description: error.message ?? String(error), variant: "destructive" });
+      toast({ title: isEs ? "Error al cargar modelo" : isEn ? "Error loading model" : "Erro ao carregar modelo", description: error.message ?? String(error), variant: "destructive" });
     }
   };
 
@@ -249,21 +253,21 @@ const ConversaoPage: React.FC = () => {
       const workbook = await readWorkbook(file);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       if (!sheet) {
-        throw new Error("Não foi possível ler a primeira aba do arquivo.");
+        throw new Error(isEs ? "No se pudo leer la primera hoja del archivo." : isEn ? "Could not read the first sheet of the file." : "Não foi possível ler a primeira aba do arquivo.");
       }
       const entries = parseLegendEntries(sheet);
       if (entries.length === 0) {
-        throw new Error("Nenhuma entrada válida encontrada no arquivo enviado.");
+        throw new Error(isEs ? "No se encontraron entradas válidas en el archivo enviado." : isEn ? "No valid entries found in the uploaded file." : "Nenhuma entrada válida encontrada no arquivo enviado.");
       }
       setLegendEntries(entries);
       setLegendFileName(file.name);
-      toast({ 
-        title: "✨ Legendas ToolSS carregadas!", 
-        description: `${defaultLegendBank.length + entries.length} nomenclaturas disponíveis para mapeamento.`,
+      toast({
+        title: isEs ? "Leyendas ToolSS cargadas!" : isEn ? "ToolSS Legends loaded!" : "✨ Legendas ToolSS carregadas!",
+        description: isEs ? `${defaultLegendBank.length + entries.length} nomenclaturas disponibles para mapeo.` : isEn ? `${defaultLegendBank.length + entries.length} nomenclatures available for mapping.` : `${defaultLegendBank.length + entries.length} nomenclaturas disponíveis para mapeamento.`,
         duration: 4000
       });
     } catch (error: any) {
-      toast({ title: "Erro ao carregar banco", description: error.message ?? String(error), variant: "destructive" });
+      toast({ title: isEs ? "Error al cargar banco" : isEn ? "Error loading bank" : "Erro ao carregar banco", description: error.message ?? String(error), variant: "destructive" });
     }
   };
 
@@ -272,18 +276,18 @@ const ConversaoPage: React.FC = () => {
       const workbook = await readWorkbook(file);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       if (!sheet) {
-        throw new Error("Não foi possível ler a primeira aba do arquivo.");
+        throw new Error(isEs ? "No se pudo leer la primera hoja del archivo." : isEn ? "Could not read the first sheet of the file." : "Não foi possível ler a primeira aba do arquivo.");
       }
       const { headers, rows } = extractHeadersAndRows(sheet);
       if (headers.length === 0) {
-        throw new Error("Não encontramos cabeçalhos na primeira linha do arquivo de dados.");
+        throw new Error(isEs ? "No encontramos encabezados en la primera fila del archivo de datos." : isEn ? "No headers found in the first row of the data file." : "Não encontramos cabeçalhos na primeira linha do arquivo de dados.");
       }
       setDataHeaders(headers);
       setDataRows(rows);
       setDataFileName(file.name);
-      toast({ title: "Dados carregados", description: `${rows.length} linhas disponíveis para conversão.` });
+      toast({ title: isEs ? "Datos cargados" : isEn ? "Data loaded" : "Dados carregados", description: isEs ? `${rows.length} filas disponibles para conversión.` : isEn ? `${rows.length} rows available for conversion.` : `${rows.length} linhas disponíveis para conversão.` });
     } catch (error: any) {
-      toast({ title: "Erro ao carregar dados", description: error.message ?? String(error), variant: "destructive" });
+      toast({ title: isEs ? "Error al cargar datos" : isEn ? "Error loading data" : "Erro ao carregar dados", description: error.message ?? String(error), variant: "destructive" });
     }
   };
 
@@ -361,8 +365,8 @@ const ConversaoPage: React.FC = () => {
   const handleDownload = () => {
     if (!canDownload) {
       toast({
-        title: "Nada para exportar",
-        description: "Faça o upload dos arquivos e conclua as aprovações antes de exportar.",
+        title: isEs ? "Nada para exportar" : isEn ? "Nothing to export" : "Nada para exportar",
+        description: isEs ? "Cargue los archivos y complete las aprobaciones antes de exportar." : isEn ? "Upload the files and complete approvals before exporting." : "Faça o upload dos arquivos e conclua as aprovações antes de exportar.",
         variant: "destructive",
       });
       return;
@@ -435,10 +439,10 @@ const ConversaoPage: React.FC = () => {
     const fileName = `${baseName}_padronizado.xlsx`;
     XLSX.writeFile(workbook, fileName);
 
-    const excludeMsg = excludedCount > 0 ? ` ${excludedCount} coluna(s) excluída(s).` : '';
-    toast({ 
-      title: "Download iniciado", 
-      description: `Arquivo ${fileName} gerado com sucesso.${excludeMsg}` 
+    const excludeMsg = excludedCount > 0 ? (isEs ? ` ${excludedCount} columna(s) excluida(s).` : isEn ? ` ${excludedCount} column(s) excluded.` : ` ${excludedCount} coluna(s) excluída(s).`) : '';
+    toast({
+      title: isEs ? "Descarga iniciada" : isEn ? "Download started" : "Download iniciado",
+      description: isEs ? `Archivo ${fileName} generado con éxito.${excludeMsg}` : isEn ? `File ${fileName} generated successfully.${excludeMsg}` : `Arquivo ${fileName} gerado com sucesso.${excludeMsg}`
     });
   };
 
@@ -450,13 +454,11 @@ const ConversaoPage: React.FC = () => {
       <div className="space-y-2">
         <div className="flex items-center gap-3">
           <Badge variant="secondary">Preview</Badge>
-          <h1 className="text-3xl font-bold">Conversão e padronização de planilhas</h1>
-          <HelpHint content="Padronize planilhas com nomenclaturas diferentes usando detecção automática: banco de aliases > regex > fuzzy matching" />
+          <h1 className="text-3xl font-bold">{isEs ? "Conversión y estandarización de hojas de cálculo" : isEn ? "Spreadsheet conversion and standardization" : "Conversão e padronização de planilhas"}</h1>
+          <HelpHint content={isEs ? "Estandarice hojas de cálculo con diferentes nomenclaturas usando detección automática: banco de aliases > regex > fuzzy matching" : isEn ? "Standardize spreadsheets with different nomenclatures using automatic detection: alias bank > regex > fuzzy matching" : "Padronize planilhas com nomenclaturas diferentes usando detecção automática: banco de aliases > regex > fuzzy matching"} />
         </div>
         <p className="text-muted-foreground max-w-3xl">
-          Faça o upload do modelo padrão, do banco de nomenclaturas e do arquivo de dados. A ToolSS sugere mapeamentos automáticos
-          (priorizando o banco, depois regex e fuzzy) para converter cabeçalhos e gerar um arquivo padronizado com todas as PTAs e
-          colunas originais preservadas.
+          {isEs ? "Cargue el modelo estándar, el banco de nomenclaturas y el archivo de datos. ToolSS sugiere mapeos automáticos (priorizando el banco, luego regex y fuzzy) para convertir encabezados y generar un archivo estandarizado con todas las PTAs y columnas originales preservadas." : isEn ? "Upload the standard model, the nomenclature bank, and the data file. ToolSS suggests automatic mappings (prioritizing the bank, then regex and fuzzy) to convert headers and generate a standardized file with all PTAs and original columns preserved." : "Faça o upload do modelo padrão, do banco de nomenclaturas e do arquivo de dados. A ToolSS sugere mapeamentos automáticos (priorizando o banco, depois regex e fuzzy) para converter cabeçalhos e gerar um arquivo padronizado com todas as PTAs e colunas originais preservadas."}
         </p>
       </div>
 
@@ -464,8 +466,8 @@ const ConversaoPage: React.FC = () => {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <FileUploadCard
-          title="1. Modelo padrão ✨"
-          description="Use nosso modelo ToolSS com todas as PTAs ou envie o seu."
+          title={isEs ? "1. Modelo estándar ✨" : isEn ? "1. Standard model ✨" : "1. Modelo padrão ✨"}
+          description={isEs ? "Use nuestro modelo ToolSS con todas las PTAs o envíe el suyo." : isEn ? "Use our ToolSS model with all PTAs or upload your own." : "Use nosso modelo ToolSS com todas as PTAs ou envie o seu."}
           onFileSelected={handleModelUpload}
           accept=".xlsx,.xls,.xlsm,.csv"
           fileName={modelFileName}
@@ -476,7 +478,7 @@ const ConversaoPage: React.FC = () => {
               {modelHeaders.length === 0 && (
                 <div className="p-2 bg-primary/5 rounded-md border border-primary/20">
                   <p className="text-xs font-medium text-primary">
-                    👇 Recomendado: Use nosso modelo ToolSS completo
+                    {isEs ? "👇 Recomendado: Use nuestro modelo ToolSS completo" : isEn ? "👇 Recommended: Use our complete ToolSS model" : "👇 Recomendado: Use nosso modelo ToolSS completo"}
                   </p>
                 </div>
               )}
@@ -496,13 +498,13 @@ const ConversaoPage: React.FC = () => {
                             'Pragma': 'no-cache'
                           }
                         });
-                        if (!response.ok) throw new Error('Não foi possível carregar o modelo padrão');
+                        if (!response.ok) throw new Error(isEs ? 'No se pudo cargar el modelo estándar' : isEn ? 'Could not load the standard model' : 'Não foi possível carregar o modelo padrão');
                         const blob = await response.blob();
                         const file = new File([blob], 'Planilha_modelo_padrão.csv', { type: 'text/csv' });
                         await handleModelUpload(file);
                       } catch (error: any) {
                         toast({
-                          title: "Erro ao carregar modelo",
+                          title: isEs ? "Error al cargar modelo" : isEn ? "Error loading model" : "Erro ao carregar modelo",
                           description: error.message ?? String(error),
                           variant: "destructive"
                         });
@@ -510,11 +512,11 @@ const ConversaoPage: React.FC = () => {
                     }}
                   >
                     <Sparkles className="h-4 w-4" />
-                    Usar Modelo ToolSS
+                    {isEs ? "Usar Modelo ToolSS" : isEn ? "Use ToolSS Model" : "Usar Modelo ToolSS"}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">Inclui todas as PTAs e campos padrão da ToolSS</p>
+                  <p className="text-xs">{isEs ? "Incluye todas las PTAs y campos estándar de ToolSS" : isEn ? "Includes all ToolSS standard PTAs and fields" : "Inclui todas as PTAs e campos padrão da ToolSS"}</p>
                 </TooltipContent>
               </Tooltip>
               
@@ -523,10 +525,10 @@ const ConversaoPage: React.FC = () => {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">ou</span>
+                  <span className="bg-background px-2 text-muted-foreground">{isEs ? "o" : isEn ? "or" : "ou"}</span>
                 </div>
               </div>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -534,22 +536,22 @@ const ConversaoPage: React.FC = () => {
                 onClick={() => document.getElementById('model-file-input')?.click()}
               >
                 <Upload className="h-4 w-4" />
-                Enviar arquivo personalizado
+                {isEs ? "Enviar archivo personalizado" : isEn ? "Upload custom file" : "Enviar arquivo personalizado"}
               </Button>
-              
+
               {modelHeaders.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  ✓ {modelHeaders.length} chaves detectadas
+                  {isEs ? `✓ ${modelHeaders.length} claves detectadas` : isEn ? `✓ ${modelHeaders.length} keys detected` : `✓ ${modelHeaders.length} chaves detectadas`}
                 </p>
               )}
             </div>
           }
-          badge={modelHeaders.length > 0 ? <Badge>{modelHeaders.length} chaves</Badge> : undefined}
+          badge={modelHeaders.length > 0 ? <Badge>{modelHeaders.length} {isEs ? "claves" : isEn ? "keys" : "chaves"}</Badge> : undefined}
         />
 
         <FileUploadCard
-          title="2. Banco de nomenclaturas ✨"
-          description="Use nossas +500 nomenclaturas ou adicione as suas."
+          title={isEs ? "2. Banco de nomenclaturas ✨" : isEn ? "2. Nomenclature bank ✨" : "2. Banco de nomenclaturas ✨"}
+          description={isEs ? "Use nuestras +500 nomenclaturas o agregue las suyas." : isEn ? "Use our 500+ nomenclatures or add your own." : "Use nossas +500 nomenclaturas ou adicione as suas."}
           onFileSelected={handleLegendUpload}
           accept=".xlsx,.xls,.xlsm,.csv"
           fileName={legendFileName}
@@ -560,7 +562,7 @@ const ConversaoPage: React.FC = () => {
               {legendEntries.length === 0 && (
                 <div className="p-2 bg-primary/5 rounded-md border border-primary/20">
                   <p className="text-xs font-medium text-primary">
-                    👇 Use nossas legendas (cobre +500 variações)
+                    {isEs ? "👇 Use nuestras leyendas (cubre +500 variaciones)" : isEn ? "👇 Use our legends (covers 500+ variations)" : "👇 Use nossas legendas (cobre +500 variações)"}
                   </p>
                 </div>
               )}
@@ -576,13 +578,13 @@ const ConversaoPage: React.FC = () => {
                         const fileName = 'Legendas_27092025.csv';
                         const encodedFileName = encodeURIComponent(fileName);
                         const response = await fetch(`/${encodedFileName}?v=${Date.now()}`);
-                        if (!response.ok) throw new Error('Não foi possível carregar as legendas padrão');
+                        if (!response.ok) throw new Error(isEs ? 'No se pudieron cargar las leyendas estándar' : isEn ? 'Could not load the default legends' : 'Não foi possível carregar as legendas padrão');
                         const blob = await response.blob();
                         const file = new File([blob], fileName, { type: 'text/csv' });
                         await handleLegendUpload(file);
                       } catch (error: any) {
                         toast({
-                          title: "Erro ao carregar legendas",
+                          title: isEs ? "Error al cargar leyendas" : isEn ? "Error loading legends" : "Erro ao carregar legendas",
                           description: error.message ?? String(error),
                           variant: "destructive"
                         });
@@ -590,11 +592,11 @@ const ConversaoPage: React.FC = () => {
                     }}
                   >
                     <Sparkles className="h-4 w-4" />
-                    Usar Legendas ToolSS
+                    {isEs ? "Usar Leyendas ToolSS" : isEn ? "Use ToolSS Legends" : "Usar Legendas ToolSS"}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">+500 variações de nomenclaturas de laboratórios</p>
+                  <p className="text-xs">{isEs ? "+500 variaciones de nomenclaturas de laboratorios" : isEn ? "500+ nomenclature variations from laboratories" : "+500 variações de nomenclaturas de laboratórios"}</p>
                 </TooltipContent>
               </Tooltip>
               
@@ -603,10 +605,10 @@ const ConversaoPage: React.FC = () => {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">ou</span>
+                  <span className="bg-background px-2 text-muted-foreground">{isEs ? "o" : isEn ? "or" : "ou"}</span>
                 </div>
               </div>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -614,41 +616,41 @@ const ConversaoPage: React.FC = () => {
                 onClick={() => document.getElementById('legend-file-input')?.click()}
               >
                 <Upload className="h-4 w-4" />
-                Adicionar aliases personalizados
+                {isEs ? "Agregar aliases personalizados" : isEn ? "Add custom aliases" : "Adicionar aliases personalizados"}
               </Button>
-              
+
               {legendEntries.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  ✓ {legendEntries.length} aliases personalizados carregados
+                  {isEs ? `✓ ${legendEntries.length} aliases personalizados cargados` : isEn ? `✓ ${legendEntries.length} custom aliases loaded` : `✓ ${legendEntries.length} aliases personalizados carregados`}
                 </p>
               )}
             </div>
           }
           badge={
             legendEntries.length > 0 
-              ? <Badge variant="secondary">{legendEntries.length} entradas</Badge> 
-              : <Badge variant="outline">Recomendado</Badge>
+              ? <Badge variant="secondary">{legendEntries.length} {isEs ? "entradas" : isEn ? "entries" : "entradas"}</Badge>
+              : <Badge variant="outline">{isEs ? "Recomendado" : isEn ? "Recommended" : "Recomendado"}</Badge>
           }
         />
 
         <FileUploadCard
-          title="3. Arquivo de dados"
-          description="CSV ou Excel com os dados a padronizar."
+          title={isEs ? "3. Archivo de datos" : isEn ? "3. Data file" : "3. Arquivo de dados"}
+          description={isEs ? "CSV o Excel con los datos a estandarizar." : isEn ? "CSV or Excel with the data to standardize." : "CSV ou Excel com os dados a padronizar."}
           onFileSelected={handleDataUpload}
           accept=".xlsx,.xls,.xlsm,.csv"
           fileName={dataFileName}
           helper={
             dataRows.length > 0 ? (
-              <p className="text-xs text-muted-foreground">{dataRows.length} linhas carregadas.</p>
+              <p className="text-xs text-muted-foreground">{isEs ? `${dataRows.length} filas cargadas.` : isEn ? `${dataRows.length} rows loaded.` : `${dataRows.length} linhas carregadas.`}</p>
             ) : modelHeaders.length === 0 ? (
               <p className="text-xs text-muted-foreground">
-                Importe os dados quando quiser e carregue o modelo padrão para habilitar as sugestões de mapeamento.
+                {isEs ? "Importe los datos cuando quiera y cargue el modelo estándar para habilitar las sugerencias de mapeo." : isEn ? "Import data whenever you want and load the standard model to enable mapping suggestions." : "Importe os dados quando quiser e carregue o modelo padrão para habilitar as sugestões de mapeamento."}
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground">Após o upload você poderá revisar e aprovar os mapeamentos.</p>
+              <p className="text-xs text-muted-foreground">{isEs ? "Después de cargar podrá revisar y aprobar los mapeos." : isEn ? "After upload you can review and approve the mappings." : "Após o upload você poderá revisar e aprovar os mapeamentos."}</p>
             )
           }
-          badge={dataRows.length > 0 ? <Badge variant="secondary">Dados prontos</Badge> : undefined}
+          badge={dataRows.length > 0 ? <Badge variant="secondary">{isEs ? "Datos listos" : isEn ? "Data ready" : "Dados prontos"}</Badge> : undefined}
         />
       </div>
 
@@ -659,29 +661,29 @@ const ConversaoPage: React.FC = () => {
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold">Sugestões de mapeamento</h2>
+            <h2 className="text-2xl font-semibold">{isEs ? "Sugerencias de mapeo" : isEn ? "Mapping suggestions" : "Sugestões de mapeamento"}</h2>
             <p className="text-sm text-muted-foreground">
-              Aprove ou ajuste as sugestões antes de gerar o arquivo padronizado.
+              {isEs ? "Apruebe o ajuste las sugerencias antes de generar el archivo estandarizado." : isEn ? "Approve or adjust suggestions before generating the standardized file." : "Aprove ou ajuste as sugestões antes de gerar o arquivo padronizado."}
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Badge variant="outline">{approvedCount} aprovadas</Badge>
+            <Badge variant="outline">{approvedCount} {isEs ? "aprobadas" : isEn ? "approved" : "aprovadas"}</Badge>
             {excludedCount > 0 && (
-              <Badge variant="destructive">{excludedCount} excluídas</Badge>
+              <Badge variant="destructive">{excludedCount} {isEs ? "excluidas" : isEn ? "excluded" : "excluídas"}</Badge>
             )}
             <Button variant="outline" onClick={handleApproveSafe} disabled={safeSuggestions.length === 0}>
-              Aprovar sugestões seguras ({safeSuggestions.length})
+              {isEs ? `Aprobar sugerencias seguras (${safeSuggestions.length})` : isEn ? `Approve safe suggestions (${safeSuggestions.length})` : `Aprovar sugestões seguras (${safeSuggestions.length})`}
             </Button>
             <Button onClick={handleDownload} disabled={!canDownload}>
-              Baixar *_padronizado.xlsx
+              {isEs ? "Descargar *_padronizado.xlsx" : isEn ? "Download *_padronizado.xlsx" : "Baixar *_padronizado.xlsx"}
             </Button>
           </div>
         </div>
 
         {modelHeaders.length === 0 && (
           <Alert>
-            <AlertTitle>Modelo obrigatório</AlertTitle>
-            <AlertDescription>Carregue o modelo padrão para habilitar as sugestões.</AlertDescription>
+            <AlertTitle>{isEs ? "Modelo obligatorio" : isEn ? "Model required" : "Modelo obrigatório"}</AlertTitle>
+            <AlertDescription>{isEs ? "Cargue el modelo estándar para habilitar las sugerencias." : isEn ? "Load the standard model to enable suggestions." : "Carregue o modelo padrão para habilitar as sugestões."}</AlertDescription>
           </Alert>
         )}
 

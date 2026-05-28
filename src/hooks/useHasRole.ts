@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocale } from "@/lib/i18n";
 
 interface UseHasRoleOptions {
   /**
@@ -89,7 +90,7 @@ export function useHasRole(role: string, options: UseHasRoleOptions = {}): HasRo
       return result;
     } catch (err: any) {
       console.error(`Erro ao verificar role "${role}" via RPC ${functionName}:`, err);
-      setError(err?.message ?? "Não foi possível verificar permissões");
+      setError(err?.message ?? ({ "en-US": "Unable to verify permissions", "es": "No se pudieron verificar los permisos" }[getLocale()] ?? "Não foi possível verificar permissões"));
       setHasRole(false);
       return false;
     } finally {

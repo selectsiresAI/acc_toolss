@@ -15,6 +15,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Target } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const DEFAULT_SELECTED: string[] = ["hhp_dollar", "tpi", "nm_dollar", "dpr", "pl", "scs"];
 const BINS = 30;
@@ -36,13 +37,13 @@ interface IdealBenchmark {
   description: string;
 }
 
-const IDEAL_BENCHMARKS: Record<string, IdealBenchmark> = {
-  hhp_dollar: { min: 400, ideal: 600, description: "Valor econômico para alta lucratividade" },
-  tpi: { min: 2400, ideal: 2800, description: "Índice de mérito genético superior" },
-  nm_dollar: { min: 500, ideal: 700, description: "Valor líquido de mérito elevado" },
-  dpr: { min: 1.0, ideal: 2.5, description: "Taxa de prenhez elevada" },
-  pl: { min: 3.0, ideal: 6.0, description: "Longevidade produtiva superior" },
-  scs: { min: 2.5, ideal: 2.7, description: "Contagem de células somáticas baixa (menor é melhor)" },
+const IDEAL_BENCHMARKS: Record<string, IdealBenchmark & { descriptionEn: string; descriptionEs: string }> = {
+  hhp_dollar: { min: 400, ideal: 600, description: "Valor econômico para alta lucratividade", descriptionEn: "Economic value for high profitability", descriptionEs: "Valor económico para alta rentabilidad" },
+  tpi: { min: 2400, ideal: 2800, description: "Índice de mérito genético superior", descriptionEn: "Superior genetic merit index", descriptionEs: "Índice de mérito genético superior" },
+  nm_dollar: { min: 500, ideal: 700, description: "Valor líquido de mérito elevado", descriptionEn: "High net merit value", descriptionEs: "Valor neto de mérito elevado" },
+  dpr: { min: 1.0, ideal: 2.5, description: "Taxa de prenhez elevada", descriptionEn: "High pregnancy rate", descriptionEs: "Tasa de preñez elevada" },
+  pl: { min: 3.0, ideal: 6.0, description: "Longevidade produtiva superior", descriptionEn: "Superior productive longevity", descriptionEs: "Longevidad productiva superior" },
+  scs: { min: 2.5, ideal: 2.7, description: "Contagem de células somáticas baixa (menor é melhor)", descriptionEn: "Low somatic cell count (lower is better)", descriptionEs: "Conteo de células somáticas bajo (menor es mejor)" },
 };
 
 function calculateDescriptiveStats(values: number[]): DescriptiveStats {
@@ -114,6 +115,9 @@ type TraitSeries = {
 };
 
 function HistogramCard({ series }: { series: TraitSeries }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const { stats } = series;
   const benchmark = IDEAL_BENCHMARKS[series.traitKey];
 
@@ -131,15 +135,15 @@ function HistogramCard({ series }: { series: TraitSeries }) {
           {/* Estatísticas Resumidas */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 text-sm">
             <div className="bg-muted/50 px-2 py-1 rounded">
-              <div className="text-xs text-muted-foreground">Média</div>
+              <div className="text-xs text-muted-foreground">{isEs ? "Promedio" : isEn ? "Mean" : "Média"}</div>
               <div className="font-semibold">{stats.mean.toFixed(2)}</div>
             </div>
             <div className="bg-muted/50 px-2 py-1 rounded">
-              <div className="text-xs text-muted-foreground">Mediana</div>
+              <div className="text-xs text-muted-foreground">{isEs ? "Mediana" : isEn ? "Median" : "Mediana"}</div>
               <div className="font-semibold">{stats.median.toFixed(2)}</div>
             </div>
             <div className="bg-muted/50 px-2 py-1 rounded">
-              <div className="text-xs text-muted-foreground">Desvio Padrão</div>
+              <div className="text-xs text-muted-foreground">{isEs ? "Desv. Estándar" : isEn ? "Std Dev" : "Desvio Padrão"}</div>
               <div className="font-semibold">{stats.std.toFixed(2)}</div>
             </div>
             <div className="bg-muted/50 px-2 py-1 rounded">
@@ -147,7 +151,7 @@ function HistogramCard({ series }: { series: TraitSeries }) {
               <div className="font-semibold">{stats.cv.toFixed(1)}%</div>
             </div>
             <div className="bg-muted/50 px-2 py-1 rounded">
-              <div className="text-xs text-muted-foreground">Mín - Máx</div>
+              <div className="text-xs text-muted-foreground">{isEs ? "Mín - Máx" : isEn ? "Min - Max" : "Mín - Máx"}</div>
               <div className="font-semibold text-xs">{stats.min.toFixed(1)} – {stats.max.toFixed(1)}</div>
             </div>
             <div className="bg-muted/50 px-2 py-1 rounded">
@@ -161,7 +165,7 @@ function HistogramCard({ series }: { series: TraitSeries }) {
             <div className="mt-2 flex items-center gap-2 text-xs">
               <Target className="h-3 w-3" />
               <span className="text-muted-foreground">
-                Meta ideal: <strong>≥{benchmark.ideal}</strong> ({benchmark.description})
+                {isEs ? "Meta ideal" : isEn ? "Ideal target" : "Meta ideal"}: <strong>≥{benchmark.ideal}</strong> ({isEs ? benchmark.descriptionEs : isEn ? benchmark.descriptionEn : benchmark.description})
               </span>
             </div>
           )}
@@ -184,7 +188,7 @@ function HistogramCard({ series }: { series: TraitSeries }) {
               />
               <YAxis 
                 allowDecimals={false}
-                label={{ value: 'Frequência', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
+                label={{ value: isEs ? 'Frecuencia' : isEn ? 'Frequency' : 'Frequência', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
               />
               <Tooltip 
                 content={({ active, payload }) => {
@@ -194,8 +198,8 @@ function HistogramCard({ series }: { series: TraitSeries }) {
                     return (
                       <div className="bg-popover border border-border p-3 rounded-md shadow-lg text-sm">
                         <p className="font-semibold mb-1">{data.bin}</p>
-                        <p>Frequência: <strong className="text-primary">{data.n}</strong> ({pct}%)</p>
-                        <p className="text-xs text-muted-foreground mt-1">Centro: {data.midpoint.toFixed(2)}</p>
+                        <p>{isEs ? "Frecuencia" : isEn ? "Frequency" : "Frequência"}: <strong className="text-primary">{data.n}</strong> ({pct}%)</p>
+                        <p className="text-xs text-muted-foreground mt-1">{isEs ? "Centro" : isEn ? "Center" : "Centro"}: {data.midpoint.toFixed(2)}</p>
                       </div>
                     );
                   }
@@ -213,15 +217,15 @@ function HistogramCard({ series }: { series: TraitSeries }) {
         <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-foreground" />
-            <span>Próximo da média (±0.5σ)</span>
+            <span>{isEs ? "Cerca del promedio" : isEn ? "Near the mean" : "Próximo da média"} (±0.5σ)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-muted-foreground" />
-            <span>Moderado (0.5σ - 1.5σ)</span>
+            <span>{isEs ? "Moderado" : isEn ? "Moderate" : "Moderado"} (0.5σ - 1.5σ)</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded bg-muted" />
-            <span>Distante (&gt;1.5σ)</span>
+            <span>{isEs ? "Distante" : isEn ? "Distant" : "Distante"} (&gt;1.5σ)</span>
           </div>
         </div>
       </CardContent>
@@ -235,6 +239,9 @@ interface AuditoriaStep7SectionProps {
 }
 
 export default function AuditoriaStep7Section({ farmId }: AuditoriaStep7SectionProps) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const allTraits = useMemo(() => {
     const sorted = [...PTA_CATALOG].sort((a, b) => a.label.localeCompare(b.label));
     return sorted.sort((a, b) => (a.key === "hhp_dollar" ? -1 : b.key === "hhp_dollar" ? 1 : 0));
@@ -313,13 +320,13 @@ export default function AuditoriaStep7Section({ farmId }: AuditoriaStep7SectionP
   }, [farmId, allTraits]);
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">Carregando…</div>;
+    return <div className="text-sm text-muted-foreground">{isEs ? "Cargando..." : isEn ? "Loading..." : "Carregando…"}</div>;
   }
 
   if (series.length === 0) {
     return (
       <div className="text-sm text-muted-foreground">
-        Nenhum dado disponível.
+        {isEs ? "Sin datos disponibles." : isEn ? "No data available." : "Nenhum dado disponível."}
       </div>
     );
   }

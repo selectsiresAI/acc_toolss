@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Bug, Star, Sparkles } from "lucide-react";
 import { useAGFilters } from "@/features/auditoria/store";
+import { useTranslation } from "@/hooks/useTranslation";
 function useTenantId(): string | null {
   const filters = useAGFilters();
   const farmId = filters?.farmId;
@@ -26,6 +27,7 @@ type HomeHintDialogProps = {
 };
 
 export default function HomeHintDialog({ userId = null }: HomeHintDialogProps) {
+  const { t } = useTranslation();
   const tenantId = useTenantId();
 
   const key = useMemo(() => storageKey(userId, tenantId), [userId, tenantId]);
@@ -69,10 +71,10 @@ export default function HomeHintDialog({ userId = null }: HomeHintDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            Bem-vindo à Plataforma!
+            {t("hint.welcome")}
           </DialogTitle>
           <DialogDescription>
-            Estamos aqui para ajudar você a aproveitar ao máximo todas as funcionalidades.
+            {t("hint.welcomeDesc")}
           </DialogDescription>
         </DialogHeader>
         
@@ -82,9 +84,9 @@ export default function HomeHintDialog({ userId = null }: HomeHintDialogProps) {
               <HelpCircle className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-sm mb-1">Central de Ajuda</h4>
+              <h4 className="font-semibold text-sm mb-1">{t("hint.helpCenter")}</h4>
               <p className="text-sm text-muted-foreground">
-                Acesse FAQs contextuais, guias e vídeos tutoriais pelo botão vermelho no canto inferior direito.
+                {t("hint.helpCenterDesc")}
               </p>
             </div>
           </div>
@@ -94,9 +96,9 @@ export default function HomeHintDialog({ userId = null }: HomeHintDialogProps) {
               <Bug className="h-5 w-5 text-orange-500" />
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-sm mb-1">Reporte de Erros</h4>
+              <h4 className="font-semibold text-sm mb-1">{t("hint.bugReport")}</h4>
               <p className="text-sm text-muted-foreground">
-                Encontrou um bug? Use o botão laranja flutuante para nos avisar rapidamente.
+                {t("hint.bugReportDesc")}
               </p>
             </div>
           </div>
@@ -106,9 +108,9 @@ export default function HomeHintDialog({ userId = null }: HomeHintDialogProps) {
               <Star className="h-5 w-5 text-purple-500" />
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-sm mb-1">Avalie a Plataforma</h4>
+              <h4 className="font-semibold text-sm mb-1">{t("hint.ratePlatform")}</h4>
               <p className="text-sm text-muted-foreground">
-                Sua opinião é importante! Compartilhe feedback sobre aparência, gráficos e usabilidade.
+                {t("hint.ratePlatformDesc")}
               </p>
             </div>
           </div>
@@ -120,13 +122,13 @@ export default function HomeHintDialog({ userId = null }: HomeHintDialogProps) {
             onClick={closeDialog}
             className="flex-1"
           >
-            Entendi
+            {t("hint.gotIt")}
           </Button>
           <Button 
             onClick={handleStartTutorial}
             className="flex-1"
           >
-            Iniciar Tutorial
+            {t("hint.startTutorial")}
           </Button>
         </div>
       </DialogContent>

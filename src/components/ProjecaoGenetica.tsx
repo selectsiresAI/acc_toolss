@@ -18,6 +18,7 @@ import {
 } from "@/providers/PlanObjectiveContext";
 import { PlanStepper } from "@/components/plano-genetico/PlanStepper";
 import { EmptyChartPlaceholder } from "@/components/plano-genetico/EmptyChartPlaceholder";
+import { useTranslation } from '@/hooks/useTranslation';
 
 /**
  * Projeção Genética MVP – Select Sires (Frontend Only, Single File)
@@ -49,32 +50,12 @@ const DEFAULT_IM5_PLAN_ID = "SEU_PLAN_ID_AQUI"; // ⚠️ Ajuste para usar o pla
 
 type BuiltinObjectiveKey = Extract<ObjectiveChoice, { kind: "BUILTIN" }>["key"];
 
-const BUILTIN_OBJECTIVES: { key: BuiltinObjectiveKey; label: string; description: string }[] = [
-  {
-    key: "HHP$",
-    label: "HHP$ — Saúde e Longevidade",
-    description: "Priorização de genética voltada a fertilidade, resistência a doenças e vida produtiva das vacas.",
-  },
-  {
-    key: "TPI",
-    label: "TPI — Total Performance Index",
-    description: "Equilíbrio geral entre produção, conformação e saúde para rebanhos com foco em evolução completa.",
-  },
-  {
-    key: "NM$",
-    label: "NM$ — Net Merit Dollar",
-    description: "Maximiza retorno econômico combinando produção de leite, sólidos e custos de saúde do rebanho.",
-  },
-  {
-    key: "FM$",
-    label: "FM$ — Female Merit",
-    description: "Direcionado a fertilidade, produção e longevidade em sistemas comerciais de leite focados em fêmeas.",
-  },
-  {
-    key: "CM$",
-    label: "CM$ — Cheese Merit",
-    description: "Ênfase em sólidos do leite e qualidade para operações voltadas a queijos e derivados.",
-  },
+const BUILTIN_OBJECTIVES: { key: BuiltinObjectiveKey; labelKey: string; descKey: string }[] = [
+  { key: "HHP$", labelKey: "proj.obj.hhp", descKey: "proj.obj.hhpDesc" },
+  { key: "TPI", labelKey: "proj.obj.tpi", descKey: "proj.obj.tpiDesc" },
+  { key: "NM$", labelKey: "proj.obj.nm", descKey: "proj.obj.nmDesc" },
+  { key: "FM$", labelKey: "proj.obj.fm", descKey: "proj.obj.fmDesc" },
+  { key: "CM$", labelKey: "proj.obj.cm", descKey: "proj.obj.cmDesc" },
 ];
 
 const BUILTIN_OBJECTIVE_MAP: Record<BuiltinObjectiveKey, typeof BUILTIN_OBJECTIVES[number]> = BUILTIN_OBJECTIVES.reduce(
@@ -87,14 +68,19 @@ const BUILTIN_OBJECTIVE_MAP: Record<BuiltinObjectiveKey, typeof BUILTIN_OBJECTIV
 
 const labelToBuiltin = new Map<BuiltinObjectiveKey | string, BuiltinObjectiveKey>();
 BUILTIN_OBJECTIVES.forEach((item) => {
-  labelToBuiltin.set(item.label, item.key);
   labelToBuiltin.set(item.key, item.key);
 });
 labelToBuiltin.set("HHP$®", "HHP$");
 
 function getObjectiveLabel(choice: ObjectiveChoice | null) {
   if (!choice) return "";
-  return BUILTIN_OBJECTIVE_MAP[choice.key]?.label ?? choice.key;
+  return choice.key;
+}
+
+function getObjectiveTranslatedLabel(choice: ObjectiveChoice | null, t: (key: string) => string) {
+  if (!choice) return "";
+  const obj = BUILTIN_OBJECTIVE_MAP[choice.key];
+  return obj ? t(obj.labelKey as any) : choice.key;
 }
 
 function objectiveFromLabel(label: string): ObjectiveChoice | null {
@@ -169,11 +155,11 @@ function resolveRoiIndexLabel(objective: ObjectiveChoice | null, selectedPTAs: s
 
 // Tipos
 type CategoryKey = "novilhas" | "primiparas" | "secundiparas" | "multiparas";
-const CATEGORIES: { key: CategoryKey; label: string }[] = [
-  { key: "novilhas", label: "Novilhas" },
-  { key: "primiparas", label: "Primíparas" },
-  { key: "secundiparas", label: "Secundíparas" },
-  { key: "multiparas", label: "Multíparas" },
+const CATEGORIES: { key: CategoryKey; labelKey: string }[] = [
+  { key: "novilhas", labelKey: "herd.heifers" },
+  { key: "primiparas", labelKey: "herd.primiparous" },
+  { key: "secundiparas", labelKey: "herd.secondiparous" },
+  { key: "multiparas", labelKey: "herd.multiparous" },
 ];
 
 // Lista completa de PTAs disponíveis (exatos como no banco)
@@ -239,15 +225,15 @@ interface AppState {
 }
 
 // ---------- Helpers ----------
-const BRL = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+const BRL = (v: number, locale = "pt-BR") =>
+  new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" }).format(
     isFinite(v) ? v : 0
   );
 
-const NUM = (v: number, digits = 0) =>
-  new Intl.NumberFormat("pt-BR", { 
-    minimumFractionDigits: digits, 
-    maximumFractionDigits: digits 
+const NUM = (v: number, digits = 0, locale = "pt-BR") =>
+  new Intl.NumberFormat(locale, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits
   }).format(isFinite(v) ? Math.round(v * Math.pow(10, digits)) / Math.pow(10, digits) : 0);
 
 // PTA_NUM removed — use formatPtaValue(ptaLabel, value) instead
@@ -475,13 +461,13 @@ function useAppState() {
             autoCalculatePopulation: true
           }));
           
-          toast.success('Rebanho carregado automaticamente');
+          toast.success('Herd loaded automatically');
         } else {
           // No farm selected for auto-loading
         }
       } catch (error) {
         console.error('❌ Erro ao carregar rebanho:', error);
-        toast.error('Erro ao carregar rebanho automaticamente');
+        toast.error('Error loading herd automatically');
       }
     };
     
@@ -797,6 +783,8 @@ function Button({
 
 // ---------- Pages ----------
 function PagePlano({ st, setSt }: { st: AppState; setSt: React.Dispatch<React.SetStateAction<AppState>> }) {
+  const { t, locale } = useTranslation();
+  const isEn = locale === "en-US"; const isEs = locale === "es";
   const planStore = usePlanStore();
   
   // Load ToolSS data 
@@ -876,33 +864,33 @@ function PagePlano({ st, setSt }: { st: AppState; setSt: React.Dispatch<React.Se
 
   return (
     <div>
-      <Section title="Informações Gerais do Plano">
+      <Section title={isEs ? "Información General del Plan" : isEn ? "General Plan Information" : "Informações Gerais do Plano"}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div>
-            <Label>Nome da Fazenda</Label>
-            <Input value={st.farm.farmName} onChange={(v) => setSt((s) => ({ ...s, farm: { ...s.farm, farmName: v } }))} placeholder="Digite o nome da fazenda" />
+            <Label>{isEs ? "Nombre de la Finca" : isEn ? "Farm Name" : "Nome da Fazenda"}</Label>
+            <Input value={st.farm.farmName} onChange={(v) => setSt((s) => ({ ...s, farm: { ...s.farm, farmName: v } }))} placeholder={isEs ? "Ingrese el nombre de la finca" : isEn ? "Enter farm name" : "Digite o nome da fazenda"} />
           </div>
           <div>
-            <Label>Nome do Técnico</Label>
-            <Input value={st.farm.technician} onChange={(v) => setSt((s) => ({ ...s, farm: { ...s.farm, technician: v } }))} placeholder="Digite o nome do técnico" />
+            <Label>{isEs ? "Nombre del Técnico" : isEn ? "Technician Name" : "Nome do Técnico"}</Label>
+            <Input value={st.farm.technician} onChange={(v) => setSt((s) => ({ ...s, farm: { ...s.farm, technician: v } }))} placeholder={isEs ? "Ingrese el nombre del técnico" : isEn ? "Enter technician name" : "Digite o nome do técnico"} />
           </div>
           <div>
-            <Label>Data da Simulação</Label>
+            <Label>{isEs ? "Fecha de la Simulación" : isEn ? "Simulation Date" : "Data da Simulação"}</Label>
             <Input type="date" value={st.farm.date} onChange={(v) => setSt((s) => ({ ...s, farm: { ...s.farm, date: v } }))} />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
-            <Label>Objetivo Genético do Rebanho</Label>
-            <Input value={st.farm.objective} onChange={(v) => setSt((s) => ({ ...s, farm: { ...s.farm, objective: v } }))} placeholder="Ex.: Maximizar NM$ e longevidade com custo competitivo" />
+            <Label>{isEs ? "Objetivo Genético del Rebaño" : isEn ? "Herd Genetic Objective" : "Objetivo Genético do Rebanho"}</Label>
+            <Input value={st.farm.objective} onChange={(v) => setSt((s) => ({ ...s, farm: { ...s.farm, objective: v } }))} placeholder={isEs ? "Ej.: Maximizar NM$ y longevidad con costo competitivo" : isEn ? "E.g.: Maximize NM$ and longevity with competitive cost" : "Ex.: Maximizar NM$ e longevidade com custo competitivo"} />
           </div>
         </div>
       </Section>
 
           {/* Seleção de Cliente e Fazenda do ToolSSApp */}
       {toolssClients.length > 0 && (
-        <Section title="🎯 Dados do Rebanho (ToolSS)">
+        <Section title={isEs ? "Datos del Rebaño (ToolSS)" : isEn ? "Herd Data (ToolSS)" : "Dados do Rebanho (ToolSS)"}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <Label>Cliente/Rebanho</Label>
+              <Label>{isEs ? "Cliente/Rebaño" : isEn ? "Client/Herd" : "Cliente/Rebanho"}</Label>
               <Select 
                 value={selectedClientData?.id ? selectedClientData.id.toString() : ""} 
                 onChange={(v) => {
@@ -925,13 +913,13 @@ function PagePlano({ st, setSt }: { st: AppState; setSt: React.Dispatch<React.Se
                   }
                 }}
                 options={[
-                  { value: "", label: "Selecione um cliente" },
+                  { value: "", label: isEs ? "Seleccione un cliente" : isEn ? "Select a client" : "Selecione um cliente" },
                   ...toolssClients.map(c => ({ value: c.id.toString(), label: `#${c.id} - ${c.nome}` }))
                 ]}
               />
             </div>
             <div>
-              <Label>Fazenda</Label>
+              <Label>{isEs ? "Finca" : isEn ? "Farm" : "Fazenda"}</Label>
               <Select 
                 value={selectedFarm?.id ? selectedFarm.id.toString() : ""} 
                 onChange={(v) => {
@@ -947,26 +935,26 @@ function PagePlano({ st, setSt }: { st: AppState; setSt: React.Dispatch<React.Se
                   }
                 }}
                 options={[
-                  { value: "", label: "Selecione uma fazenda" },
-                  ...farms.map((f: any) => ({ value: f.id.toString(), label: `${f.nome} (${f.females?.length || 0} fêmeas)` }))
+                  { value: "", label: isEs ? "Seleccione una finca" : isEn ? "Select a farm" : "Selecione uma fazenda" },
+                  ...farms.map((f: any) => ({ value: f.id.toString(), label: `${f.nome} (${f.females?.length || 0} ${isEs ? "hembras" : isEn ? "females" : "fêmeas"})` }))
                 ]}
               />
             </div>
           </div>
           {selectedFarm && (
             <div style={{ marginTop: 12, padding: 10, background: "#f0f9ff", borderRadius: 8, fontSize: 12 }}>
-              <strong>Rebanho selecionado:</strong> {selectedFarm.nome}<br/>
-              <strong>Total de fêmeas:</strong> {selectedFarm.females?.length || 0}<br/>
-              <strong>Distribuição automática por categoria será calculada</strong>
+              <strong>{isEs ? "Rebaño seleccionado:" : isEn ? "Selected herd:" : "Rebanho selecionado:"}</strong> {selectedFarm.nome}<br/>
+              <strong>{isEs ? "Total de hembras:" : isEn ? "Total females:" : "Total de fêmeas:"}</strong> {selectedFarm.females?.length || 0}<br/>
+              <strong>{isEs ? "La distribución automática por categoría será calculada" : isEn ? "Automatic distribution by category will be calculated" : "Distribuição automática por categoria será calculada"}</strong>
             </div>
           )}
         </Section>
       )}
 
       {/* Seleção de PTAs */}
-      <Section title="📊 Seleção de PTAs para Análise">
+      <Section title={isEs ? "Selección de PTAs para Análisis" : isEn ? "PTA Selection for Analysis" : "Seleção de PTAs para Análise"}>
         <div style={{ marginBottom: 12 }}>
-          <Label>Selecione até 5 PTAs para análise (atual: {planStore.selectedPTAList.length}/5)</Label>
+          <Label>{isEs ? `Seleccione hasta 5 PTAs para análisis (actual: ${planStore.selectedPTAList.length}/5)` : isEn ? `Select up to 5 PTAs for analysis (current: ${planStore.selectedPTAList.length}/5)` : `Selecione até 5 PTAs para análise (atual: ${planStore.selectedPTAList.length}/5)`}</Label>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8, marginTop: 8 }}>
             {ALL_PTAS.map(pta => {
               const isSelected = planStore.selectedPTAList.includes(pta);
@@ -989,7 +977,7 @@ function PagePlano({ st, setSt }: { st: AppState; setSt: React.Dispatch<React.Se
                         if (planStore.selectedPTAList.length < 5) {
                           planStore.setSelectedPTAList([...planStore.selectedPTAList, pta]);
                         } else {
-                          toast.error("Máximo de 5 PTAs permitidas.");
+                          toast.error(isEs ? "Máximo de 5 PTAs permitidas." : isEn ? "Maximum of 5 PTAs allowed." : "Máximo de 5 PTAs permitidas.");
                         }
                       } else {
                         planStore.setSelectedPTAList(planStore.selectedPTAList.filter(k => k !== pta));
@@ -1005,7 +993,7 @@ function PagePlano({ st, setSt }: { st: AppState; setSt: React.Dispatch<React.Se
         </div>
       </Section>
 
-      <Section title="📋 Premissas Reprodutivas da Fazenda">
+      <Section title={isEs ? "Premisas Reproductivas de la Finca" : isEn ? "Farm Reproductive Premises" : "Premissas Reprodutivas da Fazenda"}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           {/* Estrutura populacional */}
           <EstruturalPopulacional />
@@ -1022,7 +1010,7 @@ function PagePlano({ st, setSt }: { st: AppState; setSt: React.Dispatch<React.Se
                 marginBottom: 8
               }}
             >
-              <h3 style={{ fontWeight: 700 }}>Parâmetros Reprodutivos por Categoria</h3>
+              <h3 style={{ fontWeight: 700 }}>{isEs ? "Parámetros Reproductivos por Categoría" : isEn ? "Reproductive Parameters by Category" : "Parâmetros Reprodutivos por Categoria"}</h3>
               <Button
                 variant="primary"
                 ariaLabel="Incluir dados de referência"
@@ -1053,28 +1041,28 @@ function PagePlano({ st, setSt }: { st: AppState; setSt: React.Dispatch<React.Se
                   }));
                 }}
               >
-                📋 Restaurar padrões
+                {isEs ? "Restaurar valores predeterminados" : isEn ? "Restore defaults" : "Restaurar padrões"}
               </Button>
             </div>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
               <thead>
                 <tr style={{ background: COLORS.gray }}>
-                  <th style={{ textAlign: "left", padding: 6 }}>Categoria</th>
-                  <th style={{ textAlign: "left", padding: 6 }}>Tx. Serviço (%)
-                    <span title="Número de IA / número de fêmeas expostas"> ⓘ</span>
+                  <th style={{ textAlign: "left", padding: 6 }}>{isEs ? "Categoría" : isEn ? "Category" : "Categoria"}</th>
+                  <th style={{ textAlign: "left", padding: 6 }}>{isEs ? "Tasa de Servicio (%)" : isEn ? "Service Rate (%)" : "Tx. Serviço (%)"}
+                    <span title={isEs ? "Número de IA / número de hembras expuestas" : isEn ? "Number of AI / number of exposed females" : "Número de IA / número de fêmeas expostas"}> ⓘ</span>
                   </th>
-                  <th style={{ textAlign: "left", padding: 6 }}>Tx. Concepção (%)
-                    <span title="Prenhezes / IA"> ⓘ</span>
+                  <th style={{ textAlign: "left", padding: 6 }}>{isEs ? "Tasa de Concepción (%)" : isEn ? "Conception Rate (%)" : "Tx. Concepção (%)"}
+                    <span title={isEs ? "Preñeces / IA" : isEn ? "Pregnancies / AI" : "Prenhezes / IA"}> ⓘ</span>
                   </th>
-                  <th style={{ textAlign: "left", padding: 6 }}>Tx. Pré-ex (%)
-                    <span title="Prenhezes confirmadas no pré-exame"> ⓘ</span>
+                  <th style={{ textAlign: "left", padding: 6 }}>{isEs ? "Tasa Pre-examen (%)" : isEn ? "Pre-exam Rate (%)" : "Tx. Pré-ex (%)"}
+                    <span title={isEs ? "Preñeces confirmadas en el pre-examen" : isEn ? "Confirmed pregnancies at pre-exam" : "Prenhezes confirmadas no pré-exame"}> ⓘ</span>
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {CATEGORIES.map(({ key, label }) => (
+                {CATEGORIES.map(({ key, labelKey }) => (
                   <tr key={key}>
-                    <td style={{ padding: 6 }}>{label}</td>
+                    <td style={{ padding: 6 }}>{t(labelKey as any)}</td>
                     <td style={{ padding: 6 }}>
                       <Input
                         type="number"
@@ -1104,7 +1092,7 @@ function PagePlano({ st, setSt }: { st: AppState; setSt: React.Dispatch<React.Se
               </tbody>
             </table>
             <div style={{ marginTop: 6, fontSize: 12, color: COLORS.black }}>
-              * No MVP, a Tx. Serviço é informativa (não entra no fluxo principal para evitar dupla contagem).
+              {isEs ? "* En el MVP, la Tasa de Servicio es informativa (no entra en el flujo principal para evitar doble conteo)." : isEn ? "* In the MVP, the Service Rate is informational (not used in the main flow to avoid double counting)." : "* No MVP, a Tx. Serviço é informativa (não entra no fluxo principal para evitar dupla contagem)."}
             </div>
           </div>
         </div>
@@ -1120,6 +1108,8 @@ function PagePlano({ st, setSt }: { st: AppState; setSt: React.Dispatch<React.Se
 }
 
 function PageBulls({ st, setSt, onGoToResults }: { st: AppState; setSt: React.Dispatch<React.SetStateAction<AppState>>; onGoToResults?: () => void }) {
+  const { t, locale } = useTranslation();
+  const isEn = locale === "en-US"; const isEs = locale === "es";
   const planStore = usePlanStore();
 
   // Inicializa touros se necessário
@@ -1152,25 +1142,25 @@ function PageBulls({ st, setSt, onGoToResults }: { st: AppState; setSt: React.Di
   return (
     <div>
       {/* Seleção do número de touros */}
-      <Section title="🐂 Configuração de Touros">
+      <Section title={isEs ? "Configuración de Toros" : isEn ? "Bull Configuration" : "Configuração de Touros"}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
           <div>
-            <Label>Número de touros para análise (1-5)</Label>
+            <Label>{isEs ? "Número de toros para análisis (1-5)" : isEn ? "Number of bulls for analysis (1-5)" : "Número de touros para análise (1-5)"}</Label>
             <Select
               value={st.numberOfBulls}
               onChange={(v) => setSt(s => ({ ...s, numberOfBulls: parseInt(v) }))}
               options={[
-                { value: "1", label: "1 touro" },
-                { value: "2", label: "2 touros" },
-                { value: "3", label: "3 touros" },
-                { value: "4", label: "4 touros" },
-                { value: "5", label: "5 touros" },
+                { value: "1", label: isEs ? "1 toro" : isEn ? "1 bull" : "1 touro" },
+                { value: "2", label: isEs ? "2 toros" : isEn ? "2 bulls" : "2 touros" },
+                { value: "3", label: isEs ? "3 toros" : isEn ? "3 bulls" : "3 touros" },
+                { value: "4", label: isEs ? "4 toros" : isEn ? "4 bulls" : "4 touros" },
+                { value: "5", label: isEs ? "5 toros" : isEn ? "5 bulls" : "5 touros" },
               ]}
             />
           </div>
           <div style={{ display: "flex", alignItems: "end" }}>
             <div style={{ fontSize: 12, color: COLORS.black }}>
-              PTAs selecionadas: {planStore.selectedPTAList.join(", ")}
+              {isEs ? "PTAs seleccionadas:" : isEn ? "Selected PTAs:" : "PTAs selecionadas:"} {planStore.selectedPTAList.join(", ")}
             </div>
           </div>
         </div>
@@ -1178,11 +1168,11 @@ function PageBulls({ st, setSt, onGoToResults }: { st: AppState; setSt: React.Di
 
       {/* Configuração de cada touro */}
       {st.bulls.slice(0, st.numberOfBulls).map((b, idx) => (
-        <Section key={b.id} title={`Touro ${idx + 1}`}>
+        <Section key={b.id} title={isEs ? `Toro ${idx + 1}` : isEn ? `Bull ${idx + 1}` : `Touro ${idx + 1}`}>
           {/* Seleção do touro — campo único com autocomplete */}
           <div style={{ marginBottom: 12 }}>
             <BullSelector
-              label={`Selecionar Touro ${idx + 1}`}
+              label={isEs ? `Seleccionar Toro ${idx + 1}` : isEn ? `Select Bull ${idx + 1}` : `Selecionar Touro ${idx + 1}`}
               value={b.naab ? {
                 id: b.naab,
                 code: b.naab,
@@ -1228,41 +1218,41 @@ function PageBulls({ st, setSt, onGoToResults }: { st: AppState; setSt: React.Di
             />
             {b.naab && Object.values(b.pta).some(v => v !== null && v !== 0) && (
               <div style={{ marginTop: 4, fontSize: 11, color: "#16a34a" }}>
-                ✅ PTAs carregadas automaticamente para as {planStore.selectedPTAList.length} características selecionadas
+                {isEs ? `✅ PTAs cargadas automáticamente para las ${planStore.selectedPTAList.length} características seleccionadas` : isEn ? `✅ PTAs auto-loaded for the ${planStore.selectedPTAList.length} selected traits` : `✅ PTAs carregadas automaticamente para as ${planStore.selectedPTAList.length} características selecionadas`}
               </div>
             )}
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 12, marginBottom: 8 }}>
             <div>
-              <Label>Nome do Touro</Label>
-              <Input value={b.name} disabled={!!b.naab} onChange={(v) => setSt((s) => ({ ...s, bulls: s.bulls.map((bb, i) => (i === idx ? { ...bb, name: v } : bb)) }))} placeholder="Preenchido ao selecionar touro" />
+              <Label>{isEs ? "Nombre del Toro" : isEn ? "Bull Name" : "Nome do Touro"}</Label>
+              <Input value={b.name} disabled={!!b.naab} onChange={(v) => setSt((s) => ({ ...s, bulls: s.bulls.map((bb, i) => (i === idx ? { ...bb, name: v } : bb)) }))} placeholder={isEs ? "Se completa al seleccionar toro" : isEn ? "Filled when bull is selected" : "Preenchido ao selecionar touro"} />
             </div>
             <div>
               <Label>NAAB</Label>
               <Input value={b.naab} disabled={!!b.naab} onChange={(v) => setSt((s) => ({ ...s, bulls: s.bulls.map((bb, i) => (i === idx ? { ...bb, naab: v } : bb)) }))} placeholder="NAAB" />
             </div>
             <div>
-              <Label>Empresa</Label>
-              <Input value={b.empresa || ""} disabled={!!b.naab} onChange={(v) => setSt((s) => ({ ...s, bulls: s.bulls.map((bb, i) => (i === idx ? { ...bb, empresa: v } : bb)) }))} placeholder="Empresa" />
+              <Label>{isEs ? "Empresa" : isEn ? "Company" : "Empresa"}</Label>
+              <Input value={b.empresa || ""} disabled={!!b.naab} onChange={(v) => setSt((s) => ({ ...s, bulls: s.bulls.map((bb, i) => (i === idx ? { ...bb, empresa: v } : bb)) }))} placeholder={isEs ? "Empresa" : isEn ? "Company" : "Empresa"} />
             </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 8 }}>
             <div>
-              <Label>Tipo de Sêmen</Label>
+              <Label>{isEs ? "Tipo de Semen" : isEn ? "Semen Type" : "Tipo de Sêmen"}</Label>
               <Select value={b.semen} onChange={(v) => setSt((s) => ({ ...s, bulls: s.bulls.map((bb, i) => (i === idx ? { ...bb, semen: v as SemenType } : bb)) }))} options={["Sexado", "Convencional"]} />
             </div>
             <div>
-              <Label>Preço por dose (R$)</Label>
+              <Label>{isEs ? "Precio por dosis (R$)" : isEn ? "Price per dose (R$)" : "Preço por dose (R$)"}</Label>
               <Input type="number" min={0} value={b.pricePerDose} onChange={(v) => setSt((s) => ({ ...s, bulls: s.bulls.map((bb, i) => (i === idx ? { ...bb, pricePerDose: v === "" ? 0 : v } : bb)) }))} />
             </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 8 }}>
-            {CATEGORIES.map(({ key, label }) => (
+            {CATEGORIES.map(({ key, labelKey }) => (
               <div key={key}>
-                <Label>{label} – Nº Doses</Label>
+                <Label>{t(labelKey as any)} – {isEs ? "N.º Dosis" : isEn ? "No. Doses" : "Nº Doses"}</Label>
                 <Input
                   type="number"
                   min={0}
@@ -1274,7 +1264,7 @@ function PageBulls({ st, setSt, onGoToResults }: { st: AppState; setSt: React.Di
           </div>
 
           <div style={{ marginTop: 8 }}>
-            <h4 style={{ marginBottom: 6, fontWeight: 700 }}>PTAs do Touro</h4>
+            <h4 style={{ marginBottom: 6, fontWeight: 700 }}>{isEs ? "PTAs del Toro" : isEn ? "Bull PTAs" : "PTAs do Touro"}</h4>
             <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(planStore.selectedPTAList.length, 5)}, 1fr)`, gap: 8 }}>
               {planStore.selectedPTAList.map((ptaLabel) => (
                 <div key={ptaLabel}>
@@ -1306,7 +1296,7 @@ function PageBulls({ st, setSt, onGoToResults }: { st: AppState; setSt: React.Di
             </div>
             {b.naab && Object.values(b.pta).some(v => v !== null && v !== 0) && (
               <div style={{ marginTop: 6, fontSize: 11, color: "#16a34a" }}>
-                ✅ PTAs carregadas automaticamente do banco de touros
+                {isEs ? "✅ PTAs cargadas automáticamente de la base de toros" : isEn ? "✅ PTAs auto-loaded from bull database" : "✅ PTAs carregadas automaticamente do banco de touros"}
               </div>
             )}
           </div>
@@ -1319,7 +1309,7 @@ function PageBulls({ st, setSt, onGoToResults }: { st: AppState; setSt: React.Di
       ) && (
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
           <Button onClick={onGoToResults}>
-            Ir para Resultados →
+            {isEs ? "Ir a Resultados →" : isEn ? "Go to Results →" : "Ir para Resultados →"}
           </Button>
         </div>
       )}
@@ -1353,6 +1343,9 @@ function RoiIndexSelector({
   value: string | null;
   onSelect: (label: string) => void;
 }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US"; const isEs = locale === "es";
+
   if (!options.length) {
     return (
       <div
@@ -1365,7 +1358,7 @@ function RoiIndexSelector({
           color: COLORS.black,
         }}
       >
-        Adicione até 5 características no plano genético para escolher qual índice será usado na fórmula do ROI.
+        {isEs ? "Agregue hasta 5 características en el plan genético para elegir qué índice se usará en la fórmula del ROI." : isEn ? "Add up to 5 traits in the genetic plan to choose which index will be used in the ROI formula." : "Adicione até 5 características no plano genético para escolher qual índice será usado na fórmula do ROI."}
       </div>
     );
   }
@@ -1373,7 +1366,7 @@ function RoiIndexSelector({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.black }}>
-        Escolha qual característica alimenta a fórmula do ROI:
+        {isEs ? "Elija qué característica alimenta la fórmula del ROI:" : isEn ? "Choose which trait feeds the ROI formula:" : "Escolha qual característica alimenta a fórmula do ROI:"}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {options.map((label) => {
@@ -1430,6 +1423,9 @@ function RoiBasisSelector({
   hasIm5Config: boolean;
   im5Traits: string[];
 }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US"; const isEs = locale === "es";
+
   const buttonBaseStyle = {
     padding: "10px 14px",
     borderRadius: 10,
@@ -1458,7 +1454,7 @@ function RoiBasisSelector({
             boxShadow: roiMode === "INDEX" ? "0 0 0 2px rgba(190, 30, 45, 0.12)" : "none",
           }}
         >
-          Índices prontos
+          {isEs ? "Índices listos" : isEn ? "Ready-made indices" : "Índices prontos"}
         </button>
         <button
           type="button"
@@ -1475,7 +1471,7 @@ function RoiBasisSelector({
             cursor: hasIm5Config ? "pointer" : "not-allowed",
           }}
         >
-          IM5$ personalizado
+          {isEs ? "IM5$ personalizado" : isEn ? "Custom IM5$" : "IM5$ personalizado"}
         </button>
       </div>
 
@@ -1494,17 +1490,17 @@ function RoiBasisSelector({
         >
           {im5Ready ? (
             <>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>IM5$ ativo na fórmula do ROI</div>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>{isEs ? "IM5$ activo en la fórmula del ROI" : isEn ? "IM5$ active in the ROI formula" : "IM5$ ativo na fórmula do ROI"}</div>
               <div style={{ marginBottom: 4 }}>
-                Pesos aplicados para os traços: {im5Traits.join(", ") || "–"}.
+                {isEs ? "Pesos aplicados para los rasgos:" : isEn ? "Weights applied for traits:" : "Pesos aplicados para os traços:"} {im5Traits.join(", ") || "–"}.
               </div>
-              <div>Atualize os pesos ou clique em “Calcular” novamente para recalcular o ROI.</div>
+              <div>{isEs ? "Actualice los pesos o haga clic en \"Calcular\" nuevamente para recalcular el ROI." : isEn ? "Update the weights or click \"Calculate\" again to recalculate the ROI." : "Atualize os pesos ou clique em \"Calcular\" novamente para recalcular o ROI."}</div>
             </>
           ) : (
             <>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Configure o IM5$</div>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>{isEs ? "Configure el IM5$" : isEn ? "Configure IM5$" : "Configure o IM5$"}</div>
               <div>
-                Defina os traços, pesos e clique em “Calcular” para liberar o IM5$ na fórmula do ROI.
+                {isEs ? "Defina los rasgos, pesos y haga clic en \"Calcular\" para habilitar el IM5$ en la fórmula del ROI." : isEn ? "Define the traits, weights and click \"Calculate\" to enable IM5$ in the ROI formula." : "Defina os traços, pesos e clique em \"Calcular\" para liberar o IM5$ na fórmula do ROI."}
               </div>
             </>
           )}
@@ -1515,6 +1511,8 @@ function RoiBasisSelector({
 }
 
 function PageResults({ st }: { st: AppState }) {
+  const { t, locale } = useTranslation();
+  const isEn = locale === "en-US"; const isEs = locale === "es";
   const planStore = usePlanStore();
   const farmIdForIM5 = planStore.selectedFarmId ?? DEFAULT_IM5_FARM_ID;
   const { bulls: planBulls, loading: im5Loading, error: im5Error } = usePlanBulls(DEFAULT_IM5_PLAN_ID);
@@ -1566,18 +1564,18 @@ function PageResults({ st }: { st: AppState }) {
   const roiIndexDisplayName = isIm5Selected
     ? "IM5$ (R$/filha)"
     : roiLabelUsed
-    ? `Índice ${roiLabelUsed}`
-    : "Índice econômico";
+    ? (isEs ? `Índice ${roiLabelUsed}` : isEn ? `${roiLabelUsed} Index` : `Índice ${roiLabelUsed}`)
+    : (isEs ? "Índice económico" : isEn ? "Economic index" : "Índice econômico");
   const roiIndexFormulaLabel = isIm5Selected
-    ? "IM5$ ponderado"
+    ? (isEs ? "IM5$ ponderado" : isEn ? "Weighted IM5$" : "IM5$ ponderado")
     : roiLabelUsed
-    ? `${roiLabelUsed} Ponderado`
-    : "Índice ponderado";
+    ? (isEs ? `${roiLabelUsed} Ponderado` : isEn ? `Weighted ${roiLabelUsed}` : `${roiLabelUsed} Ponderado`)
+    : (isEs ? "Índice ponderado" : isEn ? "Weighted index" : "Índice ponderado");
   const roiIndexExplanation = isIm5Selected
-    ? "Retorno econômico médio por filha gerado com base nas PTAs e pesos definidos no IM5$, ponderado pelo número de bezerras geradas por touro."
+    ? (isEs ? "Retorno económico medio por hija generado con base en las PTAs y pesos definidos en el IM5$, ponderado por el número de terneras generadas por toro." : isEn ? "Average economic return per daughter generated based on PTAs and weights defined in IM5$, weighted by the number of calves generated per bull." : "Retorno econômico médio por filha gerado com base nas PTAs e pesos definidos no IM5$, ponderado pelo número de bezerras geradas por touro.")
     : roiLabelUsed
-    ? `Valor médio ponderado do ${roiLabelUsed} dos touros selecionados, considerando o número de doses utilizadas de cada touro.`
-    : "Valor médio ponderado do índice econômico selecionado dos touros, considerando o número de doses utilizadas de cada touro.";
+    ? (isEs ? `Valor medio ponderado del ${roiLabelUsed} de los toros seleccionados, considerando el número de dosis utilizadas de cada toro.` : isEn ? `Weighted average value of ${roiLabelUsed} of the selected bulls, considering the number of doses used per bull.` : `Valor médio ponderado do ${roiLabelUsed} dos touros selecionados, considerando o número de doses utilizadas de cada touro.`)
+    : (isEs ? "Valor medio ponderado del índice económico seleccionado de los toros, considerando el número de dosis utilizadas de cada toro." : isEn ? "Weighted average value of the selected economic index of the bulls, considering the number of doses used per bull." : "Valor médio ponderado do índice econômico selecionado dos touros, considerando o número de doses utilizadas de cada touro.");
   const roiIndexAverageValue = isIm5Selected
     ? calc.im5AverageValue
     : roiLabelUsed
@@ -1606,11 +1604,11 @@ function PageResults({ st }: { st: AppState }) {
 
     if (!hasChartData) return;
 
-    const labelsBulls = calc.byBull.map((r) => r.bull.name || `Touro ${r.bull.id}`);
+    const labelsBulls = calc.byBull.map((r) => r.bull.name || (isEs ? `Toro ${r.bull.id}` : isEn ? `Bull ${r.bull.id}` : `Touro ${r.bull.id}`));
 
     // 1) Barras: Bezerras por categoria e por touro (stacked)
-    const datasetsBar = CATEGORIES.map(({ key, label }) => ({
-      label,
+    const datasetsBar = CATEGORIES.map(({ key, labelKey }) => ({
+      label: t(labelKey as any),
       data: calc.byBull.map((r) => r.bezPorCat[key]),
       borderWidth: 1,
     }));
@@ -1649,7 +1647,7 @@ function PageResults({ st }: { st: AppState }) {
       return (value - min) / (max - min);
     };
     const radarDatasets = calc.byBull.map((r) => ({
-      label: r.bull.name || `Touro ${r.bull.id}`,
+      label: r.bull.name || (isEs ? `Toro ${r.bull.id}` : isEn ? `Bull ${r.bull.id}` : `Touro ${r.bull.id}`),
       data: planStore.selectedPTAList.map((ptaLabel) => normalize(ptaLabel, r.ptaPond[ptaLabel] || 0)),
     }));
     radarRef.current = createChart("chart-radar", {
@@ -1684,7 +1682,7 @@ function PageResults({ st }: { st: AppState }) {
         labels: labelsBulls,
         datasets: [
           {
-            label: calc.roiIndexLabel ? `ROI (R$) — Índice ${calc.roiIndexLabel}` : "ROI (R$)",
+            label: calc.roiIndexLabel ? (isEs ? `ROI (R$) — Índice ${calc.roiIndexLabel}` : isEn ? `ROI (R$) — ${calc.roiIndexLabel} Index` : `ROI (R$) — Índice ${calc.roiIndexLabel}`) : "ROI (R$)",
             data: roiData,
             backgroundColor: roiColors,
             borderColor: roiColors,
@@ -1732,33 +1730,33 @@ function PageResults({ st }: { st: AppState }) {
   return (
     <div>
       <Section
-        title="Resumo da Simulação"
+        title={isEs ? "Resumen de la Simulación" : isEn ? "Simulation Summary" : "Resumo da Simulação"}
         right={
           <div style={{ display: "flex", gap: 12 }}>
-            <div><strong>Total bezerras:</strong> {NUM(calc.totalBez, 0)}</div>
-            <div><strong>Custo total:</strong> {BRL(calc.totalValor)}</div>
-            <div><strong>Custo médio/bezerra:</strong> {BRL(calc.custoMedioBezerra)}</div>
+            <div><strong>{isEs ? "Total terneras:" : isEn ? "Total calves:" : "Total bezerras:"}</strong> {NUM(calc.totalBez, 0)}</div>
+            <div><strong>{isEs ? "Costo total:" : isEn ? "Total cost:" : "Custo total:"}</strong> {BRL(calc.totalValor)}</div>
+            <div><strong>{isEs ? "Costo medio/ternera:" : isEn ? "Avg cost/calf:" : "Custo médio/bezerra:"}</strong> {BRL(calc.custoMedioBezerra)}</div>
           </div>
         }
       >
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(planStore.selectedPTAList.length, 5)}, 1fr)`, gap: 12 }}>
           {planStore.selectedPTAList.map((ptaLabel) => (
             <div key={ptaLabel} style={{ background: COLORS.white, border: `1px dashed ${COLORS.gray}`, borderRadius: 10, padding: 10 }}>
-              <div style={{ fontSize: 12, color: COLORS.black }}>PTA média geral – {ptaLabel}</div>
+              <div style={{ fontSize: 12, color: COLORS.black }}>{isEs ? "PTA media general" : isEn ? "Overall average PTA" : "PTA média geral"} – {ptaLabel}</div>
               <div style={{ fontSize: 22, fontWeight: 800 }}>{formatPtaValue(ptaLabel, calc.ptaPondGeral[ptaLabel] || 0)}</div>
             </div>
           ))}
         </div>
       </Section>
 
-      <Section title="IM5$ — Custo-benefício por Touro">
+      <Section title={isEs ? "IM5$ — Costo-beneficio por Toro" : isEn ? "IM5$ — Cost-benefit per Bull" : "IM5$ — Custo-benefício por Touro"}>
         <div className="flex flex-col gap-4">
           <IM5Configurator farmId={farmIdForIM5} onApply={setIm5Config} />
           {im5Error && (
             <div style={{ color: COLORS.red, fontSize: 12 }}>{im5Error}</div>
           )}
           {im5Loading && (
-            <div style={{ fontSize: 12, color: "#555" }}>Carregando touros…</div>
+            <div style={{ fontSize: 12, color: "#555" }}>{isEs ? "Cargando toros…" : isEn ? "Loading bulls…" : "Carregando touros…"}</div>
           )}
           <IM5Results
             farmId={farmIdForIM5}
@@ -1769,22 +1767,22 @@ function PageResults({ st }: { st: AppState }) {
         </div>
       </Section>
 
-      <Section title="Tabela Comparativa Final">
+      <Section title={isEs ? "Tabla Comparativa Final" : isEn ? "Final Comparative Table" : "Tabela Comparativa Final"}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
             <thead>
               <tr style={{ background: COLORS.gray }}>
-                <th style={{ textAlign: "left", padding: 6 }}>Touro</th>
-                <th style={{ textAlign: "left", padding: 6 }}>Empresa</th>
-                <th style={{ textAlign: "left", padding: 6 }}>Tipo</th>
-                <th style={{ textAlign: "right", padding: 6 }}>Doses Totais</th>
-                <th style={{ textAlign: "right", padding: 6 }}>R$ Total</th>
-                <th style={{ textAlign: "right", padding: 6 }}>Bezerras Totais</th>
+                <th style={{ textAlign: "left", padding: 6 }}>{isEs ? "Toro" : isEn ? "Bull" : "Touro"}</th>
+                <th style={{ textAlign: "left", padding: 6 }}>{isEs ? "Empresa" : isEn ? "Company" : "Empresa"}</th>
+                <th style={{ textAlign: "left", padding: 6 }}>{isEs ? "Tipo" : isEn ? "Type" : "Tipo"}</th>
+                <th style={{ textAlign: "right", padding: 6 }}>{isEs ? "Dosis Totales" : isEn ? "Total Doses" : "Doses Totais"}</th>
+                <th style={{ textAlign: "right", padding: 6 }}>{isEs ? "R$ Total" : isEn ? "R$ Total" : "R$ Total"}</th>
+                <th style={{ textAlign: "right", padding: 6 }}>{isEs ? "Terneras Totales" : isEn ? "Total Calves" : "Bezerras Totais"}</th>
                 {planStore.selectedPTAList.map((ptaLabel) => (
                   <th key={ptaLabel} style={{ textAlign: "right", padding: 6 }}>PTA {ptaLabel}</th>
                 ))}
-                <th style={{ textAlign: "right", padding: 6 }}>R$/Bezerra</th>
-                <th style={{ textAlign: "right", padding: 6 }}>ROI (R$/bezerra)</th>
+                <th style={{ textAlign: "right", padding: 6 }}>{isEs ? "R$/Ternera" : isEn ? "R$/Calf" : "R$/Bezerra"}</th>
+                <th style={{ textAlign: "right", padding: 6 }}>{isEs ? "ROI (R$/ternera)" : isEn ? "ROI (R$/calf)" : "ROI (R$/bezerra)"}</th>
               </tr>
             </thead>
             <tbody>
@@ -1799,7 +1797,7 @@ function PageResults({ st }: { st: AppState }) {
                     <tr key={r.bull.id} style={{
                       backgroundColor: isHighestROI ? "#d4f4dd" : isLowestROI ? "#fdd4d4" : "transparent"
                     }}>
-                      <td style={{ padding: 6, fontWeight: isHighestROI ? 700 : 400 }}>{r.bull.name || `Touro ${r.bull.id}`}</td>
+                      <td style={{ padding: 6, fontWeight: isHighestROI ? 700 : 400 }}>{r.bull.name || (isEs ? `Toro ${r.bull.id}` : isEn ? `Bull ${r.bull.id}` : `Touro ${r.bull.id}`)}</td>
                       <td style={{ padding: 6 }}>{r.bull.empresa || "–"}</td>
                       <td style={{ padding: 6 }}>{r.bull.semen}</td>
                       <td style={{ textAlign: "right", padding: 6 }}>{NUM(r.dosesTotal, 0)}</td>
@@ -1826,39 +1824,39 @@ function PageResults({ st }: { st: AppState }) {
         </div>
       </Section>
 
-      <Section title="Gráficos">
-        {!ready.chart && <div>Carregando biblioteca de gráficos…</div>}
+      <Section title={isEs ? "Gráficos" : isEn ? "Charts" : "Gráficos"}>
+        {!ready.chart && <div>{isEs ? "Cargando biblioteca de gráficos…" : isEn ? "Loading chart library…" : "Carregando biblioteca de gráficos…"}</div>}
         {ready.chart && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
-              <h4 style={{ marginBottom: 6 }}>Barras (Bezerras por categoria x Touro)</h4>
-              {hasChartData ? <ChartCanvas id="chart-bar" /> : <EmptyChartPlaceholder label="Configure os touros e doses na etapa anterior para visualizar este gráfico" />}
+              <h4 style={{ marginBottom: 6 }}>{isEs ? "Barras (Terneras por categoría x Toro)" : isEn ? "Bars (Calves by category x Bull)" : "Barras (Bezerras por categoria x Touro)"}</h4>
+              {hasChartData ? <ChartCanvas id="chart-bar" /> : <EmptyChartPlaceholder label={isEs ? "Configure los toros y dosis en la etapa anterior para visualizar este gráfico" : isEn ? "Configure bulls and doses in the previous step to view this chart" : "Configure os touros e doses na etapa anterior para visualizar este gráfico"} />}
             </div>
             <div>
-              <h4 style={{ marginBottom: 6 }}>Pizza (Participação de bezerras por Touro)</h4>
-              {hasChartData ? <ChartCanvas id="chart-pie" /> : <EmptyChartPlaceholder label="Configure os touros e doses na etapa anterior para visualizar este gráfico" />}
+              <h4 style={{ marginBottom: 6 }}>{isEs ? "Torta (Participación de terneras por Toro)" : isEn ? "Pie (Calf share by Bull)" : "Pizza (Participação de bezerras por Touro)"}</h4>
+              {hasChartData ? <ChartCanvas id="chart-pie" /> : <EmptyChartPlaceholder label={isEs ? "Configure los toros y dosis en la etapa anterior para visualizar este gráfico" : isEn ? "Configure bulls and doses in the previous step to view this chart" : "Configure os touros e doses na etapa anterior para visualizar este gráfico"} />}
             </div>
             <div>
-              <h4 style={{ marginBottom: 6 }}>Radar (PTAs médias das filhas)</h4>
-              {hasChartData ? <ChartCanvas id="chart-radar" /> : <EmptyChartPlaceholder label="Configure os touros e doses na etapa anterior para visualizar este gráfico" />}
+              <h4 style={{ marginBottom: 6 }}>{isEs ? "Radar (PTAs medias de las hijas)" : isEn ? "Radar (Average daughter PTAs)" : "Radar (PTAs médias das filhas)"}</h4>
+              {hasChartData ? <ChartCanvas id="chart-radar" /> : <EmptyChartPlaceholder label={isEs ? "Configure los toros y dosis en la etapa anterior para visualizar este gráfico" : isEn ? "Configure bulls and doses in the previous step to view this chart" : "Configure os touros e doses na etapa anterior para visualizar este gráfico"} />}
             </div>
             <div>
-              <h4 style={{ marginBottom: 6 }}>Barras (ROI por touro)</h4>
-              {hasChartData ? <ChartCanvas id="chart-line" /> : <EmptyChartPlaceholder label="Configure os touros e doses na etapa anterior para visualizar este gráfico" />}
+              <h4 style={{ marginBottom: 6 }}>{isEs ? "Barras (ROI por toro)" : isEn ? "Bars (ROI per bull)" : "Barras (ROI por touro)"}</h4>
+              {hasChartData ? <ChartCanvas id="chart-line" /> : <EmptyChartPlaceholder label={isEs ? "Configure los toros y dosis en la etapa anterior para visualizar este gráfico" : isEn ? "Configure bulls and doses in the previous step to view this chart" : "Configure os touros e doses na etapa anterior para visualizar este gráfico"} />}
             </div>
           </div>
         )}
         {missingCrit && (
           <div style={{ marginTop: 12, background: "#fff7ed", border: "1px solid #f59e0b", borderRadius: 10, padding: 12 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6, color: COLORS.red }}>Dados incompletos:</div>
+            <div style={{ fontWeight: 700, marginBottom: 6, color: COLORS.red }}>{isEs ? "Datos incompletos:" : isEn ? "Incomplete data:" : "Dados incompletos:"}</div>
             <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13 }}>
               {calc.byBull.map((r, i) => {
                 const issues: string[] = [];
-                if (r.bezerrasTotais === 0) issues.push("sem bezerras (verifique doses e premissas)");
-                if (r.valorTotal === 0) issues.push("sem doses configuradas");
-                if (!r.bull.name) issues.push("sem nome");
+                if (r.bezerrasTotais === 0) issues.push(isEs ? "sin terneras (verifique dosis y premisas)" : isEn ? "no calves (check doses and premises)" : "sem bezerras (verifique doses e premissas)");
+                if (r.valorTotal === 0) issues.push(isEs ? "sin dosis configuradas" : isEn ? "no doses configured" : "sem doses configuradas");
+                if (!r.bull.name) issues.push(isEs ? "sin nombre" : isEn ? "no name" : "sem nome");
                 return issues.length > 0 ? (
-                  <li key={r.bull.id}>Touro {i + 1} ({r.bull.name || r.bull.id}): {issues.join(", ")}</li>
+                  <li key={r.bull.id}>{isEs ? "Toro" : isEn ? "Bull" : "Touro"} {i + 1} ({r.bull.name || r.bull.id}): {issues.join(", ")}</li>
                 ) : null;
               })}
             </ul>
@@ -1866,7 +1864,7 @@ function PageResults({ st }: { st: AppState }) {
         )}
       </Section>
 
-      <Section title="Insights">
+      <Section title={isEs ? "Perspectivas" : isEn ? "Insights" : "Insights"}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 12 }}>
           {/* Maior índice econômico */}
           {(() => {
@@ -1884,9 +1882,9 @@ function PageResults({ st }: { st: AppState }) {
                 <div style={{ fontSize: 12, color: COLORS.black }}>
                   {roiLabel
                     ? isIm5
-                      ? "Maior IM5$ médio"
-                      : `Maior ${roiLabel} médio`
-                    : "Maior índice médio"}
+                      ? (isEs ? "Mayor IM5$ medio" : isEn ? "Highest avg IM5$" : "Maior IM5$ médio")
+                      : (isEs ? `Mayor ${roiLabel} medio` : isEn ? `Highest avg ${roiLabel}` : `Maior ${roiLabel} médio`)
+                    : (isEs ? "Mayor índice medio" : isEn ? "Highest avg index" : "Maior índice médio")}
                 </div>
                 <div style={{ fontSize: 16, fontWeight: 800 }}>
                   {bestIndex && roiLabel ? `${bestIndex.bull.name || bestIndex.bull.id}` : "–"}
@@ -1907,7 +1905,7 @@ function PageResults({ st }: { st: AppState }) {
             const bestCost = [...calc.byBull].filter((x) => x.bezerrasTotais > 0).sort((a, b) => a.custoPorBezerra - b.custoPorBezerra)[0];
             return (
               <div style={{ border: `1px solid ${COLORS.gray}`, borderRadius: 10, padding: 10 }}>
-                <div style={{ fontSize: 12, color: COLORS.black }}>Menor custo por bezerra</div>
+                <div style={{ fontSize: 12, color: COLORS.black }}>{isEs ? "Menor costo por ternera" : isEn ? "Lowest cost per calf" : "Menor custo por bezerra"}</div>
                 <div style={{ fontSize: 16, fontWeight: 800 }}>
                   {bestCost ? `${bestCost.bull.name || bestCost.bull.id}` : "–"}
                 </div>
@@ -1928,7 +1926,7 @@ function PageResults({ st }: { st: AppState }) {
                 padding: 10, 
                 backgroundColor: "#d4f4dd" 
               }}>
-                <div style={{ fontSize: 12, color: COLORS.black, fontWeight: 600 }}>🏆 Touro Mais Rentável</div>
+                <div style={{ fontSize: 12, color: COLORS.black, fontWeight: 600 }}>{isEs ? "Toro Más Rentable" : isEn ? "Most Profitable Bull" : "Touro Mais Rentável"}</div>
                 <div style={{ fontSize: 16, fontWeight: 800 }}>
                   {bestROI ? `${bestROI.bull.name || bestROI.bull.id}` : "–"}
                 </div>
@@ -1949,7 +1947,7 @@ function PageResults({ st }: { st: AppState }) {
                 padding: 10, 
                 backgroundColor: "#fdd4d4" 
               }}>
-                <div style={{ fontSize: 12, color: COLORS.black, fontWeight: 600 }}>⚠️ Touro Menos Rentável</div>
+                <div style={{ fontSize: 12, color: COLORS.black, fontWeight: 600 }}>{isEs ? "Toro Menos Rentable" : isEn ? "Least Profitable Bull" : "Touro Menos Rentável"}</div>
                 <div style={{ fontSize: 16, fontWeight: 800 }}>
                   {worstROI ? `${worstROI.bull.name || worstROI.bull.id}` : "–"}
                 </div>
@@ -1964,12 +1962,12 @@ function PageResults({ st }: { st: AppState }) {
           {(() => {
             return (
               <div style={{ border: `1px solid ${COLORS.gray}`, borderRadius: 10, padding: 10 }}>
-                <div style={{ fontSize: 12, color: COLORS.black }}>Total de Bezerras</div>
+                <div style={{ fontSize: 12, color: COLORS.black }}>{isEs ? "Total de Terneras" : isEn ? "Total Calves" : "Total de Bezerras"}</div>
                 <div style={{ fontSize: 18, fontWeight: 800 }}>
                   {NUM(calc.totalBez, 0)}
                 </div>
                 <div style={{ fontSize: 12, color: COLORS.black }}>
-                  Custo médio: {BRL(calc.custoMedioBezerra)}
+                  {isEs ? "Costo medio:" : isEn ? "Avg cost:" : "Custo médio:"} {BRL(calc.custoMedioBezerra)}
                 </div>
               </div>
             );
@@ -1978,7 +1976,7 @@ function PageResults({ st }: { st: AppState }) {
       </Section>
 
       {/* Fórmula e Explicação do ROI */}
-      <Section title="Fórmula do ROI">
+      <Section title={isEs ? "Fórmula del ROI" : isEn ? "ROI Formula" : "Fórmula do ROI"}>
         <div style={{ backgroundColor: COLORS.white, padding: 20, borderRadius: 10, border: `1px solid ${COLORS.gray}` }}>
           <div style={{ marginBottom: 20 }}>
             <RoiBasisSelector
@@ -1993,7 +1991,7 @@ function PageResults({ st }: { st: AppState }) {
             />
           </div>
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 10 }}>Fórmula:</div>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 10 }}>{isEs ? "Fórmula:" : isEn ? "Formula:" : "Fórmula:"}</div>
             <div style={{
               backgroundColor: '#f8f9fa',
               padding: 15,
@@ -2004,22 +2002,21 @@ function PageResults({ st }: { st: AppState }) {
               textAlign: 'center',
               fontWeight: 600
             }}>
-              ROI = ({roiIndexFormulaLabel} × Total de Bezerras) - Custo Total do Sêmen
+              ROI = ({roiIndexFormulaLabel} × {isEs ? "Total de Terneras" : isEn ? "Total Calves" : "Total de Bezerras"}) - {isEs ? "Costo Total del Semen" : isEn ? "Total Semen Cost" : "Custo Total do Sêmen"}
             </div>
           </div>
 
           <div style={{ marginBottom: 15 }}>
-            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 10 }}>Explicação:</div>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 10 }}>{isEs ? "Explicación:" : isEn ? "Explanation:" : "Explicação:"}</div>
             <div style={{ fontSize: 14, lineHeight: 1.6, color: COLORS.black }}>
               <div style={{ marginBottom: 8 }}>
                 <strong>{roiIndexFormulaLabel}:</strong> {roiIndexExplanation}
               </div>
               <div style={{ marginBottom: 8 }}>
-                <strong>Total de Bezerras:</strong> Número total estimado de bezerras fêmeas nascidas
-                (considerando taxa de natalidade feminina variável por tipo de sêmen: Sexado 90%, Convencional 47%).
+                <strong>{isEs ? "Total de Terneras:" : isEn ? "Total Calves:" : "Total de Bezerras:"}</strong> {isEs ? "Número total estimado de terneras hembras nacidas (considerando tasa de natalidad femenina variable por tipo de semen: Sexado 90%, Convencional 47%)." : isEn ? "Total estimated number of female calves born (considering variable female birth rate by semen type: Sexed 90%, Conventional 47%)." : "Número total estimado de bezerras fêmeas nascidas (considerando taxa de natalidade feminina variável por tipo de sêmen: Sexado 90%, Convencional 47%)."}
               </div>
               <div style={{ marginBottom: 8 }}>
-                <strong>Custo Total do Sêmen:</strong> Somatória do valor gasto com todas as doses de sêmen utilizadas no plano.
+                <strong>{isEs ? "Costo Total del Semen:" : isEn ? "Total Semen Cost:" : "Custo Total do Sêmen:"}</strong> {isEs ? "Suma del valor gastado con todas las dosis de semen utilizadas en el plan." : isEn ? "Sum of the amount spent on all semen doses used in the plan." : "Somatória do valor gasto com todas as doses de sêmen utilizadas no plano."}
               </div>
             </div>
           </div>
@@ -2031,13 +2028,13 @@ function PageResults({ st }: { st: AppState }) {
             border: `1px solid ${COLORS.gray}`,
             marginTop: 15 
           }}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Interpretação do Resultado:</div>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>{isEs ? "Interpretación del Resultado:" : isEn ? "Result Interpretation:" : "Interpretação do Resultado:"}</div>
             <div style={{ fontSize: 13, lineHeight: 1.5 }}>
               <div style={{ marginBottom: 5 }}>
-                <span style={{ color: "#167C2B", fontWeight: 600 }}>ROI Positivo:</span> O retorno genético supera o investimento em sêmen
+                <span style={{ color: "#167C2B", fontWeight: 600 }}>{isEs ? "ROI Positivo:" : isEn ? "Positive ROI:" : "ROI Positivo:"}</span> {isEs ? "El retorno genético supera la inversión en semen" : isEn ? "The genetic return exceeds the semen investment" : "O retorno genético supera o investimento em sêmen"}
               </div>
               <div>
-                <span style={{ color: COLORS.red, fontWeight: 600 }}>ROI Negativo:</span> O investimento em sêmen é maior que o retorno genético projetado
+                <span style={{ color: COLORS.red, fontWeight: 600 }}>{isEs ? "ROI Negativo:" : isEn ? "Negative ROI:" : "ROI Negativo:"}</span> {isEs ? "La inversión en semen es mayor que el retorno genético proyectado" : isEn ? "The semen investment is greater than the projected genetic return" : "O investimento em sêmen é maior que o retorno genético projetado"}
               </div>
             </div>
           </div>
@@ -2050,15 +2047,15 @@ function PageResults({ st }: { st: AppState }) {
               border: '1px solid #90caf9',
               marginTop: 15
             }}>
-              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>Valores do Plano Atual:</div>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>{isEs ? "Valores del Plan Actual:" : isEn ? "Current Plan Values:" : "Valores do Plano Atual:"}</div>
               <div style={{ fontSize: 13, lineHeight: 1.5 }}>
                 <div>
                   {roiIndexDisplayName}: <strong>{roiLabelUsed ? formatIndexValue(roiIndexAverageValue) : "–"}</strong>
                 </div>
-                <div>Total de Bezerras: <strong>{calc.totalBez.toLocaleString()}</strong></div>
-                <div>Custo Total: <strong>{BRL(calc.totalValor)}</strong></div>
+                <div>{isEs ? "Total de Terneras:" : isEn ? "Total Calves:" : "Total de Bezerras:"} <strong>{calc.totalBez.toLocaleString(locale)}</strong></div>
+                <div>{isEs ? "Costo Total:" : isEn ? "Total Cost:" : "Custo Total:"} <strong>{BRL(calc.totalValor)}</strong></div>
                 <div style={{ marginTop: 8, fontSize: 14, fontWeight: 600 }}>
-                  ROI Total: <span style={{ color: roiTotalColor }}>
+                  {isEs ? "ROI Total:" : isEn ? "Total ROI:" : "ROI Total:"} <span style={{ color: roiTotalColor }}>
                     {roiLabelUsed ? BRL(roiTotalValue) : "–"}
                   </span>
                 </div>
@@ -2072,6 +2069,8 @@ function PageResults({ st }: { st: AppState }) {
 }
 
 function PageExport({ st }: { st: AppState }) {
+  const { t, locale } = useTranslation();
+  const isEn = locale === "en-US"; const isEs = locale === "es";
   const ref = useRef<HTMLDivElement>(null);
   const { ready } = useCharts();
   const { addReport } = useFileStore();
@@ -2085,11 +2084,11 @@ function PageExport({ st }: { st: AppState }) {
     a.style.background = "#fff";
     a.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-        <div style="font-weight:800; font-size:18px; color:${COLORS.black}">Projeção Genética MVP – Select Sires</div>
-        <div style="font-size:12px; color:${COLORS.black}">${new Date(st.farm.date || new Date().toISOString().slice(0,10)).toLocaleDateString("pt-BR")}</div>
+        <div style="font-weight:800; font-size:18px; color:${COLORS.black}">${isEs ? "Proyección Genética MVP – Select Sires" : isEn ? "Genetic Projection MVP – Select Sires" : "Projeção Genética MVP – Select Sires"}</div>
+        <div style="font-size:12px; color:${COLORS.black}">${new Date(st.farm.date || new Date().toISOString().slice(0,10)).toLocaleDateString(locale)}</div>
       </div>
       <div style="font-size:12px; margin-bottom:8px; color:${COLORS.black}">
-        Fazenda: <strong>${st.farm.farmName || "–"}</strong> · Técnico: <strong>${st.farm.technician || "–"}</strong>
+        ${isEs ? "Finca" : isEn ? "Farm" : "Fazenda"}: <strong>${st.farm.farmName || "–"}</strong> · ${isEs ? "Técnico" : isEn ? "Technician" : "Técnico"}: <strong>${st.farm.technician || "–"}</strong>
       </div>
     `;
     a.appendChild(el.cloneNode(true));
@@ -2113,7 +2112,7 @@ function PageExport({ st }: { st: AppState }) {
         const pdfBlob = pdf.output('blob');
         
         // Save to Files page
-        const reportName = `Projeção Genética ${st.farm.farmName || 'MVP'} - ${new Date().toLocaleDateString('pt-BR')}`;
+        const reportName = `${isEs ? "Proyección Genética" : isEn ? "Genetic Projection" : "Projeção Genética"} ${st.farm.farmName || 'MVP'} - ${new Date().toLocaleDateString(locale)}`;
         addReport({
           name: reportName,
           type: 'genetic_projection',
@@ -2122,7 +2121,7 @@ function PageExport({ st }: { st: AppState }) {
           metadata: {
             createdAt: new Date().toISOString(),
             size: pdfBlob.size,
-            description: `Projeção genética com ${st.bulls.length} touros e ${st.structure.total} fêmeas`,
+            description: isEs ? `Proyección genética con ${st.bulls.length} toros y ${st.structure.total} hembras` : isEn ? `Genetic projection with ${st.bulls.length} bulls and ${st.structure.total} females` : `Projeção genética com ${st.bulls.length} touros e ${st.structure.total} fêmeas`,
             settings: {
               selectedPTAs: st.selectedPTAs,
               numberOfBulls: st.numberOfBulls,
@@ -2136,10 +2135,10 @@ function PageExport({ st }: { st: AppState }) {
         // Also download the file
         pdf.save("Projecao_Genetica_MVP.pdf");
         
-        toast.success('PDF salvo na página Arquivos e baixado com sucesso!');
+        toast.success(isEs ? 'PDF guardado en la página Archivos y descargado con éxito!' : isEn ? 'PDF saved to Files page and downloaded successfully!' : 'PDF salvo na página Arquivos e baixado com sucesso!');
       } catch (error) {
         console.error('Erro ao exportar PDF:', error);
-        toast.error('Erro ao exportar PDF');
+        toast.error(isEs ? 'Error al exportar PDF' : isEn ? 'Error exporting PDF' : 'Erro ao exportar PDF');
       }
     } else {
       // Fallback
@@ -2150,12 +2149,12 @@ function PageExport({ st }: { st: AppState }) {
   return (
     <div>
       <Section
-        title="Exportação PDF"
-        right={<Button onClick={doExport}>{ready.h2c && ready.jspdf ? "Exportar PDF" : "Imprimir/Salvar PDF"}</Button>}
+        title={isEs ? "Exportación PDF" : isEn ? "PDF Export" : "Exportação PDF"}
+        right={<Button onClick={doExport}>{ready.h2c && ready.jspdf ? (isEs ? "Exportar PDF" : isEn ? "Export PDF" : "Exportar PDF") : (isEs ? "Imprimir/Guardar PDF" : isEn ? "Print/Save PDF" : "Imprimir/Salvar PDF")}</Button>}
       >
         <div ref={ref}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>O PDF incluirá o conteúdo principal da tela de Resultados & Gráficos.</div>
-          <div style={{ fontSize: 12, color: COLORS.black }}>Para melhor qualidade, gere os gráficos em Resultados antes da exportação.</div>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>{isEs ? "El PDF incluirá el contenido principal de la pantalla de Resultados y Gráficos." : isEn ? "The PDF will include the main content from the Results & Charts screen." : "O PDF incluirá o conteúdo principal da tela de Resultados & Gráficos."}</div>
+          <div style={{ fontSize: 12, color: COLORS.black }}>{isEs ? "Para mejor calidad, genere los gráficos en Resultados antes de la exportación." : isEn ? "For best quality, generate charts in Results before exporting." : "Para melhor qualidade, gere os gráficos em Resultados antes da exportação."}</div>
         </div>
       </Section>
     </div>
@@ -2164,6 +2163,9 @@ function PageExport({ st }: { st: AppState }) {
 
 // ---------- App ----------
 function Sidebar({ current, onChange, onLoadTest, onClear }: { current: string; onChange: (page: string) => void; onLoadTest: () => void; onClear: () => void }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US"; const isEs = locale === "es";
+
   const item = (key: string, label: string) => (
     <div
       onClick={() => onChange(key)}
@@ -2183,14 +2185,14 @@ function Sidebar({ current, onChange, onLoadTest, onClear }: { current: string; 
 
   return (
     <div style={{ width: 280, minWidth: 240, background: COLORS.white, borderRight: `1px solid ${COLORS.gray}`, padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ fontWeight: 900, color: COLORS.black, marginBottom: 8, fontSize: 18 }}>Projeção Genética MVP</div>
-      {item("plano", "🧬 Plano Genético")}
-      {item("touros", "🐂 Entradas dos Touros")}
-      {item("resultados", "📊 Resultados & Gráficos")}
-      {item("pdf", "📄 Exportar PDF")}
+      <div style={{ fontWeight: 900, color: COLORS.black, marginBottom: 8, fontSize: 18 }}>{isEs ? "Proyección Genética MVP" : isEn ? "Genetic Projection MVP" : "Projeção Genética MVP"}</div>
+      {item("plano", isEs ? "Plano Genético" : isEn ? "Genetic Plan" : "Plano Genético")}
+      {item("touros", isEs ? "Entradas de Toros" : isEn ? "Bull Entries" : "Entradas dos Touros")}
+      {item("resultados", isEs ? "Resultados y Gráficos" : isEn ? "Results & Charts" : "Resultados & Gráficos")}
+      {item("pdf", isEs ? "Exportar PDF" : isEn ? "Export PDF" : "Exportar PDF")}
       <div style={{ marginTop: "auto", display: "grid", gap: 8 }}>
-        <Button onClick={onLoadTest}>Carregar Dados de Teste</Button>
-        <Button variant="ghost" onClick={onClear}>Limpar Todos os Dados</Button>
+        <Button onClick={onLoadTest}>{isEs ? "Cargar Datos de Prueba" : isEn ? "Load Test Data" : "Carregar Dados de Teste"}</Button>
+        <Button variant="ghost" onClick={onClear}>{isEs ? "Limpiar Todos los Datos" : isEn ? "Clear All Data" : "Limpar Todos os Dados"}</Button>
       </div>
     </div>
   );

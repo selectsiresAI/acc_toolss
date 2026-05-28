@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useAGFilters } from "@/features/auditoria/store";
 import { PTA_CATALOG } from "@/lib/pta";
  import { formatPtaValue } from "@/utils/ptaFormat";
@@ -77,6 +78,7 @@ async function fetchAllPaginated(
 }
 
 export default function Step8GeneticBenchmark() {
+  const { t, locale } = useTranslation();
   const { farmId } = useAGFilters();
   const [topPct, setTopPct] = useState<TopPct>(5);
   const [isLoading, setIsLoading] = useState(false);
@@ -105,7 +107,7 @@ export default function Step8GeneticBenchmark() {
     try {
       if (!farmId) {
         setRows([]);
-        setErrorMsg("Selecione um rebanho para carregar os dados.");
+        setErrorMsg(t("bench.selectHerd"));
         return;
       }
 
@@ -143,7 +145,7 @@ export default function Step8GeneticBenchmark() {
       setRows(result);
     } catch (e: any) {
       setRows([]);
-      setErrorMsg(`Erro inesperado: ${e?.message ?? "desconhecido"}`);
+      setErrorMsg(`${t("common.unexpectedError")} ${e?.message ?? t("common.unknown")}`);
     } finally {
       setIsLoading(false);
     }
@@ -180,21 +182,21 @@ export default function Step8GeneticBenchmark() {
         </div>
 
         <Button onClick={loadData} disabled={isLoading}>
-          {isLoading ? "Carregando..." : "Atualizar"}
+          {isLoading ? t("bench.loading") : t("bench.refresh")}
         </Button>
 
-        <Button variant="outline" onClick={debugTest} title="Teste rápido de acesso (log no console)">
+        <Button variant="outline" onClick={debugTest} title={t("bench.debugTitle")}>
           Debug
         </Button>
 
         {farmId && (
-          <Badge variant="secondary" className="ml-2">Rebanho: {farmId}</Badge>
+          <Badge variant="secondary" className="ml-2">{t("bench.herd")} {farmId}</Badge>
         )}
       </div>
 
       {errorMsg && <div className="text-sm text-red-600">{errorMsg}</div>}
       {!errorMsg && !isLoading && rows.length === 0 && (
-        <div className="text-sm text-muted-foreground">Nenhuma PTA disponível.</div>
+        <div className="text-sm text-muted-foreground">{t("bench.noPta")}</div>
       )}
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -209,7 +211,7 @@ export default function Step8GeneticBenchmark() {
               <CardContent className="text-sm space-y-2">
                 <div className="flex items-center justify-between">
                   <span>
-                    Top {topPct}% do rebanho
+                    {t("bench.topHerd").replace("{{pct}}", String(topPct))}
                     <span className="ml-2 text-xs text-muted-foreground">
                       ({r.herd.n_top}/{r.herd.n_total})
                     </span>
@@ -218,7 +220,7 @@ export default function Step8GeneticBenchmark() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span>
-                    Top {topPct}% global
+                    {t("bench.topGlobal").replace("{{pct}}", String(topPct))}
                     <span className="ml-2 text-xs text-muted-foreground">
                       ({r.global.n_top}/{r.global.n_total})
                     </span>

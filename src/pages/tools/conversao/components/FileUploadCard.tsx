@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/hooks/useTranslation";
 interface FileUploadCardProps {
   title: string;
   description: string;
@@ -26,6 +27,9 @@ export const FileUploadCard: React.FC<FileUploadCardProps> = ({
   hideDefaultButton = false,
   inputId
 }) => {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const inputRef = useRef<HTMLInputElement>(null);
   const handleSelectClick = () => {
     inputRef.current?.click();
@@ -58,12 +62,12 @@ export const FileUploadCard: React.FC<FileUploadCardProps> = ({
         />
         {!hideDefaultButton && (
           <Button variant="outline" onClick={handleSelectClick} disabled={disabled} className="bg-gray-200 hover:bg-gray-100">
-            Selecionar arquivo
+            {isEs ? "Seleccionar archivo" : isEn ? "Select file" : "Selecionar arquivo"}
           </Button>
         )}
         {!hideDefaultButton && fileName && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Badge variant="secondary">Selecionado</Badge>
+            <Badge variant="secondary">{isEs ? "Seleccionado" : isEn ? "Selected" : "Selecionado"}</Badge>
             <span className="truncate" title={fileName}>
               {fileName}
             </span>
@@ -71,7 +75,7 @@ export const FileUploadCard: React.FC<FileUploadCardProps> = ({
         )}
         {!hideDefaultButton && !fileName && (
           <p className="text-sm text-muted-foreground">
-            Nenhum arquivo selecionado até o momento.
+            {isEs ? "Ningún archivo seleccionado hasta el momento." : isEn ? "No file selected yet." : "Nenhum arquivo selecionado até o momento."}
           </p>
         )}
         {helper}

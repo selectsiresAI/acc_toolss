@@ -25,6 +25,7 @@ import { ChartExportProvider } from "@/components/pdf/ChartExportProvider";
 import { BatchExportBar, SingleExportButton } from "@/components/pdf/ExportButtons";
 import { useRegisterChart } from "@/components/pdf/useRegisterChart";
 import { getAdaptiveYAxisDomainFromValues } from "@/lib/chart-utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type SeriesPoint = { year: number; n: number; mean: number };
 
@@ -112,6 +113,7 @@ const TraitCard = memo(function TraitCard({
   showTrend,
   farmMean,
 }: TraitCardProps) {
+  const { t } = useTranslation();
   const slope = computeSlope(data);
   const chartData = data.map((p, i) => ({
     year: p.year,
@@ -122,20 +124,23 @@ const TraitCard = memo(function TraitCard({
   }));
   const trendResult = useMemo(() => computeTrend(data), [data]);
 
-  // Domínio adaptativo do eixo Y baseado nos dados reais
   const yDomain = useMemo(() => {
     const allValues = [
       ...data.map((point) => point.mean),
       ...(showTrend && trendResult.trendLine.length ? trendResult.trendLine.map((point) => point.trend) : []),
       ...(showMean ? [farmMean] : []),
     ].filter((value): value is number => Number.isFinite(value));
-    
+
     return getAdaptiveYAxisDomainFromValues(allValues);
   }, [data, showTrend, showMean, farmMean, trendResult]);
 
   const cardRef = useRef<HTMLDivElement>(null);
-  const displayTitle = `${traitLabel} - Média Anual Por Ano De Nascimento`;
+  const displayTitle = t("ag.progress.annualMean").replace("{{trait}}", traitLabel);
   useRegisterChart(`step5-progressao-${traitKey}`, 5, displayTitle, cardRef);
+
+  const annualLabel = t("ag.progress.annualLabel") + " " + traitLabel;
+  const trendLabel = t("ag.progress.trend") + " (R²=" + trendResult.r2.toFixed(3) + ")";
+  const overallMeanLabel = t("ag.progress.overallMean");
 
   return (
     <Card ref={cardRef} className="overflow-hidden">
@@ -144,7 +149,7 @@ const TraitCard = memo(function TraitCard({
           <CardTitle className="text-base font-semibold">{displayTitle}</CardTitle>
           {showTrend && trendResult.r2 > 0 && (
             <div className="text-xs text-muted-foreground">
-              Tendência (R²={trendResult.r2.toFixed(3)}): {slope >= 0 ? "+" : ""}
+              {t("ag.progress.trend")} (R²={trendResult.r2.toFixed(3)}): {slope >= 0 ? "+" : ""}
               {slope}/ano
             </div>
           )}
@@ -174,20 +179,20 @@ const TraitCard = memo(function TraitCard({
               <RechartsTooltip
                 formatter={(value: any, name: string) => {
                   if (name === "mean")
-                    return [typeof value === "number" ? formatPtaValue(traitKey, value) : value, "Média anual " + traitLabel];
+                    return [typeof value === "number" ? formatPtaValue(traitKey, value) : value, annualLabel];
                   if (name === "trend")
                     return [
                       typeof value === "number" ? formatPtaValue(traitKey, value) : value,
-                      "Tendência (R²=" + trendResult.r2.toFixed(3) + ")",
+                      trendLabel,
                     ];
                   if (name === "farmMean")
-                    return [typeof value === "number" ? formatPtaValue(traitKey, value) : value, "Média geral"];
+                    return [typeof value === "number" ? formatPtaValue(traitKey, value) : value, overallMeanLabel];
                   if (name === "n") return [value, "N"];
                   return [value, name];
                 }}
-                labelFormatter={(label) => `Ano ${label}`}
+                labelFormatter={(label) => `${t("ag.progress.year")} ${label}`}
               />
-              <Legend 
+              <Legend
                 formatter={(value: string) => {
                   if (value.startsWith("band")) return "";
                   return value;
@@ -213,7 +218,7 @@ const TraitCard = memo(function TraitCard({
                   strokeWidth={1.5}
                   strokeDasharray="8 8"
                   label={{
-                    value: `Média: ${formatPtaValue(traitKey, farmMean)}`,
+                    value: `${t("ag.progress.mean")} ${formatPtaValue(traitKey, farmMean)}`,
                     position: "insideTopRight",
                     fill: "#10B981",
                     fontSize: 11,
@@ -224,7 +229,7 @@ const TraitCard = memo(function TraitCard({
               <Line
                 type="monotone"
                 dataKey="mean"
-                name={"Média anual " + traitLabel}
+                name={annualLabel}
                 stroke="hsl(var(--foreground))"
                 strokeWidth={2}
                 dot={(props: any) => {
@@ -247,7 +252,7 @@ const TraitCard = memo(function TraitCard({
                 <Line
                   type="linear"
                   dataKey="trend"
-                  name={"Tendência (R²=" + trendResult.r2.toFixed(3) + ")"}
+                  name={trendLabel}
                   stroke="#10B981"
                   strokeWidth={2}
                   strokeDasharray="5 5"
@@ -260,7 +265,7 @@ const TraitCard = memo(function TraitCard({
         </div>
 
         <div className="border-t px-4 pb-4 pt-4">
-          <h4 className="mb-2 text-sm font-semibold">Média Anual {traitLabel} Por Ano</h4>
+          <h4 className="mb-2 text-sm font-semibold">{t("ag.progress.annualMeanShort").replace("{{trait}}", traitLabel)}</h4>
           <div className="max-h-64 overflow-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-muted">
@@ -290,7 +295,8 @@ const TraitCard = memo(function TraitCard({
 function Step5ProgressaoContent() {
   const { farmId, ptasSelecionadas = [], setPTAs } = useAGFilters();
   const { data: females = [], isLoading } = useFemales(farmId);
-  
+  const { t } = useTranslation();
+
   const [showMean, setShowMean] = useState(true);
   const [showTrend, setShowTrend] = useState(true);
 
@@ -402,7 +408,7 @@ function Step5ProgressaoContent() {
                         </Badge>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Sem dados disponíveis no rebanho</p>
+                        <p>{t("ag.progress.noDataInHerd")}</p>
                       </TooltipContent>
                     </Tooltip>
                   );
@@ -425,11 +431,11 @@ function Step5ProgressaoContent() {
           <div className="flex gap-6">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <Checkbox checked={showMean} onCheckedChange={(v) => setShowMean(!!v)} />
-              Mostrar média geral
+              {t("ag.progress.showMean")}
             </label>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <Checkbox checked={showTrend} onCheckedChange={(v) => setShowTrend(!!v)} />
-              Mostrar tendência
+              {t("ag.progress.showTrend")}
             </label>
           </div>
         </CardContent>
@@ -437,7 +443,7 @@ function Step5ProgressaoContent() {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12 text-muted-foreground">
-          <RefreshCw className="mr-2 h-6 w-6 animate-spin" /> Carregando dados...
+          <RefreshCw className="mr-2 h-6 w-6 animate-spin" /> {t("ag.progress.loading")}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">

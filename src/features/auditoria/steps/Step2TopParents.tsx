@@ -13,15 +13,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAGFilters } from "../store";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type ParentRole = "sire" | "mgs";
-type AgeSegment =
-  | "Todas"
-  | "Bezerra"
-  | "Novilha"
-  | "Primípara"
-  | "Secundípara"
-  | "Multípara";
+type AgeSegment = "Todas" | "Bezerra" | "Novilha" | "Primípara" | "Secundípara" | "Multípara";
 
 type RawRow = {
   parent_label: string;
@@ -34,6 +29,15 @@ type Row = RawRow & {
 };
 
 const DEFAULT_TRAIT = "hhp_dollar";
+
+const AGE_SEGMENT_KEYS: Record<AgeSegment, string> = {
+  "Todas": "ag.topParents.all",
+  "Bezerra": "ag.topParents.calf",
+  "Novilha": "ag.topParents.heifer",
+  "Primípara": "ag.topParents.primiparous",
+  "Secundípara": "ag.topParents.secondiparous",
+  "Multípara": "ag.topParents.multiparous",
+};
 
 async function fetchBullNames(naabCodes: string[]): Promise<Map<string, string>> {
   if (naabCodes.length === 0) return new Map();
@@ -50,15 +54,14 @@ async function fetchBullNames(naabCodes: string[]): Promise<Map<string, string>>
 
 export default function Step2TopParents() {
   const { farmId } = useAGFilters();
+  const { t } = useTranslation();
 
-  // Mantidos: filtros e controles existentes
   const [yearFrom, setYearFrom] = useState(() => new Date().getFullYear() - 4);
   const [yearTo, setYearTo] = useState(() => new Date().getFullYear() + 1);
   const [limit, setLimit] = useState(20);
   const [orderTrait, setOrderTrait] = useState(DEFAULT_TRAIT);
   const [ageFilter, setAgeFilter] = useState<AgeSegment>("Todas");
 
-  // Novo: manteremos os dois rankings em paralelo (Sire e MGS)
   const [rowsSire, setRowsSire] = useState<Row[]>([]);
   const [rowsMgs, setRowsMgs] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
@@ -68,11 +71,11 @@ export default function Step2TopParents() {
       if (!farmId) return [];
       const { data, error } = await (supabase.rpc as any)("ag_top_parents", {
         p_farm: farmId,
-        p_parent_type: role,    // "sire" ou "mgs"
+        p_parent_type: role,
         p_year_from: yearFrom,
         p_year_to: yearTo,
         p_limit: limit,
-        p_order_trait: orderTrait, // mantém para cálculo de trait_mean na RPC
+        p_order_trait: orderTrait,
         p_age_filter: ageFilter,
       });
       if (error) {
@@ -80,7 +83,6 @@ export default function Step2TopParents() {
         return [];
       }
       const arr: RawRow[] = Array.isArray(data) ? (data as RawRow[]) : [];
-      // ORDEM EXIGIDA: maior nº de filhas → menor (independente da RPC)
       return [...arr].sort((a, b) => b.daughters_count - a.daughters_count);
     },
     [farmId, yearFrom, yearTo, limit, orderTrait, ageFilter]
@@ -95,7 +97,6 @@ export default function Step2TopParents() {
     setLoading(true);
     const [sireRaw, mgsRaw] = await Promise.all([fetchTop("sire"), fetchTop("mgs")]);
 
-    // Coletar todos os NAABs únicos
     const allNaabs = [
       ...new Set([
         ...sireRaw.map((r) => r.parent_label),
@@ -103,10 +104,8 @@ export default function Step2TopParents() {
       ]),
     ];
 
-    // Buscar nomes correspondentes
     const namesMap = await fetchBullNames(allNaabs);
 
-    // Enriquecer dados com nomes
     const enrichRow = (row: RawRow): Row => ({
       ...row,
       parent_name: namesMap.get(row.parent_label) || null,
@@ -121,7 +120,6 @@ export default function Step2TopParents() {
     fetchData();
   }, [fetchData]);
 
-  // Totais e percentuais
   const totalSire = useMemo(
     () => rowsSire.reduce((acc, r) => acc + (r.daughters_count || 0), 0),
     [rowsSire]
@@ -134,73 +132,64 @@ export default function Step2TopParents() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top Parents — Ranking por Nº de Filhas</CardTitle>
+        <CardTitle>{t("ag.topParents.title")}</CardTitle>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Controles — mantidos do seu componente original */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Ano inicial */}
           <Input
             className="w-28"
             type="number"
             value={yearFrom}
             onChange={(e) => setYearFrom(Number(e.target.value))}
           />
-          {/* Ano final */}
           <Input
             className="w-28"
             type="number"
             value={yearTo}
             onChange={(e) => setYearTo(Number(e.target.value))}
           />
-            {/* Limite (a RPC já limita; mantemos para consistência) */}
           <Input
             className="w-28"
             type="number"
             value={limit}
             onChange={(e) => setLimit(Number(e.target.value))}
           />
-          {/* Trait usado pela RPC para calcular trait_mean. O ranking visual é por nº de filhas. */}
           <Input
             className="w-44"
             value={orderTrait}
             onChange={(e) => setOrderTrait(e.target.value)}
-            placeholder="Índice p/ RPC (ex.: hhp_dollar)"
+            placeholder={t("ag.topParents.indexPlaceholder")}
           />
-          {/* Segmento etário */}
           <Select value={ageFilter} onValueChange={(v) => setAgeFilter(v as AgeSegment)}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Segmento" />
+              <SelectValue placeholder={t("ag.topParents.segment")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Todas">Todas</SelectItem>
-              <SelectItem value="Bezerra">Bezerra</SelectItem>
-              <SelectItem value="Novilha">Novilha</SelectItem>
-              <SelectItem value="Primípara">Primípara</SelectItem>
-              <SelectItem value="Secundípara">Secundípara</SelectItem>
-              <SelectItem value="Multípara">Multípara</SelectItem>
+              {(Object.keys(AGE_SEGMENT_KEYS) as AgeSegment[]).map((seg) => (
+                <SelectItem key={seg} value={seg}>{t(AGE_SEGMENT_KEYS[seg] as any)}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         {loading && (
           <div className="py-6 text-center text-muted-foreground">
-            Carregando dados...
+            {t("ag.topParents.loading")}
           </div>
         )}
 
         {!loading && rowsSire.length === 0 && rowsMgs.length === 0 && (
           <div className="py-6 text-center text-muted-foreground">
-            Sem dados para os filtros.
+            {t("ag.topParents.noData")}
           </div>
         )}
 
         {!loading && (rowsSire.length > 0 || rowsMgs.length > 0) && (
           <Tabs defaultValue="sire" className="w-full">
             <TabsList className="mb-4">
-              <TabsTrigger value="sire">Sire (Pai)</TabsTrigger>
-              <TabsTrigger value="mgs">MGS (Avô materno)</TabsTrigger>
+              <TabsTrigger value="sire">{t("ag.topParents.sireTab")}</TabsTrigger>
+              <TabsTrigger value="mgs">{t("ag.topParents.mgsTab")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="sire">
@@ -209,6 +198,7 @@ export default function Step2TopParents() {
                 rows={rowsSire}
                 total={totalSire}
                 barBasis="daughters_count"
+                totalLabel={t("ag.topParents.totalDaughters")}
               />
             </TabsContent>
 
@@ -218,6 +208,7 @@ export default function Step2TopParents() {
                 rows={rowsMgs}
                 total={totalMgs}
                 barBasis="daughters_count"
+                totalLabel={t("ag.topParents.totalDaughters")}
               />
             </TabsContent>
           </Tabs>
@@ -232,11 +223,13 @@ function RankingList({
   rows,
   total,
   barBasis,
+  totalLabel,
 }: {
   title: string;
   rows: Row[];
   total: number;
   barBasis: "daughters_count";
+  totalLabel: string;
 }) {
   const maxVal = useMemo(
     () => Math.max(0, ...rows.map((r) => (barBasis === "daughters_count" ? r.daughters_count : 0))),
@@ -248,7 +241,7 @@ function RankingList({
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">{title}</h3>
         <div className="text-xs text-muted-foreground">
-          Total de filhas (aba): <span className="font-medium">{total}</span>
+          {totalLabel} <span className="font-medium">{total}</span>
         </div>
       </div>
 

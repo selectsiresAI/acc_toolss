@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { getAutomaticCategory } from "@/utils/femaleCategories";
  import { formatPtaValue } from "@/utils/ptaFormat";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
   RadarChart,
   PolarGrid,
@@ -101,6 +102,9 @@ interface AuditoriaStep6SectionProps {
 }
 
 export default function AuditoriaStep6Section({ farmId }: AuditoriaStep6SectionProps) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<any[]>([]);
   const [categoryCol, setCategoryCol] = useState<string>("");
@@ -289,13 +293,13 @@ export default function AuditoriaStep6Section({ farmId }: AuditoriaStep6SectionP
   }, [meansByCategory, presentPTAs]);
 
   if (loading) {
-    return <div className="py-6 text-center text-muted-foreground">Carregando dados…</div>;
+    return <div className="py-6 text-center text-muted-foreground">{isEs ? "Cargando datos..." : isEn ? "Loading data..." : "Carregando dados…"}</div>;
   }
 
   if (!rows.length || !categoryCol) {
     return (
       <div className="py-6 text-center text-muted-foreground">
-        Sem dados com categoria disponíveis.
+        {isEs ? "Sin datos con categoría disponibles." : isEn ? "No data with categories available." : "Sem dados com categoria disponíveis."}
       </div>
     );
   }
@@ -303,7 +307,7 @@ export default function AuditoriaStep6Section({ farmId }: AuditoriaStep6SectionP
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Comparação por Categoria ({groupA} vs {groupB})</CardTitle>
+        <CardTitle>{isEs ? "Comparación por Categoría" : isEn ? "Comparison by Category" : "Comparação por Categoria"} ({groupA} vs {groupB})</CardTitle>
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -312,7 +316,7 @@ export default function AuditoriaStep6Section({ farmId }: AuditoriaStep6SectionP
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="py-2 px-3 text-left font-semibold">Grupo</th>
+                  <th className="py-2 px-3 text-left font-semibold">{isEs ? "Grupo" : isEn ? "Group" : "Grupo"}</th>
                   {view.tTraits.map((t) => (
                     <th key={`th-${t}`} className="py-2 px-3 text-left font-semibold">
                       {(PTA_LABELS[t] ?? t).toUpperCase()}

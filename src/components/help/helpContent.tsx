@@ -1,5 +1,8 @@
 // Conteúdo de ajuda contextual para cada página/módulo
 import { ReactNode } from 'react';
+import type { Locale } from '@/lib/i18n';
+import { helpContentMapEN } from './helpContentEN';
+import { helpContentMapES } from './helpContentES';
 
 export interface HelpContent {
   faq: Array<{
@@ -9,7 +12,7 @@ export interface HelpContent {
   resources: Array<{
     title: string;
     description: string;
-    type: 'Guia' | 'Vídeo';
+    type: 'Guia' | 'Vídeo' | 'Guide' | 'Video' | 'Guía';
   }>;
   hints: Record<string, string>;
 }
@@ -1740,6 +1743,12 @@ export const helpContentMap: Record<string, HelpContent> = {
 };
 
 // Helper para obter conteúdo contextual
-export function getHelpContent(page: string): HelpContent {
+export function getHelpContent(page: string, locale: Locale = 'pt-BR'): HelpContent {
+  if (locale === 'en-US') {
+    return helpContentMapEN[page] || helpContentMapEN.dashboard;
+  }
+  if (locale === 'es') {
+    return helpContentMapES[page] || helpContentMapES.dashboard;
+  }
   return helpContentMap[page] || helpContentMap.dashboard;
 }

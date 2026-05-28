@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import { useGeneticCalculator } from "@/hooks/useGeneticCalculator";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Phase2ConceptionProps {
   useReferenceNumbers: boolean;
@@ -13,6 +14,9 @@ interface Phase2ConceptionProps {
 }
 
 export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }: Phase2ConceptionProps) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const { inputs, setConceptionInputs } = useGeneticCalculator();
   const { conception } = inputs;
 
@@ -38,7 +42,7 @@ export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }
             <span className="bg-destructive text-destructive-foreground rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
               2
             </span>
-            Fase 2 - Dados de concepção
+            {isEs ? "Fase 2 - Datos de concepción" : isEn ? "Phase 2 - Conception Data" : "Fase 2 - Dados de concepção"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -48,23 +52,23 @@ export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }
               checked={useReferenceNumbers}
               onCheckedChange={(checked) => setUseReferenceNumbers(checked === true)}
             />
-            <Label htmlFor="use-reference-phase2">Usar números referência</Label>
+            <Label htmlFor="use-reference-phase2">{isEs ? "Usar números de referencia" : isEn ? "Use reference numbers" : "Usar números referência"}</Label>
           </div>
 
           <div className="space-y-6">
             {/* Taxa de concepção em vacas */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Taxa de concepção em vacas</h3>
+              <h3 className="text-lg font-semibold mb-4">{isEs ? "Tasa de concepción en vacas" : isEn ? "Cow conception rate" : "Taxa de concepção em vacas"}</h3>
               <div className="grid grid-cols-5 gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Label>Sêmen Sexado</Label>
+                    <Label>{isEs ? "Semen Sexado" : isEn ? "Sexed Semen" : "Sêmen Sexado"}</Label>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="w-4 h-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Referência: 25-35%</p>
+                        <p>{isEs ? "Referencia: 25-35%" : isEn ? "Reference: 25-35%" : "Referência: 25-35%"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -78,13 +82,13 @@ export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <Label>Convencional</Label>
+                    <Label>{isEs ? "Convencional" : isEn ? "Conventional" : "Convencional"}</Label>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="w-4 h-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Referência: 35-45%</p>
+                        <p>{isEs ? "Referencia: 35-45%" : isEn ? "Reference: 35-45%" : "Referência: 35-45%"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -98,13 +102,13 @@ export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <Label>Corte</Label>
+                    <Label>{isEs ? "Carne" : isEn ? "Beef" : "Corte"}</Label>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="w-4 h-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Referência: 30-40%</p>
+                        <p>{isEs ? "Referencia: 30-40%" : isEn ? "Reference: 30-40%" : "Referência: 30-40%"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -117,7 +121,7 @@ export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }
                   />
                 </div>
                 <div>
-                  <Label>Embriões</Label>
+                  <Label>{isEs ? "Embriones" : isEn ? "Embryos" : "Embriões"}</Label>
                   <Input
                     type="number"
                     value={conception.cows.embryos}
@@ -126,7 +130,7 @@ export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }
                   />
                 </div>
                 <div>
-                  <Label>Embrião sexado</Label>
+                  <Label>{isEs ? "Embrión sexado" : isEn ? "Sexed embryo" : "Embrião sexado"}</Label>
                   <Input
                     type="number"
                     value={conception.cows.sexedEmbryo}
@@ -139,17 +143,17 @@ export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }
 
             {/* Taxa de concepção em novilhas */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Taxa de concepção em novilhas</h3>
+              <h3 className="text-lg font-semibold mb-4">{isEs ? "Tasa de concepción en vaquillas" : isEn ? "Heifer conception rate" : "Taxa de concepção em novilhas"}</h3>
               <div className="grid grid-cols-5 gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <Label>Sêmen Sexado</Label>
+                    <Label>{isEs ? "Semen Sexado" : isEn ? "Sexed Semen" : "Sêmen Sexado"}</Label>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="w-4 h-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Referência: 50-60%</p>
+                        <p>{isEs ? "Referencia: 50-60%" : isEn ? "Reference: 50-60%" : "Referência: 50-60%"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -163,13 +167,13 @@ export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <Label>Convencional</Label>
+                    <Label>{isEs ? "Convencional" : isEn ? "Conventional" : "Convencional"}</Label>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="w-4 h-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Referência: 65-75%</p>
+                        <p>{isEs ? "Referencia: 65-75%" : isEn ? "Reference: 65-75%" : "Referência: 65-75%"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -183,13 +187,13 @@ export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <Label>Corte</Label>
+                    <Label>{isEs ? "Carne" : isEn ? "Beef" : "Corte"}</Label>
                     <Tooltip>
                       <TooltipTrigger>
                         <Info className="w-4 h-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Referência: 55-65%</p>
+                        <p>{isEs ? "Referencia: 55-65%" : isEn ? "Reference: 55-65%" : "Referência: 55-65%"}</p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
@@ -202,7 +206,7 @@ export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }
                   />
                 </div>
                 <div>
-                  <Label>Embriões</Label>
+                  <Label>{isEs ? "Embriones" : isEn ? "Embryos" : "Embriões"}</Label>
                   <Input
                     type="number"
                     value={conception.heifers.embryos}
@@ -211,7 +215,7 @@ export function Phase2Conception({ useReferenceNumbers, setUseReferenceNumbers }
                   />
                 </div>
                 <div>
-                  <Label>Embrião sexado</Label>
+                  <Label>{isEs ? "Embrión sexado" : isEn ? "Sexed embryo" : "Embrião sexado"}</Label>
                   <Input
                     type="number"
                     value={conception.heifers.sexedEmbryo}

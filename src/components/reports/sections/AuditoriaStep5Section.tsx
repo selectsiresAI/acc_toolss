@@ -16,6 +16,7 @@ import { PTA_CATALOG } from "@/lib/pta";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPtaValue } from "@/utils/ptaFormat";
 import { getAdaptiveYAxisDomainFromValues } from "@/lib/chart-utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type SeriesPoint = { year: number; n: number; mean: number };
 
@@ -79,6 +80,9 @@ interface AuditoriaStep5SectionProps {
 }
 
 export default function AuditoriaStep5Section({ farmId }: AuditoriaStep5SectionProps) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [females, setFemales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -164,7 +168,7 @@ export default function AuditoriaStep5Section({ farmId }: AuditoriaStep5SectionP
     PTA_CATALOG.find((i) => i.key === key)?.label ?? key.toUpperCase();
 
   if (loading) {
-    return <div className="py-6 text-muted-foreground">Carregando dados...</div>;
+    return <div className="py-6 text-muted-foreground">{isEs ? "Cargando datos..." : isEn ? "Loading data..." : "Carregando dados..."}</div>;
   }
 
   return (
@@ -186,12 +190,12 @@ export default function AuditoriaStep5Section({ farmId }: AuditoriaStep5SectionP
             <CardHeader className="border-b px-4 py-3">
               <div className="space-y-1">
                 <CardTitle className="text-base font-semibold">
-                  {label} - Média Anual Por Ano De Nascimento
+                  {label} - {isEs ? "Promedio Anual Por Año De Nacimiento" : isEn ? "Annual Average by Birth Year" : "Média Anual Por Ano De Nascimento"}
                 </CardTitle>
                 {trendResult.r2 > 0 && (
                   <div className="text-xs text-muted-foreground">
-                    Tendência (R²={trendResult.r2.toFixed(3)}): {trendResult.slope >= 0 ? "+" : ""}
-                    {trendResult.slope}/ano
+                    {isEs ? "Tendencia" : isEn ? "Trend" : "Tendência"} (R²={trendResult.r2.toFixed(3)}): {trendResult.slope >= 0 ? "+" : ""}
+                    {trendResult.slope}/{isEs ? "año" : isEn ? "year" : "ano"}
                   </div>
                 )}
               </div>
@@ -232,7 +236,7 @@ export default function AuditoriaStep5Section({ farmId }: AuditoriaStep5SectionP
                     <Line
                       type="monotone"
                       dataKey="mean"
-                      name={"Média anual " + label}
+                      name={(isEs ? "Promedio anual " : isEn ? "Annual average " : "Média anual ") + label}
                       stroke="hsl(var(--foreground))"
                       strokeWidth={2}
                       dot={(props: any) => {
@@ -255,7 +259,7 @@ export default function AuditoriaStep5Section({ farmId }: AuditoriaStep5SectionP
                       <Line
                         type="linear"
                         dataKey="trend"
-                        name={"Tendência (R²=" + trendResult.r2.toFixed(3) + ")"}
+                        name={(isEs ? "Tendencia" : isEn ? "Trend" : "Tendência") + " (R²=" + trendResult.r2.toFixed(3) + ")"}
                         stroke="#10B981"
                         strokeWidth={2}
                         strokeDasharray="5 5"
@@ -268,13 +272,13 @@ export default function AuditoriaStep5Section({ farmId }: AuditoriaStep5SectionP
               </div>
 
               <div className="border-t px-4 pb-4 pt-4">
-                <h4 className="mb-2 text-sm font-semibold">Média Anual {label} Por Ano</h4>
+                <h4 className="mb-2 text-sm font-semibold">{isEs ? `Promedio Anual ${label} Por Año` : isEn ? `Annual Average ${label} by Year` : `Média Anual ${label} Por Ano`}</h4>
                 <div className="max-h-48 overflow-auto">
                   <table className="w-full text-sm">
                     <thead className="sticky top-0 bg-muted">
                       <tr>
-                        <th className="p-2 text-left font-semibold">Ano</th>
-                        <th className="p-2 text-right font-semibold">Média</th>
+                        <th className="p-2 text-left font-semibold">{isEs ? "Año" : isEn ? "Year" : "Ano"}</th>
+                        <th className="p-2 text-right font-semibold">{isEs ? "Promedio" : isEn ? "Average" : "Média"}</th>
                         <th className="p-2 text-right font-semibold">N</th>
                       </tr>
                     </thead>

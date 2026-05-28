@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { getAccessToken, getEdgeUrl, supabase } from '@/lib/edge';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type Props = {
   farmId?: string;
@@ -20,17 +21,18 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
   const [loading, setLoading] = React.useState(false);
   const [fileName, setFileName] = React.useState('');
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   function toastSuccess(message: string) {
-    toast({ title: 'Sucesso', description: message });
+    toast({ title: t("femaleImport.uploadComplete"), description: message });
   }
 
   function toastError(message: string) {
-    toast({ title: 'Erro no upload', description: message, variant: 'destructive' });
+    toast({ title: t("files.uploadError"), description: message, variant: 'destructive' });
   }
 
   function toastInfo(message: string) {
-    toast({ title: 'Importação de Fêmeas', description: message });
+    toast({ title: t("femaleImport.title"), description: message });
   }
 
   function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -45,7 +47,7 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
     const firstSheetName = workbook.SheetNames[0];
 
     if (!firstSheetName) {
-      throw new Error('Arquivo .xlsx sem planilhas.');
+      throw new Error('Empty .xlsx file - no sheets found.');
     }
 
     const worksheet = workbook.Sheets[firstSheetName];
@@ -61,7 +63,7 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
     );
 
     if (!hasIdentifier) {
-      throw new Error('Planilha sem coluna obrigatória: "identifier".');
+      throw new Error(`${t("femaleImport.missingColumn")} "identifier".`);
     }
 
     // Force date columns to ISO format (YYYY-MM-DD) so the edge function can parse them
@@ -73,7 +75,7 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
 
   async function handleSubmit() {
     if (!fileRef.current) {
-      toastError('Selecione um arquivo .xlsx, .xls, .xlsm ou .csv.');
+      toastError(t("femaleImport.invalidFormat"));
       return;
     }
 
@@ -84,7 +86,7 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
       const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
       
       if (refreshError || !refreshData?.session?.access_token) {
-        toastError('Sessão expirada. Faça login novamente.');
+        toastError(t("femaleImport.sessionExpired"));
         setLoading(false);
         return;
       }
@@ -97,7 +99,7 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
       if (/\.(xlsx|xls|xlsm)$/i.test(uploadFile.name)) {
         uploadFile = await convertXlsxToCsv(uploadFile);
       } else if (!/\.csv$/i.test(uploadFile.name)) {
-        toastError('Formato inválido. Use .xlsx, .xls, .xlsm ou .csv.');
+        toastError(t("femaleImport.invalidFormat"));
         setLoading(false);
         return;
       }
@@ -144,16 +146,16 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
 
       // Build summary message
       const summaryParts: string[] = [];
-      summaryParts.push(`${inserted} fêmeas importadas`);
-      if (duplicatesRemoved > 0) summaryParts.push(`${duplicatesRemoved} duplicatas removidas`);
-      if (validationErrors > 0) summaryParts.push(`${validationErrors} linhas ignoradas (dados incompletos)`);
+      summaryParts.push(`${inserted} ${t("femaleImport.femalesImported")}`);
+      if (duplicatesRemoved > 0) summaryParts.push(`${duplicatesRemoved} duplicates removed`);
+      if (validationErrors > 0) summaryParts.push(`${validationErrors} rows skipped`);
 
       if (insertErrors > 0 && inserted === 0) {
-        toastError(`Falha no upload: ${insertErrors} erros de inserção.`);
+        toastError(`${t("femaleImport.uploadFailed")} ${insertErrors} ${t("femaleImport.insertErrors")}.`);
       } else if (insertErrors > 0) {
-        toastInfo(`Upload parcial: ${summaryParts.join(', ')}. ${insertErrors} erros de inserção.`);
+        toastInfo(`${t("femaleImport.partialUpload")} ${summaryParts.join(', ')}. ${insertErrors} ${t("femaleImport.insertErrors")}.`);
       } else {
-        toastSuccess(`Upload concluído! ${summaryParts.join(', ')}.`);
+        toastSuccess(`${t("femaleImport.uploadComplete")} ${summaryParts.join(', ')}.`);
       }
 
       // Commit the batch
@@ -179,14 +181,14 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
       }
     } catch (error: any) {
       if (error?.name === 'NotReadableError' || String(error).includes('NotReadableError')) {
-        toastError('Não foi possível ler o arquivo (NotReadableError). Selecione novamente e mantenha o modal aberto durante o upload.');
+        toastError(t("femaleImport.notReadable"));
       } else if (error?.message?.includes('identifier')) {
-        toastError('Planilha sem coluna obrigatória: "identifier".');
+        toastError(`${t("femaleImport.missingColumn")} "identifier".`);
       } else if (error instanceof TypeError) {
-        toastError('Não foi possível contatar a Edge Function (CORS/URL).');
+        toastError(t("femaleImport.corsError"));
       } else {
         console.error(error);
-        toastError('Erro inesperado ao processar o arquivo.');
+        toastError(`${t("common.unexpectedError")} ${error?.message || t("common.unknown")}`);
       }
     } finally {
       setLoading(false);
@@ -196,7 +198,7 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
   return (
     <div className="space-y-3">
       <Label className="text-sm">
-        Modelos aceitos: .xlsx, .xls, .xlsm ou .csv. A planilha deve conter ao menos a coluna <b>identifier</b>.
+        {t("femaleImport.invalidFormat")} — <b>identifier</b>
       </Label>
       <Input
         ref={inputRef}
@@ -206,7 +208,7 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
         disabled={loading}
       />
       {fileName ? (
-        <div className="text-xs opacity-80">Selecionado: {fileName}</div>
+        <div className="text-xs opacity-80">{fileName}</div>
       ) : null}
       <Button
         disabled={loading || !fileRef.current}
@@ -216,10 +218,10 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
         {loading ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Enviando...
+            {t("files.uploading")}
           </>
         ) : (
-          'Enviar'
+          t("herd.import")
         )}
       </Button>
     </div>

@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { normalizeKey } from "../utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export type MappingMethod = "legend" | "regex" | "fuzzy" | undefined;
 
@@ -27,17 +28,17 @@ interface DetectionTableProps {
   onToggleApproved: (original: string, approved: boolean) => void;
 }
 
-const renderMethodBadge = (method: MappingMethod, legendSource?: "default" | "user", isExcluded?: boolean) => {
+const renderMethodBadge = (method: MappingMethod, legendSource?: "default" | "user", isExcluded?: boolean, isEn?: boolean, isEs?: boolean) => {
   if (isExcluded) {
-    return <Badge variant="destructive">Será excluída</Badge>;
+    return <Badge variant="destructive">{isEs ? "Será excluida" : isEn ? "Will be excluded" : "Será excluída"}</Badge>;
   }
 
   if (!method) {
-    return <Badge variant="outline">Não mapeado</Badge>;
+    return <Badge variant="outline">{isEs ? "No mapeado" : isEn ? "Not mapped" : "Não mapeado"}</Badge>;
   }
 
   if (method === "legend") {
-    return <Badge>{legendSource === "user" ? "Banco (usuário)" : "Banco (seed)"}</Badge>;
+    return <Badge>{legendSource === "user" ? (isEs ? "Banco (usuario)" : isEn ? "Bank (user)" : "Banco (usuário)") : (isEs ? "Banco (seed)" : isEn ? "Bank (seed)" : "Banco (seed)")}</Badge>;
   }
 
   if (method === "regex") {
@@ -53,13 +54,17 @@ const renderMethodBadge = (method: MappingMethod, legendSource?: "default" | "us
   return null;
 };
 
-const renderConfidence = (confidence?: number) => {
+const renderConfidence = (confidence?: number, isEn?: boolean, isEs?: boolean) => {
   if (confidence === undefined) {
     return <span className="text-muted-foreground">—</span>;
   }
 
   const percentage = Math.round(confidence * 1000) / 10;
-  const strength = confidence >= 0.95 ? "Excelente" : confidence >= 0.88 ? "Boa" : "Moderada";
+  const strength = confidence >= 0.95
+    ? (isEs ? "Excelente" : isEn ? "Excellent" : "Excelente")
+    : confidence >= 0.88
+    ? (isEs ? "Buena" : isEn ? "Good" : "Boa")
+    : (isEs ? "Moderada" : isEn ? "Moderate" : "Moderada");
 
   return (
     <div className="flex flex-col">
@@ -75,10 +80,14 @@ export const DetectionTable: React.FC<DetectionTableProps> = ({
   onSelectCanonical,
   onToggleApproved,
 }) => {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+
   if (rows.length === 0) {
     return (
       <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-        Faça o upload dos arquivos para visualizar sugestões de mapeamento.
+        {isEs ? "Cargue los archivos para ver sugerencias de mapeo." : isEn ? "Upload files to view mapping suggestions." : "Faça o upload dos arquivos para visualizar sugestões de mapeamento."}
       </div>
     );
   }
@@ -90,12 +99,12 @@ export const DetectionTable: React.FC<DetectionTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[180px]">Cabeçalho original</TableHead>
-            <TableHead>Método</TableHead>
-            <TableHead>Confiança</TableHead>
-            <TableHead className="w-[280px]">Chave canônica sugerida</TableHead>
-            <TableHead className="w-[100px]">Excluir</TableHead>
-            <TableHead className="w-[140px]">Aprovado</TableHead>
+            <TableHead className="w-[180px]">{isEs ? "Encabezado original" : isEn ? "Original header" : "Cabeçalho original"}</TableHead>
+            <TableHead>{isEs ? "Método" : isEn ? "Method" : "Método"}</TableHead>
+            <TableHead>{isEs ? "Confianza" : isEn ? "Confidence" : "Confiança"}</TableHead>
+            <TableHead className="w-[280px]">{isEs ? "Clave canónica sugerida" : isEn ? "Suggested canonical key" : "Chave canônica sugerida"}</TableHead>
+            <TableHead className="w-[100px]">{isEs ? "Excluir" : isEn ? "Exclude" : "Excluir"}</TableHead>
+            <TableHead className="w-[140px]">{isEs ? "Aprobado" : isEn ? "Approved" : "Aprovado"}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -110,11 +119,11 @@ export const DetectionTable: React.FC<DetectionTableProps> = ({
                 <TableCell>
                   <div className="font-medium">{row.original}</div>
                   {row.manual && (
-                    <span className="text-xs text-muted-foreground">Ajuste manual</span>
+                    <span className="text-xs text-muted-foreground">{isEs ? "Ajuste manual" : isEn ? "Manual adjustment" : "Ajuste manual"}</span>
                   )}
                 </TableCell>
-                <TableCell>{renderMethodBadge(row.method, row.legendSource, row.exclude)}</TableCell>
-                <TableCell>{renderConfidence(row.confidence)}</TableCell>
+                <TableCell>{renderMethodBadge(row.method, row.legendSource, row.exclude, isEn, isEs)}</TableCell>
+                <TableCell>{renderConfidence(row.confidence, isEn, isEs)}</TableCell>
                 <TableCell>
                   <Select
                     value={row.selectedCanonical ? row.selectedCanonical : "none"}
@@ -128,10 +137,10 @@ export const DetectionTable: React.FC<DetectionTableProps> = ({
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma chave" />
+                      <SelectValue placeholder={isEs ? "Seleccione una clave" : isEn ? "Select a key" : "Selecione uma chave"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">— Nenhum —</SelectItem>
+                      <SelectItem value="none">{isEs ? "— Ninguno —" : isEn ? "— None —" : "— Nenhum —"}</SelectItem>
                       {canonicalOptions.map((option) => (
                         <SelectItem key={option} value={option}>
                           {option}
@@ -141,7 +150,7 @@ export const DetectionTable: React.FC<DetectionTableProps> = ({
                   </Select>
                   {isSuggestionChanged && !row.exclude && (
                     <p className="mt-1 text-xs text-amber-600">
-                      Diferente da sugestão automática.
+                      {isEs ? "Diferente de la sugerencia automática." : isEn ? "Different from the automatic suggestion." : "Diferente da sugestão automática."}
                     </p>
                   )}
                 </TableCell>
@@ -169,7 +178,7 @@ export const DetectionTable: React.FC<DetectionTableProps> = ({
                         onToggleApproved(row.original, checked === true)
                       }
                     />
-                    <span className="text-sm text-muted-foreground">Liberado</span>
+                    <span className="text-sm text-muted-foreground">{isEs ? "Liberado" : isEn ? "Released" : "Liberado"}</span>
                   </div>
                 </TableCell>
               </TableRow>

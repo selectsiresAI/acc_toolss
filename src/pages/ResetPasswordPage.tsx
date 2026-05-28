@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Lock, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
 import toolssLogo from "@/assets/toolss-logo.jpg";
 
 const ResetPasswordPage: React.FC = () => {
@@ -19,6 +20,9 @@ const ResetPasswordPage: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -43,11 +47,11 @@ const ResetPasswordPage: React.FC = () => {
     setError("");
 
     if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres");
+      setError(isEs ? "La contraseña debe tener al menos 6 caracteres" : isEn ? "Password must be at least 6 characters" : "A senha deve ter pelo menos 6 caracteres");
       return;
     }
     if (password !== confirmPassword) {
-      setError("As senhas não coincidem");
+      setError(isEs ? "Las contraseñas no coinciden" : isEn ? "Passwords do not match" : "As senhas não coincidem");
       return;
     }
 
@@ -58,14 +62,14 @@ const ResetPasswordPage: React.FC = () => {
 
       setSuccess(true);
       toast({
-        title: "Senha atualizada",
-        description: "Sua senha foi alterada com sucesso.",
+        title: isEs ? "Contraseña actualizada" : isEn ? "Password updated" : "Senha atualizada",
+        description: isEs ? "Su contraseña fue cambiada con éxito." : isEn ? "Your password was changed successfully." : "Sua senha foi alterada com sucesso.",
       });
 
       setTimeout(() => navigate("/"), 2000);
     } catch (err: any) {
       console.error("Password update error occurred");
-      setError(err.message || "Erro ao atualizar senha");
+      setError(err.message || (isEs ? "Error al actualizar contraseña" : isEn ? "Error updating password" : "Erro ao atualizar senha"));
     } finally {
       setIsLoading(false);
     }
@@ -77,8 +81,8 @@ const ResetPasswordPage: React.FC = () => {
         <Card className="w-full max-w-md text-center">
           <CardContent className="pt-8 pb-8 space-y-4">
             <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
-            <h2 className="text-xl font-semibold">Senha atualizada!</h2>
-            <p className="text-muted-foreground">Redirecionando...</p>
+            <h2 className="text-xl font-semibold">{isEs ? "¡Contraseña actualizada!" : isEn ? "Password updated!" : "Senha atualizada!"}</h2>
+            <p className="text-muted-foreground">{isEs ? "Redireccionando..." : isEn ? "Redirecting..." : "Redirecionando..."}</p>
           </CardContent>
         </Card>
       </div>
@@ -91,9 +95,9 @@ const ResetPasswordPage: React.FC = () => {
         <Card className="w-full max-w-md text-center">
           <CardContent className="pt-8 pb-8 space-y-4">
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-            <p className="text-muted-foreground">Verificando link de recuperação...</p>
+            <p className="text-muted-foreground">{isEs ? "Verificando enlace de recuperación..." : isEn ? "Verifying recovery link..." : "Verificando link de recuperação..."}</p>
             <Button variant="link" onClick={() => navigate("/")}>
-              Voltar para o login
+              {isEs ? "Volver al inicio de sesión" : isEn ? "Back to login" : "Voltar para o login"}
             </Button>
           </CardContent>
         </Card>
@@ -106,19 +110,19 @@ const ResetPasswordPage: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <img src={toolssLogo} alt="ToolSS Logo" className="h-16 mx-auto mb-2" />
-          <CardTitle className="text-2xl">Redefinir senha</CardTitle>
-          <CardDescription>Digite sua nova senha abaixo</CardDescription>
+          <CardTitle className="text-2xl">{isEs ? "Restablecer contraseña" : isEn ? "Reset password" : "Redefinir senha"}</CardTitle>
+          <CardDescription>{isEs ? "Ingrese su nueva contraseña abajo" : isEn ? "Enter your new password below" : "Digite sua nova senha abaixo"}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="new-password">Nova senha</Label>
+              <Label htmlFor="new-password">{isEs ? "Nueva contraseña" : isEn ? "New password" : "Nova senha"}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   id="new-password"
                   type="password"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder={isEs ? "Mínimo 6 caracteres" : isEn ? "Minimum 6 characters" : "Mínimo 6 caracteres"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10"
@@ -130,13 +134,13 @@ const ResetPasswordPage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirm-new-password">Confirmar nova senha</Label>
+              <Label htmlFor="confirm-new-password">{isEs ? "Confirmar nueva contraseña" : isEn ? "Confirm new password" : "Confirmar nova senha"}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   id="confirm-new-password"
                   type="password"
-                  placeholder="Repita a senha"
+                  placeholder={isEs ? "Repita la contraseña" : isEn ? "Repeat password" : "Repita a senha"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="pl-10"
@@ -157,10 +161,10 @@ const ResetPasswordPage: React.FC = () => {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
+                  {isEs ? "Guardando..." : isEn ? "Saving..." : "Salvando..."}
                 </>
               ) : (
-                "Salvar nova senha"
+                isEs ? "Guardar nueva contraseña" : isEn ? "Save new password" : "Salvar nova senha"
               )}
             </Button>
           </form>

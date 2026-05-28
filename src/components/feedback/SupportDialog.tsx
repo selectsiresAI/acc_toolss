@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Send } from "lucide-react";
 import { z } from "zod";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const supportSchema = z.object({
   name: z.string().trim().min(2, "Nome deve ter no mínimo 2 caracteres").max(100),
@@ -26,6 +27,9 @@ interface SupportDialogProps {
 export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -60,8 +64,8 @@ export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
       }
 
       toast({
-        title: "Mensagem enviada!",
-        description: "Nossa equipe responderá em breve por email.",
+        title: isEs ? "¡Mensaje enviado!" : isEn ? "Message sent!" : "Mensagem enviada!",
+        description: isEs ? "Nuestro equipo responderá pronto por correo electrónico." : isEn ? "Our team will respond shortly via email." : "Nossa equipe responderá em breve por email.",
       });
 
       setFormData({
@@ -84,8 +88,8 @@ export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
       } else {
         toast({
           variant: "destructive",
-          title: "Erro ao enviar",
-          description: "Tente novamente em alguns instantes.",
+          title: isEs ? "Error al enviar" : isEn ? "Error sending" : "Erro ao enviar",
+          description: isEs ? "Intente nuevamente en unos instantes." : isEn ? "Please try again shortly." : "Tente novamente em alguns instantes.",
         });
       }
     } finally {
@@ -99,22 +103,22 @@ export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Send className="h-5 w-5 text-primary" />
-            Falar com Suporte
+            {isEs ? "Hablar con Soporte" : isEn ? "Talk to Support" : "Falar com Suporte"}
           </DialogTitle>
           <DialogDescription>
-            Descreva sua dúvida, problema ou sugestão. Responderemos por email.
+            {isEs ? "Describa su duda, problema o sugerencia. Responderemos por correo electrónico." : isEn ? "Describe your question, issue or suggestion. We'll reply by email." : "Descreva sua dúvida, problema ou sugestão. Responderemos por email."}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome</Label>
+              <Label htmlFor="name">{isEs ? "Nombre" : isEn ? "Name" : "Nome"}</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Seu nome"
+                placeholder={isEs ? "Su nombre" : isEn ? "Your name" : "Seu nome"}
                 disabled={loading}
               />
               {errors.name && (
@@ -139,7 +143,7 @@ export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Categoria</Label>
+            <Label htmlFor="category">{isEs ? "Categoría" : isEn ? "Category" : "Categoria"}</Label>
             <Select
               value={formData.category}
               onValueChange={(value: any) => setFormData({ ...formData, category: value })}
@@ -149,21 +153,21 @@ export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="question">Dúvida</SelectItem>
-                <SelectItem value="bug">Reportar Bug</SelectItem>
-                <SelectItem value="feature">Sugestão de Funcionalidade</SelectItem>
-                <SelectItem value="other">Outro</SelectItem>
+                <SelectItem value="question">{isEs ? "Pregunta" : isEn ? "Question" : "Dúvida"}</SelectItem>
+                <SelectItem value="bug">{isEs ? "Reportar Bug" : isEn ? "Report Bug" : "Reportar Bug"}</SelectItem>
+                <SelectItem value="feature">{isEs ? "Sugerencia de Funcionalidad" : isEn ? "Feature Suggestion" : "Sugestão de Funcionalidade"}</SelectItem>
+                <SelectItem value="other">{isEs ? "Otro" : isEn ? "Other" : "Outro"}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subject">Assunto</Label>
+            <Label htmlFor="subject">{isEs ? "Asunto" : isEn ? "Subject" : "Assunto"}</Label>
             <Input
               id="subject"
               value={formData.subject}
               onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-              placeholder="Resuma seu pedido em uma linha"
+              placeholder={isEs ? "Resuma su solicitud en una línea" : isEn ? "Summarize your request in one line" : "Resuma seu pedido em uma linha"}
               disabled={loading}
             />
             {errors.subject && (
@@ -172,18 +176,18 @@ export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="message">Mensagem</Label>
+            <Label htmlFor="message">{isEs ? "Mensaje" : isEn ? "Message" : "Mensagem"}</Label>
             <Textarea
               id="message"
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              placeholder="Descreva detalhadamente sua solicitação..."
+              placeholder={isEs ? "Describa detalladamente su solicitud..." : isEn ? "Describe your request in detail..." : "Descreva detalhadamente sua solicitação..."}
               rows={6}
               disabled={loading}
               className="resize-none"
             />
             <p className="text-xs text-muted-foreground">
-              {formData.message.length}/2000 caracteres
+              {formData.message.length}/2000 {isEs ? "caracteres" : isEn ? "characters" : "caracteres"}
             </p>
             {errors.message && (
               <p className="text-sm text-destructive">{errors.message}</p>
@@ -197,18 +201,18 @@ export function SupportDialog({ open, onOpenChange }: SupportDialogProps) {
               onClick={() => onOpenChange(false)}
               disabled={loading}
             >
-              Cancelar
+              {isEs ? "Cancelar" : isEn ? "Cancel" : "Cancelar"}
             </Button>
             <Button type="submit" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Enviando...
+                  {isEs ? "Enviando..." : isEn ? "Sending..." : "Enviando..."}
                 </>
               ) : (
                 <>
                   <Send className="mr-2 h-4 w-4" />
-                  Enviar
+                  {isEs ? "Enviar" : isEn ? "Send" : "Enviar"}
                 </>
               )}
             </Button>

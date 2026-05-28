@@ -23,7 +23,7 @@ type Ctx = {
 const TutorialCtx = createContext<Ctx | null>(null);
 export const useTutorial = () => {
   const ctx = useContext(TutorialCtx);
-  if (!ctx) throw new Error("TutorialProvider ausente");
+  if (!ctx) throw new Error("TutorialProvider missing / TutorialProvider ausente");
   return ctx;
 };
 

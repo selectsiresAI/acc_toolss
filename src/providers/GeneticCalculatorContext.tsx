@@ -117,7 +117,7 @@ export function useGeneticCalculator(): GeneticCalculatorState {
   const ctx = useContext(GeneticCalculatorContext);
   if (!ctx) {
     throw new Error(
-      "useGeneticCalculator deve ser usado dentro de GeneticCalculatorProvider"
+      "useGeneticCalculator must be used within GeneticCalculatorProvider"
     );
   }
   return ctx;

@@ -46,7 +46,9 @@ export function useGlossary() {
     if (!term.is_translatable) return term.pt_br;
 
     // Return translation based on locale
-    return locale === 'en-US' ? (term.en_us || term.pt_br) : term.pt_br;
+    if (locale === 'en-US') return term.en_us || term.pt_br;
+    if (locale === 'es') return term.es || term.en_us || term.pt_br;
+    return term.pt_br;
   };
 
   return {

@@ -37,7 +37,7 @@ export default function HomeTourAnchors() {
         id: "home:fazendas",
         applied: false,
         apply: () => {
-          const farmsTitle = byText(document.body, "suas fazendas");
+          const farmsTitle = byText(document.body, "suas fazendas") ?? byText(document.body, "your farms") ?? byText(document.body, "sus fincas");
           if (!farmsTitle) return false;
 
           let container: HTMLElement | null = farmsTitle.parentElement as HTMLElement | null;
@@ -53,7 +53,10 @@ export default function HomeTourAnchors() {
         applied: false,
         apply: () => {
           const allButtons = Array.from(document.querySelectorAll("button, a")) as HTMLElement[];
-          const createBtn = allButtons.find((el) => (el.textContent || "").toLowerCase().includes("criar fazenda"));
+          const createBtn = allButtons.find((el) => {
+            const txt = (el.textContent || "").toLowerCase();
+            return txt.includes("criar fazenda") || txt.includes("create farm") || txt.includes("crear finca");
+          });
           if (!createBtn) return false;
           if (createBtn.getAttribute("data-tour") === "home:criar") return true;
           createBtn.setAttribute("data-tour", "home:criar");
@@ -64,7 +67,7 @@ export default function HomeTourAnchors() {
         id: "home:resumo",
         applied: false,
         apply: () => {
-          const resumoTitle = byText(document.body, "resumo da conta");
+          const resumoTitle = byText(document.body, "resumo da conta") ?? byText(document.body, "account summary") ?? byText(document.body, "resumen de la cuenta");
           if (!resumoTitle) return false;
 
           let resumoContainer: HTMLElement | null = resumoTitle.parentElement as HTMLElement | null;

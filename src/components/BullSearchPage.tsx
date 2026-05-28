@@ -17,6 +17,7 @@ import { ANIMAL_METRIC_COLUMNS } from '@/constants/animalMetrics';
 import { useToast } from '@/hooks/use-toast';
 import { StagingMigrationButton } from './StagingMigrationButton';
 import { normalizeNaabCode } from '@/utils/bullNormalization';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   supabase,
   supabaseAnonKey,
@@ -138,8 +139,8 @@ const attemptImportBullsFetch = async (
   }
   throw new Error(
     networkErrors.length
-      ? `Não foi possível conectar às funções de importação (${operation}). ${networkErrors.join(' | ')}`
-      : `Nenhuma URL configurada para a função de importação (${operation}).`
+      ? `Could not connect to import functions (${operation}). ${networkErrors.join(' | ')}`
+      : `No URL configured for import function (${operation}).`
   );
 };
 
@@ -190,6 +191,7 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
   const [importResult, setImportResult] = useState<any>(null);
 
   const { toast } = useToast();
+  const { t, locale } = useTranslation();
 
   // ── Debounce search ──
   useEffect(() => {
@@ -377,8 +379,8 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
     } catch (error) {
       console.error('Error loading bulls:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao carregar banco de touros",
+        title: t('bulls.toast.error'),
+        description: t('bulls.toast.errorLoadingBulls'),
         variant: "destructive"
       });
     } finally {
@@ -458,25 +460,25 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
 
   const handleAddToBotijao = () => {
     if (selectedBulls.length === 0) {
-      toast({ title: "Nenhum touro selecionado", description: "Selecione pelo menos um touro para adicionar ao Botijão Virtual.", variant: "destructive" });
+      toast({ title: t('bulls.toast.noBullSelected'), description: t('bulls.toast.noBullSelectedDesc'), variant: "destructive" });
       return;
     }
     localStorage.setItem(`selected-bulls-${farm.farm_id}`, JSON.stringify(selectedBulls));
     if (onBullsSelected) onBullsSelected(selectedBulls);
-    toast({ title: "Touros selecionados", description: `${selectedBulls.length} touro(s) foram enviados para o Botijão Virtual.` });
+    toast({ title: t('bulls.toast.bullsSelected'), description: `${selectedBulls.length} ${t('bulls.toast.bullsSentToBotijao')}` });
     if (onGoToBotijao) onGoToBotijao();
   };
 
   // ── Import handler ──
   const handleImportUpload = async () => {
     if (!importFile) {
-      toast({ title: "Erro", description: "Selecione um arquivo CSV ou XLSX", variant: "destructive" });
+      toast({ title: t('bulls.toast.error'), description: t('bulls.toast.selectFile'), variant: "destructive" });
       return;
     }
     setImporting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) throw new Error(locale === 'es' ? 'Usuario no autenticado' : locale === 'en' ? 'User not authenticated' : 'Usuário não autenticado');
       const session = await supabase.auth.getSession();
       const accessToken = session.data.session?.access_token;
       const headers = { authorization: `Bearer ${accessToken}`, apikey: supabaseAnonKey };
@@ -491,7 +493,7 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
         const workbook = XLSX.read(buffer, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-        if (jsonData.length === 0) { toast({ title: "Erro", description: "Arquivo XLSX vazio", variant: "destructive" }); return; }
+        if (jsonData.length === 0) { toast({ title: t('bulls.toast.error'), description: t('bulls.toast.emptyXlsx'), variant: "destructive" }); return; }
         const originalHeaders = (jsonData[0] as any[]).map(h => String(h || '').trim());
         const rows = jsonData.slice(1) as any[][];
         const legendMap = new Map<string, string>();
@@ -518,15 +520,15 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
       const uploadData = await uploadResponse.json();
       setImportResult(uploadData);
       if (uploadData.total_rows > 0) {
-        toast({ title: "✅ CSV carregado no staging!", description: `${uploadData.total_rows} registros prontos. Clique em "Migrar Touros" para processar.`, duration: 5000 });
+        toast({ title: t('bulls.toast.csvLoaded'), description: `${uploadData.total_rows} ${t('bulls.toast.csvLoadedDesc')}`, duration: 5000 });
       } else {
-        toast({ title: "⚠ Arquivo vazio", description: "O CSV não contém registros válidos.", variant: "destructive" });
+        toast({ title: t('bulls.toast.emptyFile'), description: t('bulls.toast.emptyFileDesc'), variant: "destructive" });
       }
       await loadBulls();
       setTimeout(() => { setShowImportDialog(false); setImportFile(null); setImportResult(null); }, 3000);
     } catch (error) {
       console.error('Import error:', error);
-      toast({ title: "Erro na importação", description: error instanceof Error ? error.message : "Erro desconhecido", variant: "destructive" });
+      toast({ title: t('bulls.toast.importError'), description: error instanceof Error ? error.message : t('bulls.toast.unknownError'), variant: "destructive" });
     } finally {
       setImporting(false);
     }
@@ -555,14 +557,16 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({ title: "Template baixado", description: "Template completo de touros foi baixado com sucesso." });
+    toast({ title: t('bulls.toast.templateDownloaded'), description: t('bulls.toast.templateDownloadedDesc') });
   };
 
   const handleExport = () => {
     if (rankedBulls.length === 0) return;
     import('xlsx').then(({ utils, writeFile }) => {
       import('@/lib/excel-date-formatter').then(({ autoFormatDateColumns }) => {
-        const headers = ['NAAB', 'Nome', 'Registro', 'Empresa', 'Data Nasc.', 'Pai NAAB', 'Avô Materno', 'Score', 'HHP$', 'TPI', 'NM$', 'PTAM', 'CFP'];
+        const isEn = locale === 'en';
+        const isEs = locale === 'es';
+        const headers = ['NAAB', isEs ? 'Nombre' : isEn ? 'Name' : 'Nome', isEs ? 'Registro' : isEn ? 'Registration' : 'Registro', isEs ? 'Empresa' : isEn ? 'Company' : 'Empresa', isEs ? 'Fecha Nac.' : isEn ? 'Birth Date' : 'Data Nasc.', isEs ? 'Padre NAAB' : isEn ? 'Sire NAAB' : 'Pai NAAB', isEs ? 'Abuelo Materno' : isEn ? 'Maternal Grandsire' : 'Avô Materno', 'Score', 'HHP$', 'TPI', 'NM$', 'PTAM', 'CFP'];
         const dataRows = rankedBulls.map(bull => [
           bull.code, bull.name, bull.registration || '-', bull.company || '-',
           bull.birth_date || '', bull.sire_naab || '-', bull.mgs_naab || '-',
@@ -573,9 +577,9 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
         const worksheet = utils.aoa_to_sheet([headers, ...dataRows]);
         autoFormatDateColumns(worksheet, headers);
         const workbook = utils.book_new();
-        utils.book_append_sheet(workbook, worksheet, 'Touros');
-        writeFile(workbook, `touros_${new Date().toISOString().split('T')[0]}.xlsx`);
-        toast({ title: "Exportação concluída", description: "Arquivo XLSX foi baixado com sucesso!" });
+        utils.book_append_sheet(workbook, worksheet, isEs ? 'Toros' : isEn ? 'Bulls' : 'Touros');
+        writeFile(workbook, `${isEs ? 'toros' : isEn ? 'bulls' : 'touros'}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        toast({ title: t('bulls.toast.exportDone'), description: t('bulls.toast.exportDoneDesc') });
       });
     });
   };
@@ -601,15 +605,15 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
         <div className="flex h-16 items-center px-4 gap-4">
           <Button variant="ghost" onClick={onBack} className="mr-4 bg-slate-200 hover:bg-slate-100">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
+            {t('bulls.back')}
           </Button>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold">{farm.farm_name} - Busca de Touros</h1>
+            <h1 className="text-xl font-semibold">{`${farm.farm_name} - ${t('bulls.title')}`}</h1>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <Badge variant="secondary">{totalCount.toLocaleString()} touros</Badge>
+            <Badge variant="secondary">{totalCount.toLocaleString(locale)} {t('bulls.bulls')}</Badge>
             {selectedBulls.length > 0 && (
-              <Badge variant="outline">Selecionados: {selectedBulls.length}</Badge>
+              <Badge variant="outline">{t('bulls.selected')} {selectedBulls.length}</Badge>
             )}
           </div>
         </div>
@@ -627,7 +631,7 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
               className="gap-2"
             >
               <Filter size={16} className="text-red-500" />
-              <span className="font-bold uppercase tracking-wide text-sm">Filtros</span>
+              <span className="font-bold uppercase tracking-wide text-sm">{t('bulls.filters')}</span>
               {activeFilterCount > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">
                   {activeFilterCount}
@@ -640,7 +644,7 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
               <Input
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Buscar por NAAB ou nome..."
+                placeholder={t('bulls.searchPlaceholder')}
                 className="pl-10"
               />
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
@@ -653,42 +657,42 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">
                     <Upload size={14} className="mr-1" />
-                    Importar
+                    {t('bulls.import')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
-                    <DialogTitle>Importar Touros</DialogTitle>
+                    <DialogTitle>{t('bulls.importTitle')}</DialogTitle>
                     <DialogDescription>
-                      📥 Carregue seu arquivo CSV ou XLSX de touros.
+                      {t('bulls.importDesc')}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <Input type="file" accept=".csv,.xlsx,.xls,.xlsm" onChange={(e) => setImportFile(e.target.files?.[0] || null)} disabled={importing} />
                     {importResult && (
                       <div className="rounded-lg bg-green-50 dark:bg-green-950 p-3 border border-green-200">
-                        <p className="text-sm font-medium text-green-900 dark:text-green-100">✅ {importResult.total_rows || 0} registros carregados no staging</p>
+                        <p className="text-sm font-medium text-green-900 dark:text-green-100">{importResult.total_rows || 0} {t('bulls.toast.csvLoadedDesc')}</p>
                       </div>
                     )}
                   </div>
                   <DialogFooter className="gap-2">
-                    <Button variant="outline" onClick={() => { setShowImportDialog(false); setImportFile(null); setImportResult(null); }} disabled={importing}>Cancelar</Button>
-                    {!importResult && <Button onClick={handleImportUpload} disabled={!importFile || importing}>{importing ? 'Processando...' : 'Importar'}</Button>}
+                    <Button variant="outline" onClick={() => { setShowImportDialog(false); setImportFile(null); setImportResult(null); }} disabled={importing}>{t('bulls.cancel')}</Button>
+                    {!importResult && <Button onClick={handleImportUpload} disabled={!importFile || importing}>{importing ? t('bulls.processing') : t('bulls.import')}</Button>}
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
               <Button variant="outline" size="sm" onClick={downloadBullTemplate}>
                 <Download size={14} className="mr-1" />
-                Template
+                {t('bulls.template')}
               </Button>
               <Button variant="outline" size="sm" onClick={handleExport}>
                 <Download size={14} className="mr-1" />
-                Exportar
+                {t('bulls.export')}
               </Button>
               {selectedBulls.length > 0 && (
                 <Button size="sm" onClick={handleAddToBotijao} className="bg-primary hover:bg-primary/90">
                   <Beaker size={14} className="mr-1" />
-                  Enviar para Botijão
+                  {t('bulls.sendToBotijao')}
                 </Button>
               )}
             </div>
@@ -703,15 +707,15 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
                   <Collapsible open={brandsOpen} onOpenChange={setBrandsOpen}>
                     <div className="flex items-center justify-between mb-3">
                       <CollapsibleTrigger className="flex items-center gap-2 hover:opacity-80">
-                        <span className="font-bold text-red-600 text-sm uppercase tracking-wide">Empresas</span>
+                        <span className="font-bold text-red-600 text-sm uppercase tracking-wide">{t('bulls.companies')}</span>
                         <Badge variant="secondary" className="h-5 min-w-[20px] px-1 text-xs">
                           {selectedBrands.size}
                         </Badge>
                         {brandsOpen ? <Minus size={14} /> : <Plus size={14} />}
                       </CollapsibleTrigger>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={selectAllBrands}>Todas</Button>
-                        <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={clearAllBrands}>Limpar</Button>
+                        <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={selectAllBrands}>{t('bulls.all')}</Button>
+                        <Button variant="ghost" size="sm" className="text-xs h-6 px-2" onClick={clearAllBrands}>{t('bulls.clear')}</Button>
                       </div>
                     </div>
                     <CollapsibleContent>
@@ -726,7 +730,7 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
                             <span className="text-sm flex-1">{brand}</span>
                             {brandCounts[brand] != null && (
                               <span className="text-xs text-muted-foreground tabular-nums">
-                                {brandCounts[brand].toLocaleString()}
+                                {brandCounts[brand].toLocaleString(locale)}
                               </span>
                             )}
                           </label>
@@ -737,7 +741,7 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
 
                   {/* Weights Section */}
                   <div>
-                    <span className="font-bold text-sm uppercase tracking-wide text-muted-foreground mb-3 block">Pesos do Score</span>
+                    <span className="font-bold text-sm uppercase tracking-wide text-muted-foreground mb-3 block">{t('bulls.scoreWeights')}</span>
                     <div className="space-y-2">
                       {Object.entries(weights).map(([key, value]) => (
                         <div key={key} className="flex items-center gap-2">
@@ -749,7 +753,7 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
                           />
                         </div>
                       ))}
-                      <p className="text-xs text-muted-foreground mt-1">Soma: {totalWeight.toFixed(2)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('bulls.sum')} {totalWeight.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>
@@ -760,10 +764,10 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
           {/* ── Results Count ── */}
           <div className="flex items-center gap-3">
             <h2 className="text-sm font-black uppercase tracking-wide">
-              Resultados: {totalCount.toLocaleString()} Touros
+              {t('bulls.results')} {totalCount.toLocaleString(locale)} {t('bulls.bulls')}
             </h2>
             <span className="text-xs text-muted-foreground">
-              {selectedBrands.size > 0 ? `Filtrado por ${selectedBrands.size} empresa(s)` : 'Todas as empresas'}
+              {selectedBrands.size > 0 ? `${t('bulls.filteredBy')} ${selectedBrands.size} ${t('bulls.companySuffix')}` : t('bulls.allCompanies')}
             </span>
           </div>
 
@@ -775,10 +779,10 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
                   <thead className="sticky top-0 z-10">
                     <tr>
                       <th className="px-2 py-1 bg-foreground text-background text-xs">✓</th>
-                      <SortableHeader column="code" label="NAAB" sortConfig={bullSortConfig} onSort={handleSortBulls} className="px-2 py-1 bg-foreground text-background text-xs" />
-                      <SortableHeader column="name" label="Nome" sortConfig={bullSortConfig} onSort={handleSortBulls} className="px-2 py-1 bg-foreground text-background text-xs" />
-                      <SortableHeader column="company" label="Empresa" sortConfig={bullSortConfig} onSort={handleSortBulls} className="px-2 py-1 bg-foreground text-background text-xs" />
-                      <SortableHeader column="score" label="Score" sortConfig={bullSortConfig} onSort={handleSortBulls} className="px-2 py-1 bg-foreground text-background text-xs" />
+                      <SortableHeader column="code" label={t('bulls.col.naab')} sortConfig={bullSortConfig} onSort={handleSortBulls} className="px-2 py-1 bg-foreground text-background text-xs" />
+                      <SortableHeader column="name" label={t('bulls.col.name')} sortConfig={bullSortConfig} onSort={handleSortBulls} className="px-2 py-1 bg-foreground text-background text-xs" />
+                      <SortableHeader column="company" label={t('bulls.col.company')} sortConfig={bullSortConfig} onSort={handleSortBulls} className="px-2 py-1 bg-foreground text-background text-xs" />
+                      <SortableHeader column="score" label={t('bulls.col.score')} sortConfig={bullSortConfig} onSort={handleSortBulls} className="px-2 py-1 bg-foreground text-background text-xs" />
                       {ANIMAL_METRIC_COLUMNS.map(column => (
                         <SortableHeader key={column.key} column={column.key} label={column.label} sortConfig={bullSortConfig} onSort={handleSortBulls} className="px-2 py-1 bg-foreground text-background text-xs" />
                       ))}
@@ -788,14 +792,14 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
                     {loading ? (
                       <tr>
                         <td colSpan={5 + ANIMAL_METRIC_COLUMNS.length} className="text-center py-12 text-muted-foreground">
-                          Carregando touros...
+                          {t('bulls.loadingBulls')}
                         </td>
                       </tr>
                     ) : rankedBulls.length === 0 ? (
                       <tr>
                         <td colSpan={5 + ANIMAL_METRIC_COLUMNS.length} className="text-center py-12 text-muted-foreground">
                           <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                          Nenhum touro encontrado com os filtros atuais
+                          {t('bulls.noBullsFound')}
                         </td>
                       </tr>
                     ) : (
@@ -827,7 +831,7 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
                         {averages && (
                           <tr className="bg-muted font-bold border-t-2 border-foreground sticky bottom-0">
                             <td className="px-2 py-1.5"></td>
-                            <td colSpan={2} className="px-2 py-1.5 text-xs">Médias da Página:</td>
+                            <td colSpan={2} className="px-2 py-1.5 text-xs">{t('bulls.pageAverages')}</td>
                             <td className="px-2 py-1.5"></td>
                             <td className="px-2 py-1.5 text-center text-xs">
                               {bullsWithScores.length > 0
@@ -852,8 +856,8 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
             <div className="px-4 py-3 border-t bg-muted/40 flex items-center justify-between">
               <span className="text-xs text-muted-foreground">
                 {totalCount > 0
-                  ? `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalCount)} de ${totalCount.toLocaleString()}`
-                  : '0 resultados'}
+                  ? `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalCount)} de ${totalCount.toLocaleString(locale)}`
+                  : t('bulls.results0')}
               </span>
               <div className="flex items-center gap-1">
                 <Button
@@ -870,7 +874,7 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
                   <ChevronLeft size={14} />
                 </Button>
                 <span className="text-xs font-medium px-2 tabular-nums">
-                  Pág. {page + 1} / {totalPages || 1}
+                  {t('bulls.page')} {page + 1} / {totalPages || 1}
                 </span>
                 <Button
                   variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages - 1}

@@ -11,7 +11,7 @@ import FemaleUploadModal from './FemaleUploadModal';
 import { useHerdStore } from '@/hooks/useHerdStore';
 import { fetchFemalesDenormByFarm, isCompleteFemaleRow, type CompleteFemaleDenormRow } from '@/supabase/queries/females';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { t } from '@/lib/i18n';
+import { useTranslation } from '@/hooks/useTranslation';
 import { HelpButton } from '@/components/help/HelpButton';
 import { HelpHint } from '@/components/help/HelpHint';
 import { formatPtaValue } from '@/utils/ptaFormat';
@@ -52,6 +52,7 @@ const HerdPage: React.FC<HerdPageProps> = ({
     setSelectedHerdId,
     setDashboardCounts
   } = useHerdStore();
+  const { t, locale } = useTranslation();
   const tableRegionRef = useRef<HTMLDivElement | null>(null);
   const selectAllCheckboxRef = useRef<HTMLInputElement | null>(null);
   const stickyColumnVars = useMemo(() => ({
@@ -91,13 +92,13 @@ const HerdPage: React.FC<HerdPageProps> = ({
     const normalized = fonte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
     if (normalized.startsWith('genom')) {
       return {
-        label: 'Genômica',
+        label: t('herd.genomic'),
         className: 'border-green-200 bg-green-50 text-green-700'
       };
     }
     if (normalized.startsWith('pred')) {
       return {
-        label: 'Predição',
+        label: t('herd.prediction'),
         className: 'border-purple-200 bg-purple-50 text-purple-700'
       };
     }
@@ -116,12 +117,12 @@ const HerdPage: React.FC<HerdPageProps> = ({
   useEffect(() => {
     if (categoryCounts.total > 0) {
       const dashboardCounts = {
-        "Total de Fêmeas": categoryCounts.total,
-        "Bezerra": categoryCounts.bezerras,
-        "Novilhas": categoryCounts.novilhas,
-        "Primíparas": categoryCounts.primiparas,
-        "Secundíparas": categoryCounts.secundiparas,
-        "Multíparas": categoryCounts.multiparas
+        [t('herd.totalFemales')]: categoryCounts.total,
+        [t('herd.calves')]: categoryCounts.bezerras,
+        [t('herd.heifers')]: categoryCounts.novilhas,
+        [t('herd.primiparous')]: categoryCounts.primiparas,
+        [t('herd.secondiparous')]: categoryCounts.secundiparas,
+        [t('herd.multiparous')]: categoryCounts.multiparas
       };
       setSelectedHerdId(farm.farm_id);
       setDashboardCounts(dashboardCounts);
@@ -143,8 +144,8 @@ const HerdPage: React.FC<HerdPageProps> = ({
     } catch (error) {
       console.error('Error loading females:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao carregar dados do rebanho",
+        title: t('common.error'),
+        description: t('herd.loadError'),
         variant: "destructive"
       });
     } finally {
@@ -223,7 +224,7 @@ const HerdPage: React.FC<HerdPageProps> = ({
     }
   }, [partiallyVisibleSelected, allVisibleSelected]);
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    return new Date(dateString).toLocaleDateString(locale);
   };
   const getAge = (birthDate?: string): string => {
     if (!birthDate) return '-';
@@ -297,8 +298,8 @@ const HerdPage: React.FC<HerdPageProps> = ({
       setSelectedFemales([]);
       setIsDeleteDialogOpen(false);
       toast({
-        title: idsToDelete.length === 1 ? 'Animal excluído' : 'Animais excluídos',
-        description: idsToDelete.length === 1 ? 'O animal selecionado foi removido do rebanho.' : `${idsToDelete.length} animais foram removidos do rebanho.`
+        title: idsToDelete.length === 1 ? t('herd.animalDeleted') : t('herd.animalsDeleted'),
+        description: idsToDelete.length === 1 ? t('herd.animalDeletedDesc') : t('herd.animalsDeletedDesc', { count: idsToDelete.length })
       });
       await loadFemales(false);
       setTimeout(() => {
@@ -306,9 +307,9 @@ const HerdPage: React.FC<HerdPageProps> = ({
       }, 0);
     } catch (error) {
       console.error('Erro ao excluir animais do rebanho:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Não foi possível excluir as fêmeas selecionadas.';
+      const errorMessage = error instanceof Error ? error.message : t('herd.deleteFailedDesc');
       toast({
-        title: 'Erro ao excluir',
+        title: t('herd.deleteFailed'),
         description: errorMessage,
         variant: 'destructive'
       });
@@ -319,8 +320,8 @@ const HerdPage: React.FC<HerdPageProps> = ({
   const handleExport = () => {
     if (sortedFemales.length === 0) {
       toast({
-        title: "Nenhum dado para exportar",
-        description: "Não há fêmeas para exportar.",
+        title: t('herd.noDataToExport'),
+        description: t('herd.noDataToExportDesc'),
         variant: "destructive"
       });
       return;
@@ -329,7 +330,9 @@ const HerdPage: React.FC<HerdPageProps> = ({
     // Importar XLSX para exportação
     import('xlsx').then(({ utils, writeFile }) => {
       import('@/lib/excel-date-formatter').then(({ autoFormatDateColumns }) => {
-        const headers = ['Fazenda', 'Nome', 'Identificador', 'ID CDCB', 'Data Nascimento', 'Ordem de Parto', 'Categoria', 'Fonte', 'Pai NAAB', 'Avô Materno NAAB', 'BisAvô Materno NAAB', 'HHP$', 'TPI', 'NM$', 'CM$', 'FM$', 'GM$', 'F SAV', 'PTAM', 'CFP', 'PTAF', 'PTAF%', 'PTAP', 'PTAP%', 'PL', 'DPR', 'LIV', 'SCS', 'MAST', 'MET', 'RP', 'DA', 'KET', 'MF', 'PTAT', 'UDC', 'FLC', 'SCE', 'DCE', 'SSB', 'DSB', 'H LIV', 'CCR', 'HCR', 'FI', 'GL', 'EFC', 'BWC', 'STA', 'STR', 'DFM', 'RUA', 'RLS', 'RTP', 'FTL', 'RW', 'RLR', 'FTA', 'FLS', 'FUA', 'RUH', 'RUW', 'UCL', 'UDP', 'FTP', 'RFI', 'Beta-Casein', 'Kappa-Casein', 'GFI', 'Criado Em', 'Atualizado Em'];
+        const isEn = locale === 'en';
+        const isEs = locale === 'es';
+        const headers = [isEs ? 'Finca' : isEn ? 'Farm' : 'Fazenda', isEs ? 'Nombre' : isEn ? 'Name' : 'Nome', isEs ? 'Identificador' : isEn ? 'Identifier' : 'Identificador', isEs ? 'ID CDCB' : isEn ? 'CDCB ID' : 'ID CDCB', isEs ? 'Fecha Nacimiento' : isEn ? 'Birth Date' : 'Data Nascimento', isEs ? 'Orden de Parto' : isEn ? 'Parity Order' : 'Ordem de Parto', isEs ? 'Categoría' : isEn ? 'Category' : 'Categoria', isEs ? 'Fuente' : isEn ? 'Source' : 'Fonte', isEs ? 'Padre NAAB' : isEn ? 'Sire NAAB' : 'Pai NAAB', isEs ? 'Abuelo Materno NAAB' : isEn ? 'MGS NAAB' : 'Avô Materno NAAB', isEs ? 'Bisabuelo Materno NAAB' : isEn ? 'MMGS NAAB' : 'BisAvô Materno NAAB', 'HHP$', 'TPI', 'NM$', 'CM$', 'FM$', 'GM$', 'F SAV', 'PTAM', 'CFP', 'PTAF', 'PTAF%', 'PTAP', 'PTAP%', 'PL', 'DPR', 'LIV', 'SCS', 'MAST', 'MET', 'RP', 'DA', 'KET', 'MF', 'PTAT', 'UDC', 'FLC', 'SCE', 'DCE', 'SSB', 'DSB', 'H LIV', 'CCR', 'HCR', 'FI', 'GL', 'EFC', 'BWC', 'STA', 'STR', 'DFM', 'RUA', 'RLS', 'RTP', 'FTL', 'RW', 'RLR', 'FTA', 'FLS', 'FUA', 'RUH', 'RUW', 'UCL', 'UDP', 'FTP', 'RFI', 'Beta-Casein', 'Kappa-Casein', 'GFI', isEs ? 'Creado En' : isEn ? 'Created At' : 'Criado Em', isEs ? 'Actualizado En' : isEn ? 'Updated At' : 'Atualizado Em'];
         
         const dataRows = sortedFemales.map(female => [
           farm.farm_name, 
@@ -413,14 +416,14 @@ const HerdPage: React.FC<HerdPageProps> = ({
         
         // Criar workbook e exportar
         const workbook = utils.book_new();
-        utils.book_append_sheet(workbook, worksheet, 'Fêmeas');
-        
-        const fileName = `rebanho_${farm.farm_name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        utils.book_append_sheet(workbook, worksheet, isEs ? 'Hembras' : isEn ? 'Females' : 'Fêmeas');
+
+        const fileName = `${isEs ? 'rebano' : isEn ? 'herd' : 'rebanho'}_${farm.farm_name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
         writeFile(workbook, fileName);
         
         toast({
-          title: "Exportação concluída",
-          description: `${sortedFemales.length} fêmeas exportadas com sucesso!`
+          title: t('herd.exportDone'),
+          description: t('herd.exportDoneDesc', { count: sortedFemales.length })
         });
       });
     });
@@ -435,8 +438,8 @@ const HerdPage: React.FC<HerdPageProps> = ({
               <ArrowLeft className="w-4 h-4 mr-2" />
               Dashboard
             </Button>
-            <h1 className="text-xl font-semibold">{farm.farm_name} - Rebanho</h1>
-            <HelpHint content="Gerencie todas as fêmeas da fazenda: visualize, importe, exporte e filtre dados" />
+            <h1 className="text-xl font-semibold">{`${farm.farm_name} - ${t('herd.title')}`}</h1>
+            <HelpHint content={t('herd.hint.manage')} />
           </div>
           <div className="ml-auto flex items-center gap-3">
             {typeof onNavigateToCharts === 'function' ? null : onNavigateToCharts}
@@ -450,37 +453,37 @@ const HerdPage: React.FC<HerdPageProps> = ({
           <div className="grid gap-4 md:grid-cols-6" data-tour="rebanho:cards.contadores">
             {[{
             key: 'total',
-            label: 'Total de Fêmeas',
+            label: t('herd.totalFemales'),
             value: categoryCounts.total,
             testId: 'card-total-femeas',
             icon: <Users className="w-4 h-4" />
           }, {
             key: 'bezerras',
-            label: 'Bezerras',
+            label: t('herd.calves'),
             value: categoryCounts.bezerras,
             testId: 'card-bezerras',
             indicatorColor: 'bg-blue-200'
           }, {
             key: 'novilhas',
-            label: 'Novilhas',
+            label: t('herd.heifers'),
             value: categoryCounts.novilhas,
             testId: 'card-novilhas',
             indicatorColor: 'bg-emerald-200'
           }, {
             key: 'primiparas',
-            label: 'Primíparas',
+            label: t('herd.primiparous'),
             value: categoryCounts.primiparas,
             testId: 'card-primiparas',
             indicatorColor: 'bg-violet-200'
           }, {
             key: 'secundiparas',
-            label: 'Secundíparas',
+            label: t('herd.secondiparous'),
             value: categoryCounts.secundiparas,
             testId: 'card-secundiparas',
             indicatorColor: 'bg-orange-200'
           }, {
             key: 'multiparas',
-            label: 'Multíparas',
+            label: t('herd.multiparous'),
             value: categoryCounts.multiparas,
             testId: 'card-multiparas',
             indicatorColor: 'bg-rose-200'
@@ -498,7 +501,7 @@ const HerdPage: React.FC<HerdPageProps> = ({
                 </CardHeader>
                 <CardContent className="relative z-10 pt-0">
                   <div className="text-4xl font-black leading-tight tracking-tight drop-shadow-sm">
-                    {stat.value.toLocaleString('pt-BR')}
+                    {stat.value.toLocaleString(locale)}
                   </div>
                 </CardContent>
               </Card>)}
@@ -509,37 +512,37 @@ const HerdPage: React.FC<HerdPageProps> = ({
             <div className="flex items-center gap-2 flex-1 min-w-[260px]">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input placeholder="Buscar por nome ou identificação..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
+                <Input placeholder={t('herd.searchPlaceholder')} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
               </div>
-              <HelpHint content="Busque por nome, número CDCB ou qualquer identificador do animal" side="bottom" />
+              <HelpHint content={t('herd.hint.search')} side="bottom" />
             </div>
             <div className="flex items-center gap-2">
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Ano nascimento" />
+                  <SelectValue placeholder={t('herd.birthYear')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all-years">Todos os anos</SelectItem>
+                  <SelectItem value="all-years">{t('herd.allYears')}</SelectItem>
                   {availableYears.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <HelpHint content="Filtre o rebanho por ano de nascimento para comparar safras" side="bottom" />
+              <HelpHint content={t('herd.hint.yearFilter')} side="bottom" />
             </div>
 
             <div className="flex items-center gap-1">
               <Button variant="outline" onClick={() => setShowUploadModal(true)}>
                 <Upload className="w-4 h-4 mr-2" />
-                Importar
+                {t('herd.import')}
               </Button>
-              <HelpHint content="Importe dados de fêmeas via CSV ou Excel com validação automática" side="bottom" />
+              <HelpHint content={t('herd.hint.import')} side="bottom" />
             </div>
             
             <div className="flex items-center gap-1">
               <Button variant="outline" onClick={handleExport}>
                 <Download className="w-4 h-4 mr-2" />
-                Exportar
+                {t('herd.export')}
               </Button>
-              <HelpHint content="Exporte todos os dados do rebanho incluindo PTAs e pedigree" side="bottom" />
+              <HelpHint content={t('herd.hint.export')} side="bottom" />
             </div>
           </div>
 
@@ -548,25 +551,25 @@ const HerdPage: React.FC<HerdPageProps> = ({
             <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
-                <CardTitle>Lista do Rebanho</CardTitle>
-                <HelpHint content="Clique nos cabeçalhos para ordenar por PTA, pedigree ou informações de produção" />
+                <CardTitle>{t('herd.list')}</CardTitle>
+                <HelpHint content={t('herd.hint.sortColumns')} />
               </div>
             </CardHeader>
             <CardContent>
               {loading ? <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-muted-foreground mt-2">Carregando rebanho...</p>
+                  <p className="text-muted-foreground mt-2">{t('herd.loading')}</p>
                 </div> : sortedFemales.length === 0 ? <div className="text-center py-8">
                   <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">
-                    {females.length === 0 ? 'Nenhuma fêmea cadastrada' : 'Nenhuma fêmea encontrada'}
+                    {females.length === 0 ? t('herd.noFemales') : t('herd.noFemalesFound')}
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    {females.length === 0 ? 'Comece adicionando fêmeas ao seu rebanho.' : 'Tente ajustar os filtros de busca.'}
+                    {females.length === 0 ? t('herd.startAdding') : t('herd.adjustFilters')}
                   </p>
                   {females.length === 0 && <Button>
                       <Plus className="w-4 h-4 mr-2" />
-                      Adicionar Primeira Fêmea
+                      {t('herd.addFirst')}
                     </Button>}
                 </div> : <div ref={tableRegionRef} tabIndex={-1} role="region" aria-label="Tabela do rebanho" className="focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary rounded-md">
                   {selectedFemales.length > 0 && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted/70 px-4 py-3">
@@ -576,7 +579,7 @@ const HerdPage: React.FC<HerdPageProps> = ({
                       count: selectedFemales.length
                     })}
                         </span>
-                        <HelpHint content="Selecione múltiplas fêmeas para aplicar ações em lote" side="bottom" />
+                        <HelpHint content={t('herd.hint.batchSelect')} side="bottom" />
                       </div>
                       <AlertDialog open={isDeleteDialogOpen} onOpenChange={open => {
                     if (!isDeleting) {
@@ -589,7 +592,7 @@ const HerdPage: React.FC<HerdPageProps> = ({
                             {t('actions.delete')}
                           </Button>
                         </AlertDialogTrigger>
-                        <HelpHint content="Exclui definitivamente as fêmeas selecionadas. Use com cuidado" side="bottom" />
+                        <HelpHint content={t('herd.hint.deleteWarning')} side="bottom" />
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>{t('herd.delete.confirm.title')}</AlertDialogTitle>
@@ -616,14 +619,14 @@ const HerdPage: React.FC<HerdPageProps> = ({
                           <tr>
                             <th className="sticky top-0 z-[60] bg-foreground text-background shadow-[6px_0_12px_-6px_rgba(15,23,42,0.45)]" style={stickyColumnStyles.select}>
                           <div className="flex items-center gap-2">
-                            <input type="checkbox" ref={selectAllCheckboxRef} checked={allVisibleSelected} onChange={handleSelectAll} className="h-4 w-4" aria-label="Selecionar todas as fêmeas visíveis" />
-                            Selecionar
-                            <HelpHint content="Marque para selecionar todas as fêmeas exibidas na página" side="bottom" />
+                            <input type="checkbox" ref={selectAllCheckboxRef} checked={allVisibleSelected} onChange={handleSelectAll} className="h-4 w-4" aria-label={t('herd.selectAll')} />
+                            {t('herd.selectAll')}
+                            <HelpHint content={t('herd.hint.selectAll')} side="bottom" />
                           </div>
                         </th>
                             <SortableHeader
                               column="farm_id"
-                              label="Fazenda"
+                              label={t('herd.col.farm')}
                               sortConfig={femaleSortConfig}
                               onSort={handleSortFemales}
                               className="sticky top-0 z-[55] bg-foreground text-background shadow-[6px_0_12px_-6px_rgba(15,23,42,0.45)] px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"
@@ -631,7 +634,7 @@ const HerdPage: React.FC<HerdPageProps> = ({
                             />
                             <SortableHeader
                               column="name"
-                              label="Nome"
+                              label={t('herd.col.name')}
                               sortConfig={femaleSortConfig}
                               onSort={handleSortFemales}
                               className="sticky top-0 z-50 bg-foreground text-background shadow-[6px_0_12px_-6px_rgba(15,23,42,0.45)] px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"
@@ -639,63 +642,63 @@ const HerdPage: React.FC<HerdPageProps> = ({
                             />
                             <SortableHeader
                               column="identifier"
-                              label="Identificador"
+                              label={t('herd.col.identifier')}
                               sortConfig={femaleSortConfig}
                               onSort={handleSortFemales}
                               className="px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"
                             />
                             <SortableHeader
                               column="cdcb_identifier"
-                              label="ID CDCB"
+                              label={t('herd.col.cdcbId')}
                               sortConfig={femaleSortConfig}
                               onSort={handleSortFemales}
                               className="px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"
                             />
                             <SortableHeader
                               column="sire_naab"
-                              label="Pai"
+                              label={t('herd.col.sire')}
                               sortConfig={femaleSortConfig}
                               onSort={handleSortFemales}
                               className="px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"
                             />
                             <SortableHeader
                               column="mgs_naab"
-                              label="Avô Materno"
+                              label={t('herd.col.mgs')}
                               sortConfig={femaleSortConfig}
                               onSort={handleSortFemales}
                               className="px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"
                             />
                             <SortableHeader
                               column="mmgs_naab"
-                              label="Bisavô Materno"
+                              label={t('herd.col.mmgs')}
                               sortConfig={femaleSortConfig}
                               onSort={handleSortFemales}
                               className="px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"
                             />
                             <SortableHeader
                               column="birth_date"
-                              label="Data de Nascimento"
+                              label={t('herd.col.birthDate')}
                               sortConfig={femaleSortConfig}
                               onSort={handleSortFemales}
                               className="px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"
                             />
                             <SortableHeader
                               column="parity_order"
-                              label="Ordem de Parto"
+                              label={t('herd.col.parityOrder')}
                               sortConfig={femaleSortConfig}
                               onSort={handleSortFemales}
                               className="px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"
                             />
                             <SortableHeader
                               column="category"
-                              label="Categoria"
+                              label={t('herd.col.category')}
                               sortConfig={femaleSortConfig}
                               onSort={handleSortFemales}
                               className="px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"
                             />
                             <SortableHeader
                               column="fonte"
-                              label="Fonte"
+                              label={t('herd.col.source')}
                               sortConfig={femaleSortConfig}
                               onSort={handleSortFemales}
                               className="px-3 py-2 text-left text-xs font-semibold whitespace-nowrap"

@@ -1,6 +1,7 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import type { ReportSelection, GeneralReportConfig } from "@/hooks/useGeneralReport";
+import type { Locale } from "@/lib/i18n";
 
 export interface GenerateReportOptions {
   farmName: string;
@@ -9,6 +10,7 @@ export interface GenerateReportOptions {
   reports: ReportSelection[];
   config: GeneralReportConfig;
   onProgress: (progress: number, message: string) => void;
+  locale?: Locale;
 }
 
 interface PageInfo {
@@ -16,22 +18,110 @@ interface PageInfo {
   pageNumber: number;
 }
 
-const REPORT_LABELS: Record<string, string> = {
-  herd_summary: 'Resumo do Rebanho',
-  segmentation: 'Segmentação',
-  auditoria_step1: 'Auditoria - Parentesco',
-  auditoria_step2: 'Auditoria - Top Parents',
-  auditoria_step3: 'Auditoria - Quartis Overview',
-  auditoria_step4: 'Auditoria - Progressão',
-  auditoria_step5: 'Auditoria - Comparação',
-  auditoria_step6: 'Auditoria - Quartis Índices',
-  auditoria_step7: 'Auditoria - Distribuição',
-  botijao: 'Botijão Virtual',
-  projecao: 'Projeção Genética',
-  trends: 'Gráficos de Tendência',
-  metas: 'Metas Genéticas',
-  nexus: 'Nexus Predições',
+const REPORT_LABELS_I18N: Record<Locale, Record<string, string>> = {
+  'pt-BR': {
+    herd_summary: 'Resumo do Rebanho',
+    segmentation: 'Segmentação',
+    auditoria_step1: 'Auditoria - Parentesco',
+    auditoria_step2: 'Auditoria - Top Parents',
+    auditoria_step3: 'Auditoria - Quartis Overview',
+    auditoria_step4: 'Auditoria - Progressão',
+    auditoria_step5: 'Auditoria - Comparação',
+    auditoria_step6: 'Auditoria - Quartis Índices',
+    auditoria_step7: 'Auditoria - Distribuição',
+    botijao: 'Botijão Virtual',
+    projecao: 'Projeção Genética',
+    trends: 'Gráficos de Tendência',
+    metas: 'Metas Genéticas',
+    nexus: 'Nexus Predições',
+  },
+  'en-US': {
+    herd_summary: 'Herd Summary',
+    segmentation: 'Segmentation',
+    auditoria_step1: 'Audit - Parentage',
+    auditoria_step2: 'Audit - Top Parents',
+    auditoria_step3: 'Audit - Quartiles Overview',
+    auditoria_step4: 'Audit - Progression',
+    auditoria_step5: 'Audit - Comparison',
+    auditoria_step6: 'Audit - Index Quartiles',
+    auditoria_step7: 'Audit - Distribution',
+    botijao: 'Virtual Tank',
+    projecao: 'Genetic Projection',
+    trends: 'Trend Charts',
+    metas: 'Genetic Goals',
+    nexus: 'Nexus Predictions',
+  },
+  'es': {
+    herd_summary: 'Resumen del Rebaño',
+    segmentation: 'Segmentación',
+    auditoria_step1: 'Auditoría - Parentesco',
+    auditoria_step2: 'Auditoría - Top Padres',
+    auditoria_step3: 'Auditoría - Cuartiles General',
+    auditoria_step4: 'Auditoría - Progresión',
+    auditoria_step5: 'Auditoría - Comparación',
+    auditoria_step6: 'Auditoría - Cuartiles de Índices',
+    auditoria_step7: 'Auditoría - Distribución',
+    botijao: 'Tanque Virtual',
+    projecao: 'Proyección Genética',
+    trends: 'Gráficos de Tendencia',
+    metas: 'Metas Genéticas',
+    nexus: 'Nexus Predicciones',
+  },
 };
+
+const reportI18n = {
+  'pt-BR': {
+    generalReport: 'RELATÓRIO GERAL',
+    consolidatedAnalysis: 'Análise Genética Consolidada',
+    owner: 'Proprietário',
+    preparedBy: 'Preparado por',
+    generatedOn: 'Gerado em',
+    atTime: 'às',
+    index: 'ÍNDICE',
+    page: 'Página',
+    of: 'de',
+    preparingDoc: 'Preparando documento...',
+    generating: 'Gerando',
+    finalizingDoc: 'Finalizando documento...',
+    done: 'Concluído!',
+    distribution: 'Distribuição',
+    histogram: 'Histograma',
+  },
+  'en-US': {
+    generalReport: 'GENERAL REPORT',
+    consolidatedAnalysis: 'Consolidated Genetic Analysis',
+    owner: 'Owner',
+    preparedBy: 'Prepared by',
+    generatedOn: 'Generated on',
+    atTime: 'at',
+    index: 'INDEX',
+    page: 'Page',
+    of: 'of',
+    preparingDoc: 'Preparing document...',
+    generating: 'Generating',
+    finalizingDoc: 'Finalizing document...',
+    done: 'Done!',
+    distribution: 'Distribution',
+    histogram: 'Histogram',
+  },
+  'es': {
+    generalReport: 'INFORME GENERAL',
+    consolidatedAnalysis: 'Análisis Genético Consolidado',
+    owner: 'Propietario',
+    preparedBy: 'Preparado por',
+    generatedOn: 'Generado el',
+    atTime: 'a las',
+    index: 'ÍNDICE',
+    page: 'Página',
+    of: 'de',
+    preparingDoc: 'Preparando documento...',
+    generating: 'Generando',
+    finalizingDoc: 'Finalizando documento...',
+    done: '¡Listo!',
+    distribution: 'Distribución',
+    histogram: 'Histograma',
+  },
+} as const;
 
 async function captureElement(el: HTMLElement, scale: number = 2): Promise<HTMLCanvasElement> {
   // Hide tooltips during capture
@@ -69,8 +159,10 @@ function addCoverPage(
   farmName: string,
   farmOwner: string,
   userName: string,
-  includeDateTime: boolean
+  includeDateTime: boolean,
+  locale: Locale = 'pt-BR'
 ): void {
+  const L = reportI18n[locale];
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const centerX = pageWidth / 2;
@@ -78,68 +170,70 @@ function addCoverPage(
   // Background gradient effect (simulated with rectangles)
   doc.setFillColor(239, 68, 68); // red-500
   doc.rect(0, 0, pageWidth, 80, 'F');
-  
+
   // Title
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(32);
   doc.setFont('helvetica', 'bold');
-  doc.text('RELATÓRIO GERAL', centerX, 40, { align: 'center' });
-  
+  doc.text(L.generalReport, centerX, 40, { align: 'center' });
+
   doc.setFontSize(16);
   doc.setFont('helvetica', 'normal');
-  doc.text('Análise Genética Consolidada', centerX, 55, { align: 'center' });
-  
+  doc.text(L.consolidatedAnalysis, centerX, 55, { align: 'center' });
+
   // Farm info section
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
   doc.text(farmName, centerX, 120, { align: 'center' });
-  
+
   doc.setFontSize(14);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 100, 100);
-  doc.text(`Proprietário: ${farmOwner}`, centerX, 135, { align: 'center' });
-  
+  doc.text(`${L.owner}: ${farmOwner}`, centerX, 135, { align: 'center' });
+
   // Divider line
   doc.setDrawColor(200, 200, 200);
   doc.setLineWidth(0.5);
   doc.line(centerX - 60, 150, centerX + 60, 150);
-  
+
   // Footer info
   doc.setFontSize(12);
   doc.setTextColor(100, 100, 100);
-  doc.text(`Preparado por: ${userName}`, centerX, pageHeight - 40, { align: 'center' });
-  
+  doc.text(`${L.preparedBy}: ${userName}`, centerX, pageHeight - 40, { align: 'center' });
+
   if (includeDateTime) {
     const now = new Date();
-    const dateStr = now.toLocaleDateString('pt-BR', {
+    const dateLocale = locale === 'en-US' ? 'en-US' : locale === 'es' ? 'es' : 'pt-BR';
+    const dateStr = now.toLocaleDateString(dateLocale, {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
     });
-    const timeStr = now.toLocaleTimeString('pt-BR', {
+    const timeStr = now.toLocaleTimeString(dateLocale, {
       hour: '2-digit',
       minute: '2-digit',
     });
-    doc.text(`Gerado em: ${dateStr} às ${timeStr}`, centerX, pageHeight - 30, { align: 'center' });
+    doc.text(`${L.generatedOn}: ${dateStr} ${L.atTime} ${timeStr}`, centerX, pageHeight - 30, { align: 'center' });
   }
-  
+
   // ToolSS branding
   doc.setFontSize(10);
   doc.setTextColor(150, 150, 150);
   doc.text('Powered by ToolSS - Select Sires', centerX, pageHeight - 15, { align: 'center' });
 }
 
-function addIndexPage(doc: jsPDF, pages: PageInfo[]): void {
+function addIndexPage(doc: jsPDF, pages: PageInfo[], locale: Locale = 'pt-BR'): void {
+  const L = reportI18n[locale];
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
-  
+
   // Title
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('ÍNDICE', margin, 30);
+  doc.text(L.index, margin, 30);
   
   // Divider
   doc.setDrawColor(239, 68, 68);
@@ -192,14 +286,15 @@ function addIndexPage(doc: jsPDF, pages: PageInfo[]): void {
   });
 }
 
-function addPageNumber(doc: jsPDF, pageNum: number, totalPages: number): void {
+function addPageNumber(doc: jsPDF, pageNum: number, totalPages: number, locale: Locale = 'pt-BR'): void {
+  const L = reportI18n[locale];
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  
+
   doc.setFontSize(10);
   doc.setTextColor(150, 150, 150);
   doc.text(
-    `Página ${pageNum} de ${totalPages}`,
+    `${L.page} ${pageNum} ${L.of} ${totalPages}`,
     pageWidth / 2,
     pageHeight - 10,
     { align: 'center' }
@@ -229,8 +324,11 @@ export async function generateGeneralReport(
   options: GenerateReportOptions,
   containerRef: HTMLElement | null
 ): Promise<Blob | null> {
-  const { farmName, farmOwner, userName, reports, config, onProgress } = options;
-  
+  const { farmName, farmOwner, userName, reports, config, onProgress, locale: optLocale } = options;
+  const locale: Locale = optLocale ?? 'pt-BR';
+  const L = reportI18n[locale];
+  const RL = REPORT_LABELS_I18N[locale];
+
   if (!containerRef) {
     console.error('Container ref is null');
     return null;
@@ -244,20 +342,20 @@ export async function generateGeneralReport(
 
   const orientation = config.orientation === 'landscape' ? 'l' : 'p';
   const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
-  
+
   const pageTracker: PageInfo[] = [];
   let currentPage = 1;
-  
+
   // Calculate starting page for content
   let contentStartPage = 1;
   if (config.includeCover) contentStartPage++;
   if (config.includeIndex) contentStartPage++;
 
-  onProgress(5, 'Preparando documento...');
+  onProgress(5, L.preparingDoc);
 
   // Add cover page
   if (config.includeCover) {
-    addCoverPage(doc, farmName, farmOwner, userName, config.includeDateTime);
+    addCoverPage(doc, farmName, farmOwner, userName, config.includeDateTime, locale);
     doc.addPage();
     currentPage++;
   }
@@ -275,7 +373,8 @@ export async function generateGeneralReport(
   for (let i = 0; i < selectedReports.length; i++) {
     const report = selectedReports[i];
     const progressPercent = 10 + Math.floor((i / totalReports) * 80);
-    onProgress(progressPercent, `Gerando ${report.label}...`);
+    const reportLabel = RL[report.type] ?? report.label;
+    onProgress(progressPercent, `${L.generating} ${reportLabel}...`);
 
     // Find the rendered section in the container
     const sectionEl = containerRef.querySelector(`[data-report-section="${report.type}"]`) as HTMLElement;
@@ -291,7 +390,7 @@ export async function generateGeneralReport(
       
       for (let hIdx = 0; hIdx < histogramCards.length; hIdx++) {
         const card = histogramCards[hIdx] as HTMLElement;
-        const chartLabel = card.getAttribute('data-chart-label') || `Histograma ${hIdx + 1}`;
+        const chartLabel = card.getAttribute('data-chart-label') || `${L.histogram} ${hIdx + 1}`;
         
         try {
           // Capture the individual histogram
@@ -309,7 +408,7 @@ export async function generateGeneralReport(
           const contentTop = 30;
           
           // Add section title
-          addSectionTitle(doc, `Distribuição - ${chartLabel}`);
+          addSectionTitle(doc, `${L.distribution} - ${chartLabel}`);
           
           // Calculate image dimensions for landscape
           const maxW = pageWidth - margin * 2;
@@ -330,7 +429,7 @@ export async function generateGeneralReport(
           
           // Track page info
           pageTracker.push({
-            title: `Distribuição - ${chartLabel}`,
+            title: `${L.distribution} - ${chartLabel}`,
             pageNumber: currentPage,
           });
         } catch (error) {
@@ -368,15 +467,16 @@ export async function generateGeneralReport(
       }
 
       // Add section title
-      addSectionTitle(doc, report.label);
-      
+      const sectionLabel = RL[report.type] ?? report.label;
+      addSectionTitle(doc, sectionLabel);
+
       // Add image
       const xOffset = (pageWidth - imgW) / 2;
       doc.addImage(imgData, 'PNG', xOffset, contentTop, imgW, imgH);
-      
+
       // Track page info
       pageTracker.push({
-        title: report.label,
+        title: sectionLabel,
         pageNumber: currentPage,
       });
       
@@ -393,12 +493,12 @@ export async function generateGeneralReport(
     await new Promise(resolve => requestAnimationFrame(resolve));
   }
 
-  onProgress(90, 'Finalizando documento...');
+  onProgress(90, L.finalizingDoc);
 
   // Go back and add index page
   if (config.includeIndex && indexPageNumber > 0) {
     doc.setPage(indexPageNumber);
-    addIndexPage(doc, pageTracker);
+    addIndexPage(doc, pageTracker, locale);
   }
 
   // Add page numbers
@@ -408,11 +508,11 @@ export async function generateGeneralReport(
       doc.setPage(i);
       // Skip cover page
       if (config.includeCover && i === 1) continue;
-      addPageNumber(doc, i, totalPages);
+      addPageNumber(doc, i, totalPages, locale);
     }
   }
 
-  onProgress(100, 'Concluído!');
+  onProgress(100, L.done);
 
   // Return as blob
   return doc.output('blob');

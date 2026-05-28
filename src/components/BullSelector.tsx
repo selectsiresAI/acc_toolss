@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /** View bulls_denorm — single source of truth for all bull lookups */
 const BULL_DENORM_TABLE = "bulls_denorm" as const;
@@ -97,13 +98,18 @@ interface BullSelectorProps {
 }
 
 export function BullSelector({
-  label = "Selecionar Touro",
-  placeholder = "Digite o nome ou código NAAB do touro...",
+  label: labelProp,
+  placeholder: placeholderProp,
   value,
   onChange,
   disabled = false,
   className = "",
 }: BullSelectorProps) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+  const label = labelProp ?? (isEs ? "Seleccionar Toro" : isEn ? "Select Bull" : "Selecionar Touro");
+  const placeholder = placeholderProp ?? (isEs ? "Escriba el nombre o código NAAB del toro..." : isEn ? "Type the bull name or NAAB code..." : "Digite o nome ou código NAAB do touro...");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BullSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -282,7 +288,7 @@ export function BullSelector({
                   fontSize: 13,
                 }}
               >
-                Nenhum touro encontrado para "{query}"
+                {isEs ? `Ningún toro encontrado para "${query}"` : isEn ? `No bull found for "${query}"` : `Nenhum touro encontrado para "${query}"`}
               </div>
             )}
             {results.map((bull) => (
@@ -302,7 +308,7 @@ export function BullSelector({
                   {highlightMatch(bull.code, query)} — {highlightMatch(bull.name, query)}
                 </div>
                 <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>
-                  {bull.company || "Sem empresa"}
+                  {bull.company || (isEs ? "Sin empresa" : isEn ? "No company" : "Sem empresa")}
                   {bull.tpi != null && (
                     <span style={{ marginLeft: 8, color: "#3b82f6" }}>TPI: {bull.tpi}</span>
                   )}

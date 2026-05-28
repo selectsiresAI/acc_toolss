@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { GeneticCalculatorProvider } from "@/hooks/useGeneticCalculator";
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   Phase1Growth,
   Phase2Conception,
@@ -12,19 +13,16 @@ import {
   Phase7Summary,
 } from "@/components/calculator";
 
-const FASES = [
-  { id: 1, title: "Variáveis de crescimento" },
-  { id: 2, title: "Dados de concepção" },
-  { id: 3, title: "Estratégia genética" },
-  { id: 4, title: "Projeções de inseminação" },
-  { id: 5, title: "Doses necessárias" },
-  { id: 6, title: "Retorno sobre investimento" },
-  { id: 7, title: "Finalizar" },
-];
+const FASE_KEYS = [
+  "calc.phase1", "calc.phase2", "calc.phase3", "calc.phase4",
+  "calc.phase5", "calc.phase6", "calc.phase7",
+] as const;
 
 function CalculadoraContent() {
   const [currentPhase, setCurrentPhase] = useState(1);
   const [useReferenceNumbers, setUseReferenceNumbers] = useState(false);
+  const { t } = useTranslation();
+  const FASES = FASE_KEYS.map((key, i) => ({ id: i + 1, title: t(key as any) }));
 
   const nextPhase = () => {
     if (currentPhase < 7) {
@@ -130,14 +128,14 @@ function CalculadoraContent() {
           disabled={currentPhase === 1}
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Anterior
+          {t("calc.prev" as any)}
         </Button>
         <Button
           onClick={nextPhase}
           disabled={currentPhase === 7}
           className="bg-destructive hover:bg-destructive/90"
         >
-          Próximo
+          {t("calc.next" as any)}
           <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </div>

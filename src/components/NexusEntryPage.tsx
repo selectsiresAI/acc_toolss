@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -10,16 +11,17 @@ interface NexusEntryPageProps {
 const NexusEntryPage: React.FC<NexusEntryPageProps> = ({
   onSelectMethod
 }) => {
+  const { t } = useTranslation();
   return <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="text-center md:text-left space-y-2 md:space-y-1">
             <h1 className="text-3xl font-bold flex items-center justify-center gap-3 md:justify-start">
               <TrendingUp className="w-8 h-8 text-primary" />
-              Nexus - Sistema de Predição Genética
+              {t("nexus.title")}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto md:mx-0 md:max-w-xl">
-              Escolha o método de predição genética baseado nos dados disponíveis para seu rebanho
+              {t("nexus.subtitle")}
             </p>
           </div>
         </div>
@@ -32,26 +34,26 @@ const NexusEntryPage: React.FC<NexusEntryPageProps> = ({
             <div className="mx-auto w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-4">
               <Dna className="w-8 h-8 text-red-500" />
             </div>
-            <CardTitle className="text-xl">Nexus 1: Predição Genômica</CardTitle>
-            <p className="text-sm text-muted-foreground">Baseado em dados genômicos de fêmeas e touros</p>
+            <CardTitle className="text-xl">{t("nexus.n1.title")}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t("nexus.n1.desc")}</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <h4 className="font-semibold text-sm">Características:</h4>
+              <h4 className="font-semibold text-sm">{t("nexus.n1.features")}</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Upload de banco de fêmeas ou uso do rebanho</li>
-                <li>• Seleção de 1, 2 ou 3 touros por fêmea</li>
-                
-                <li>• Múltiplas predições por fêmea</li>
-                <li>• Análise de todos os PTAs disponíveis</li>
+                <li>• {t("nexus.n1.f1")}</li>
+                <li>• {t("nexus.n1.f2")}</li>
+
+                <li>• {t("nexus.n1.f3")}</li>
+                <li>• {t("nexus.n1.f4")}</li>
               </ul>
             </div>
             <div className="p-3 rounded-lg bg-rose-100">
-              <p className="text-xs font-medium text-zinc-950 text-center">Ideal para dados genômicos das fêmeas</p>
+              <p className="text-xs font-medium text-zinc-950 text-center">{t("nexus.n1.ideal")}</p>
             </div>
             <Button onClick={() => onSelectMethod('nexus1')} size="lg" className="w-full text-white bg-red-700 hover:bg-red-600">
               <FileSpreadsheet className="w-4 h-4 mr-2" />
-              Usar Nexus 1
+              {t("nexus.n1.use")}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
@@ -61,28 +63,28 @@ const NexusEntryPage: React.FC<NexusEntryPageProps> = ({
         <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-primary/50">
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-red-50">
-              
+
             </div>
-            <CardTitle className="text-xl">Nexus 2: Predição por Pedigree</CardTitle>
-            <p className="text-sm text-muted-foreground">Baseado no pedigree: Pai, Avô e Bisavô Materno</p>
+            <CardTitle className="text-xl">{t("nexus.n2.title")}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t("nexus.n2.desc")}</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <h4 className="font-semibold text-sm">Características:</h4>
+              <h4 className="font-semibold text-sm">{t("nexus.n1.features")}</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Entrada por NAAB dos ancestrais</li>
-                <li>• Predição individual ou em lote</li>
-                
-                <li>• Integração com banco de touros</li>
-                <li>• Upload de planilhas </li>
+                <li>• {t("nexus.n2.f1")}</li>
+                <li>• {t("nexus.n2.f2")}</li>
+
+                <li>• {t("nexus.n2.f3")}</li>
+                <li>• {t("nexus.n2.f4")}</li>
               </ul>
             </div>
             <div className="p-3 rounded-lg bg-red-100">
-              <p className="text-xs font-medium text-slate-950 text-center">Ideal quando tem apenas informações de pedigree</p>
+              <p className="text-xs font-medium text-slate-950 text-center">{t("nexus.n2.ideal")}</p>
             </div>
             <Button onClick={() => onSelectMethod('nexus2')} size="lg" variant="secondary" className="w-full text-neutral-50 bg-red-700 hover:bg-red-600">
               <Calendar className="w-4 h-4 mr-2" />
-              Usar Nexus 2
+              {t("nexus.n2.use")}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
@@ -94,25 +96,25 @@ const NexusEntryPage: React.FC<NexusEntryPageProps> = ({
             <div className="mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 bg-red-50">
               <Users className="w-8 h-8 text-red-500" />
             </div>
-            <CardTitle className="text-xl">Nexus 3: Acasalamento em Grupos</CardTitle>
-            <p className="text-sm text-muted-foreground">Analise o impacto dos touros escolhidos</p>
+            <CardTitle className="text-xl">{t("nexus.n3.title")}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t("nexus.n3.desc")}</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <h4 className="font-semibold text-sm">Características:</h4>
+              <h4 className="font-semibold text-sm">{t("nexus.n1.features")}</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Seleção de PTAs carregadas via banco</li>
-                <li>• Médias das mães por ano com edição manual</li>
-                <li>• Busca rápida de touros com até 3 slots</li>
-                <li>• Gráfico Mães vs. Filhas com projeção Nexus</li>
+                <li>• {t("nexus.n3.f1")}</li>
+                <li>• {t("nexus.n3.f2")}</li>
+                <li>• {t("nexus.n3.f3")}</li>
+                <li>• {t("nexus.n3.f4")}</li>
               </ul>
             </div>
             <div className="p-3 rounded-lg bg-rose-100">
-              <p className="text-xs font-medium text-zinc-950 text-center">Ideal para planejar lotes e acasalamentos coletivos</p>
+              <p className="text-xs font-medium text-zinc-950 text-center">{t("nexus.n3.ideal")}</p>
             </div>
             <Button onClick={() => onSelectMethod('nexus3')} size="lg" variant="secondary" className="w-full text-neutral-50 bg-red-700 hover:bg-red-600">
               <Users className="w-4 h-4 mr-2" />
-              Usar Nexus 3
+              {t("nexus.n3.use")}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </CardContent>
@@ -121,13 +123,13 @@ const NexusEntryPage: React.FC<NexusEntryPageProps> = ({
 
       <div className="mt-12 text-center">
         <div className="bg-muted/50 rounded-lg p-6 max-w-3xl mx-auto">
-          <h3 className="font-semibold mb-2">Qual método escolher?</h3>
+          <h3 className="font-semibold mb-2">{t("nexus.whichMethod")}</h3>
           <div className="text-sm text-muted-foreground space-y-2">
             <p>
-              <strong>Nexus 1</strong> é mais preciso quando você possui dados genômicos completos das fêmeas do seu rebanho.
+              {t("nexus.n1Recommend")}
             </p>
             <p>
-              <strong>Nexus 2</strong> é uma excelente alternativa quando você tem apenas as informações de pedigree (NAABs dos ancestrais).
+              {t("nexus.n2Recommend")}
             </p>
           </div>
         </div>

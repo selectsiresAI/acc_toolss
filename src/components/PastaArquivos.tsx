@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, FileText, FileSpreadsheet, File, Trash2, Download, Search, ChartBar, Beaker, TrendingUp, Filter, Image, Video } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFileStore, SavedReport } from "@/hooks/useFileStore";
+import { useTranslation } from '@/hooks/useTranslation';
 interface ArquivoItem {
   id: string;
   nome: string;
@@ -32,6 +33,7 @@ export default function PastaArquivosPage({
     reports,
     removeReport
   } = useFileStore();
+  const { t, locale } = useTranslation();
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
@@ -67,8 +69,8 @@ export default function PastaArquivosPage({
         ];
         if (!tiposPermitidos.includes(file.type)) {
           toast({
-            title: "Tipo de arquivo não suportado",
-            description: `O arquivo ${file.name} não é um tipo suportado.`,
+            title: t("files.unsupportedType"),
+            description: t("files.unsupportedTypeDesc").replace("{{name}}", file.name),
             variant: "destructive"
           });
           continue;
@@ -80,8 +82,8 @@ export default function PastaArquivosPage({
         const maxSizeLabel = isVideo ? '50MB' : '10MB';
         if (file.size > maxSize) {
           toast({
-            title: "Arquivo muito grande",
-            description: `O arquivo ${file.name} excede o limite de ${maxSizeLabel}.`,
+            title: t("files.fileTooLarge"),
+            description: t("files.fileTooLargeDesc").replace("{{name}}", file.name).replace("{{limit}}", maxSizeLabel),
             variant: "destructive"
           });
           continue;
@@ -99,14 +101,14 @@ export default function PastaArquivosPage({
       setArquivos(prev => [...prev, ...novosArquivos]);
       if (novosArquivos.length > 0) {
         toast({
-          title: "Arquivos enviados",
-          description: `${novosArquivos.length} arquivo(s) enviado(s) com sucesso.`
+          title: t("files.filesUploaded"),
+          description: t("files.filesUploadedDesc").replace("{{count}}", String(novosArquivos.length))
         });
       }
     } catch (error) {
       toast({
-        title: "Erro no upload",
-        description: "Ocorreu um erro ao enviar os arquivos.",
+        title: t("files.uploadError"),
+        description: t("files.uploadErrorDesc"),
         variant: "destructive"
       });
     } finally {
@@ -119,8 +121,8 @@ export default function PastaArquivosPage({
   const removerArquivo = (id: string) => {
     setArquivos(prev => prev.filter(arquivo => arquivo.id !== id));
     toast({
-      title: "Arquivo removido",
-      description: "O arquivo foi removido com sucesso."
+      title: t("files.fileRemoved"),
+      description: t("files.fileRemovedDesc")
     });
   };
   const downloadArquivo = (arquivo: ArquivoItem) => {
@@ -164,13 +166,13 @@ export default function PastaArquivosPage({
   const getReportTypeName = (type: SavedReport['type']) => {
     switch (type) {
       case 'segmentation':
-        return 'Segmentação';
+        return t("files.typeSegmentation");
       case 'botijao':
-        return 'Botijão Virtual';
+        return t("files.typeBotijao");
       case 'genetic_projection':
-        return 'Projeção Genética';
+        return t("files.typeGenProjection");
       default:
-        return 'Relatório';
+        return t("files.typeReport");
     }
   };
   const downloadReport = async (report: SavedReport) => {
@@ -187,15 +189,15 @@ export default function PastaArquivosPage({
       } else {
         // Se não tem blob, tentar recriar o PDF
         toast({
-          title: "Arquivo não disponível",
-          description: "O arquivo PDF não está mais disponível para download.",
+          title: t("files.fileNotAvailable"),
+          description: t("files.fileNotAvailableDesc"),
           variant: "destructive"
         });
       }
     } catch (error) {
       toast({
-        title: "Erro no download",
-        description: "Não foi possível baixar o relatório.",
+        title: t("files.downloadError"),
+        description: t("files.downloadErrorDesc"),
         variant: "destructive"
       });
     }
@@ -203,8 +205,8 @@ export default function PastaArquivosPage({
   const removeReportFile = (id: string) => {
     removeReport(id);
     toast({
-      title: "Relatório removido",
-      description: "O relatório foi removido com sucesso."
+      title: t("files.reportRemoved"),
+      description: t("files.reportRemovedDesc")
     });
   };
   const arquivosFiltrados = arquivos.filter(arquivo => arquivo.nome.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -215,12 +217,12 @@ export default function PastaArquivosPage({
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
 
-            <h1 className="text-2xl font-bold">Pasta de Arquivos</h1>
+            <h1 className="text-2xl font-bold">{t("files.title")}</h1>
           </div>
           <div className="flex items-center gap-3">
             <Button onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
               <Upload className="w-4 h-4 mr-2" />
-              {isUploading ? "Enviando..." : "Adicionar Arquivos"}
+              {isUploading ? t("files.uploading") : t("files.addFiles")}
             </Button>
           </div>
         </div>
@@ -235,7 +237,7 @@ export default function PastaArquivosPage({
           <CardContent className="p-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Buscar arquivos..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
+              <Input placeholder={t("files.searchPlaceholder")} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-9" />
             </div>
           </CardContent>
         </Card>
@@ -243,8 +245,8 @@ export default function PastaArquivosPage({
         {/* Lista de arquivos */}
         <Tabs defaultValue="reports" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="reports">Relatórios Salvos ({reportsFiltrados.length})</TabsTrigger>
-            <TabsTrigger value="uploads">Arquivos Enviados ({arquivosFiltrados.length})</TabsTrigger>
+            <TabsTrigger value="reports">{t("files.savedReports")} ({reportsFiltrados.length})</TabsTrigger>
+            <TabsTrigger value="uploads">{t("files.uploadedFiles")} ({arquivosFiltrados.length})</TabsTrigger>
           </TabsList>
 
           {/* Relatórios das páginas */}
@@ -253,17 +255,17 @@ export default function PastaArquivosPage({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Filter className="w-5 h-5" />
-                  Relatórios Gerados pelas Páginas
+                  {t("files.reportsGenerated")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {reportsFiltrados.length === 0 ? <div className="text-center py-12">
                     <ChartBar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                      {reports.length === 0 ? "Nenhum relatório salvo" : "Nenhum relatório encontrado"}
+                      {reports.length === 0 ? t("files.noReportsSaved") : t("files.noReportFound")}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {reports.length === 0 ? "Os relatórios das páginas de Segmentação, Botijão Virtual e Projeção Genética aparecerão aqui" : "Tente uma busca diferente"}
+                      {reports.length === 0 ? t("files.reportsWillAppear") : t("files.tryDifferentSearch")}
                     </p>
                   </div> : <div className="grid gap-4">
                     {reportsFiltrados.map(report => <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
@@ -277,7 +279,7 @@ export default function PastaArquivosPage({
                               </Badge>
                               <p className="text-sm text-muted-foreground">
                                 {formatarTamanho(report.metadata.size)} • 
-                                {new Date(report.metadata.createdAt).toLocaleDateString('pt-BR')}
+                                {new Date(report.metadata.createdAt).toLocaleDateString(locale)}
                               </p>
                             </div>
                             {report.metadata.description && <p className="text-xs text-muted-foreground mt-1">
@@ -303,20 +305,20 @@ export default function PastaArquivosPage({
           <TabsContent value="uploads">
             <Card>
               <CardHeader>
-                <CardTitle>Arquivos Enviados Manualmente</CardTitle>
+                <CardTitle>{t("files.manualUploads")}</CardTitle>
               </CardHeader>
               <CardContent>
                 {arquivosFiltrados.length === 0 ? <div className="text-center py-12">
                     <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                      {arquivos.length === 0 ? "Nenhum arquivo enviado" : "Nenhum arquivo encontrado"}
+                      {arquivos.length === 0 ? t("files.noFileUploaded") : t("files.noFileFound")}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      {arquivos.length === 0 ? "Adicione arquivos PDF, Excel ou outros documentos" : "Tente uma busca diferente"}
+                      {arquivos.length === 0 ? t("files.addDocsHint") : t("files.tryDifferentSearch")}
                     </p>
                     {arquivos.length === 0 && <Button onClick={() => fileInputRef.current?.click()}>
                         <Upload className="w-4 h-4 mr-2" />
-                        Adicionar Primeiro Arquivo
+                        {t("files.addFirstFile")}
                       </Button>}
                   </div> : <div className="grid gap-4">
                     {arquivosFiltrados.map(arquivo => <div key={arquivo.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
@@ -326,7 +328,7 @@ export default function PastaArquivosPage({
                             <h4 className="font-medium">{arquivo.nome}</h4>
                             <p className="text-sm text-muted-foreground">
                               {formatarTamanho(arquivo.tamanho)} • 
-                              {new Date(arquivo.dataUpload).toLocaleDateString('pt-BR')}
+                              {new Date(arquivo.dataUpload).toLocaleDateString(locale)}
                             </p>
                           </div>
                         </div>
@@ -348,29 +350,29 @@ export default function PastaArquivosPage({
         {/* Informações sobre arquivos suportados */}
         <Card>
           <CardHeader>
-            <CardTitle>Sobre os Arquivos</CardTitle>
+            <CardTitle>{t("files.aboutFiles")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-medium mb-3">Relatórios Automáticos</h4>
+                <h4 className="font-medium mb-3">{t("files.autoReports")}</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-center gap-2">
                     <ChartBar className="w-4 h-4" />
-                    Relatórios de Segmentação
+                    {t("files.segReports")}
                   </li>
                   <li className="flex items-center gap-2">
                     <Beaker className="w-4 h-4" />
-                    Botijões Virtuais salvos
+                    {t("files.botijaoSaved")}
                   </li>
                   <li className="flex items-center gap-2">
                     <TrendingUp className="w-4 h-4" />
-                    Projeções Genéticas
+                    {t("files.genProjections")}
                   </li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium mb-3">Arquivos Upload Manual</h4>
+                <h4 className="font-medium mb-3">{t("files.manualUpload")}</h4>
                 <ul className="space-y-1 text-sm text-muted-foreground">
                   <li>• PDF (.pdf)</li>
                   <li>• Excel (.xlsx, .xls, .xlsm)</li>
@@ -384,8 +386,7 @@ export default function PastaArquivosPage({
             </div>
             <div className="mt-4 p-3 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">
-                <strong>Limite:</strong> Máximo 10MB para documentos/imagens e 50MB para vídeos. 
-                Relatórios automáticos são salvos sem limite de tamanho.
+                {t("files.sizeLimit")}
               </p>
             </div>
           </CardContent>

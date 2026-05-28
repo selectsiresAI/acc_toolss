@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, FlaskConical, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const STORAGE_KEY = "hhp_card_dismissed";
 
@@ -32,12 +33,12 @@ const categoryColors: Record<string, string> = {
   type: "bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200",
 };
 
-const categoryLabels: Record<string, string> = {
-  production: "Produção",
-  health: "Saúde",
-  fertility: "Fertilidade",
-  efficiency: "Eficiência",
-  type: "Tipo / Linear",
+const CATEGORY_LABEL_KEYS: Record<string, [string, string, string]> = {
+  production: ["Produção", "Production", "Producción"],
+  health: ["Saúde", "Health", "Salud"],
+  fertility: ["Fertilidade", "Fertility", "Fertilidad"],
+  efficiency: ["Eficiência", "Efficiency", "Eficiencia"],
+  type: ["Tipo / Linear", "Type / Linear", "Tipo / Lineal"],
 };
 
 interface HhpRequiredTraitsCardProps {
@@ -48,6 +49,12 @@ interface HhpRequiredTraitsCardProps {
 }
 
 export function HhpRequiredTraitsCard({ inline = false, className = "" }: HhpRequiredTraitsCardProps) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+  const categoryLabels = Object.fromEntries(
+    Object.entries(CATEGORY_LABEL_KEYS).map(([k, [pt, en, es]]) => [k, isEs ? es : isEn ? en : pt])
+  );
   const [dismissed, setDismissed] = useState(() => {
     if (inline) return false;
     return localStorage.getItem(STORAGE_KEY) === "true";
@@ -84,12 +91,17 @@ export function HhpRequiredTraitsCard({ inline = false, className = "" }: HhpReq
       </Button>
 
       <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold">
-          Traits obrigatórios para cálculo do HHP$
+        <CardTitle className="flex items-center gap-2 text-base">
+          <FlaskConical className="h-5 w-5 text-amber-600" />
+          {isEs ? "Traits requeridos para el cálculo de HHP$" : isEn ? "Required traits for HHP$ calculation" : "Traits obrigatórios para cálculo do HHP$"}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Para calcular o índice <strong>HHP$</strong>, seu arquivo deve
-          conter as <strong>15 traits</strong> abaixo. Traits ausentes resultam em HHP$ = vazio.
+          {isEs
+            ? <>Para calcular el índice <strong>HHP$</strong> (Holistic Health Profit), su archivo debe contener los <strong>15 traits</strong> a continuación. Traits faltantes resultan en HHP$ = vacío.</>
+            : isEn
+            ? <>To calculate the <strong>HHP$</strong> (Holistic Health Profit) index, your file must contain the <strong>15 traits</strong> below. Missing traits result in HHP$ = empty.</>
+            : <>Para calcular o índice <strong>HHP$</strong> (Holistic Health Profit), seu arquivo deve conter as <strong>15 traits</strong> abaixo. Traits ausentes resultam em HHP$ = vazio.</>
+          }
         </p>
       </CardHeader>
 
@@ -114,12 +126,16 @@ export function HhpRequiredTraitsCard({ inline = false, className = "" }: HhpReq
           </div>
         ))}
 
-        <div className="mt-2 rounded-md bg-muted p-3 text-xs text-muted-foreground">
-          <p>
-            <strong>Dica:</strong> No template CSV disponibilizado, todas as 15 colunas já estão
-            presentes. Use os nomes exatos das colunas (ex: <code>PTAF</code>, <code>SCS</code>,{" "}
-            <code>RTP</code>) para mapeamento automático.
-          </p>
+        <div className="mt-2 flex items-start gap-2 rounded-md bg-white/60 dark:bg-white/5 p-3 text-xs text-muted-foreground">
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-500" />
+          <div>
+            <p>{isEs
+              ? <><strong>Consejo:</strong> En la plantilla CSV proporcionada, las 15 columnas ya están presentes. Use los nombres exactos de las columnas (ej.: <code>PTAF</code>, <code>SCS</code>, <code>RTP</code>) para el mapeo automático.</>
+              : isEn
+              ? <><strong>Tip:</strong> In the provided CSV template, all 15 columns are already present. Use exact column names (e.g.: <code>PTAF</code>, <code>SCS</code>, <code>RTP</code>) for automatic mapping.</>
+              : <><strong>Dica:</strong> No template CSV disponibilizado, todas as 15 colunas já estão presentes. Use os nomes exatos das colunas (ex: <code>PTAF</code>, <code>SCS</code>, <code>RTP</code>) para mapeamento automático.</>
+            }</p>
+          </div>
         </div>
       </CardContent>
     </Card>

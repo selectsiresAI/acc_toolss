@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Settings, BarChart3 } from 'lucide-react';
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface SegmentationSectionProps {
   farmId: string;
@@ -70,20 +71,23 @@ function calculateAverage(values: number[]): number {
 
 // Configuration Card Component
 function SegmentationConfigCard({ params }: { params: SegmentationParams | null }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   if (!params) return null;
 
-  const indexType = params.index_type || 'Não especificado';
+  const indexType = params.index_type || (isEs ? 'No especificado' : isEn ? 'Not specified' : 'Não especificado');
   const isCustom = indexType === 'Custom';
 
   return (
     <Card className="p-4 mb-6">
       <div className="flex items-center gap-2 mb-3">
         <Settings className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold text-foreground">Configuração Utilizada</h3>
+        <h3 className="font-semibold text-foreground">{isEs ? "Configuración Utilizada" : isEn ? "Configuration Used" : "Configuração Utilizada"}</h3>
       </div>
 
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-muted-foreground">Índice:</span>
+        <span className="text-muted-foreground">{isEs ? "Índice:" : isEn ? "Index:" : "Índice:"}</span>
         <Badge variant={isCustom ? 'secondary' : 'default'} className="text-sm">
           {indexType}
         </Badge>
@@ -91,7 +95,7 @@ function SegmentationConfigCard({ params }: { params: SegmentationParams | null 
 
       {isCustom && params.selected_traits && params.weights && (
         <div className="border-t pt-4">
-          <p className="text-sm text-muted-foreground mb-3">Composição do Índice Customizado:</p>
+          <p className="text-sm text-muted-foreground mb-3">{isEs ? "Composición del Índice Personalizado:" : isEn ? "Custom Index Composition:" : "Composição do Índice Customizado:"}</p>
           <div className="space-y-2">
             {params.selected_traits.map((trait) => {
               const weight = params.weights?.[trait] || 0;
@@ -112,13 +116,16 @@ function SegmentationConfigCard({ params }: { params: SegmentationParams | null 
 
 // Group Distribution Component
 function GroupDistributionCard({ stats }: { stats: ClassificationStats[] }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const total = stats.reduce((sum, s) => sum + s.count, 0);
 
   return (
     <Card className="p-4 mb-6">
       <div className="flex items-center gap-2 mb-4">
         <BarChart3 className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold text-foreground">Distribuição dos Grupos</h3>
+        <h3 className="font-semibold text-foreground">{isEs ? "Distribución de los Grupos" : isEn ? "Group Distribution" : "Distribuição dos Grupos"}</h3>
       </div>
 
       <div className="space-y-4">
@@ -140,7 +147,7 @@ function GroupDistributionCard({ stats }: { stats: ClassificationStats[] }) {
 
       <div className="text-center mt-4 pt-4 border-t">
         <span className="text-sm text-muted-foreground">Total: </span>
-        <span className="font-semibold">{total} animais</span>
+        <span className="font-semibold">{total} {isEs ? "animales" : isEn ? "animals" : "animais"}</span>
       </div>
     </Card>
   );
@@ -148,14 +155,17 @@ function GroupDistributionCard({ stats }: { stats: ClassificationStats[] }) {
 
 // Classification Averages Table Component
 function ClassificationAveragesTable({ stats }: { stats: ClassificationStats[] }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   return (
     <Card className="p-4 mb-6 overflow-x-auto">
-      <h3 className="font-semibold text-foreground mb-4">Médias por Classificação</h3>
+      <h3 className="font-semibold text-foreground mb-4">{isEs ? "Promedios por Clasificación" : isEn ? "Averages by Classification" : "Médias por Classificação"}</h3>
 
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b">
-            <th className="text-left py-2 px-2 font-medium">Classificação</th>
+            <th className="text-left py-2 px-2 font-medium">{isEs ? "Clasificación" : isEn ? "Classification" : "Classificação"}</th>
             {PTA_CONFIG.map((pta) => (
               <th key={pta.key} className="text-center py-2 px-2 font-medium whitespace-nowrap">
                 {pta.label}
@@ -190,9 +200,12 @@ function ClassificationAveragesTable({ stats }: { stats: ClassificationStats[] }
 
 // Category Breakdown Component
 function CategoryBreakdownCard({ stats }: { stats: ClassificationStats[] }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   return (
     <Card className="p-4">
-      <h3 className="font-semibold text-foreground mb-4">Categorias por Classificação</h3>
+      <h3 className="font-semibold text-foreground mb-4">{isEs ? "Categorías por Clasificación" : isEn ? "Categories by Classification" : "Categorias por Classificação"}</h3>
 
       <div className="space-y-6">
         {stats.map((stat) => (
@@ -205,7 +218,7 @@ function CategoryBreakdownCard({ stats }: { stats: ClassificationStats[] }) {
               >
                 {stat.label}
               </Badge>
-              <span className="text-sm text-muted-foreground">({stat.count} animais)</span>
+              <span className="text-sm text-muted-foreground">({stat.count} {isEs ? "animales" : isEn ? "animals" : "animais"})</span>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
@@ -232,19 +245,28 @@ function CategoryBreakdownCard({ stats }: { stats: ClassificationStats[] }) {
 
 // No Segmentation Message
 function NoSegmentationMessage() {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   return (
     <Card className="p-8 text-center">
       <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-warning" />
-      <h3 className="font-semibold text-lg mb-2">Nenhuma Segmentação Encontrada</h3>
+      <h3 className="font-semibold text-lg mb-2">{isEs ? "Ninguna Segmentación Encontrada" : isEn ? "No Segmentation Found" : "Nenhuma Segmentação Encontrada"}</h3>
       <p className="text-muted-foreground max-w-md mx-auto">
-        Nenhuma segmentação foi salva para esta fazenda. Execute a segmentação na página 
-        de Segmentação e salve os resultados para incluí-los no relatório.
+        {isEs
+          ? "No se ha guardado ninguna segmentación para esta finca. Ejecute la segmentación en la página de Segmentación y guarde los resultados para incluirlos en el informe."
+          : isEn
+          ? "No segmentation has been saved for this farm. Run the segmentation on the Segmentation page and save the results to include them in the report."
+          : "Nenhuma segmentação foi salva para esta fazenda. Execute a segmentação na página de Segmentação e salve os resultados para incluí-los no relatório."}
       </p>
     </Card>
   );
 }
 
 export default function SegmentationSectionContent({ farmId, farmName }: SegmentationSectionProps) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<ClassificationStats[]>([]);
   const [params, setParams] = useState<SegmentationParams | null>(null);
@@ -353,7 +375,7 @@ export default function SegmentationSectionContent({ farmId, farmName }: Segment
   if (loading) {
     return (
       <div className="p-8 text-center text-muted-foreground">
-        Carregando dados de segmentação...
+        {isEs ? "Cargando datos de segmentación..." : isEn ? "Loading segmentation data..." : "Carregando dados de segmentação..."}
       </div>
     );
   }

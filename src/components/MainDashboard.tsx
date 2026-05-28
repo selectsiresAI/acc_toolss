@@ -78,7 +78,9 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   const [showMetrics, setShowMetrics] = useState(false);
   const [showGeneralReportModal, setShowGeneralReportModal] = useState(false);
   const { role, isAdmin, isLoading: roleLoading } = useUserRole();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const {
     toast
   } = useToast();
@@ -114,7 +116,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
       if (farmsError) {
         console.error('Error loading farms:', farmsError);
         toast({
-          title: "Erro ao carregar fazendas",
+          title: isEs ? "Error al cargar fincas" : isEn ? "Error loading farms" : "Erro ao carregar fazendas",
           description: farmsError.message,
           variant: "destructive"
         });
@@ -137,8 +139,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     } catch (error: any) {
       console.error('Error loading data:', error);
       toast({
-        title: "Erro ao carregar dados",
-        description: error.message || 'Erro inesperado',
+        title: isEs ? "Error al cargar datos" : isEn ? "Error loading data" : "Erro ao carregar dados",
+        description: error.message || (isEs ? 'Error inesperado' : isEn ? 'Unexpected error' : 'Erro inesperado'),
         variant: "destructive"
       });
     } finally {
@@ -185,8 +187,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
           loadUserData();
         } else {
           toast({
-            title: "Erro ao apagar fazenda",
-            description: result.message || 'Erro desconhecido',
+            title: isEs ? "Error al eliminar finca" : isEn ? "Error deleting farm" : "Erro ao apagar fazenda",
+            description: result.message || (isEs ? 'Error desconocido' : isEn ? 'Unknown error' : 'Erro desconhecido'),
             variant: "destructive"
           });
         }
@@ -194,8 +196,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
     } catch (error: any) {
       console.error('Erro ao apagar fazenda:', error);
       toast({
-        title: "Erro ao apagar fazenda",
-        description: error.message || 'Tente novamente',
+        title: isEs ? "Error al eliminar finca" : isEn ? "Error deleting farm" : "Erro ao apagar fazenda",
+        description: error.message || (isEs ? 'Intente de nuevo' : isEn ? 'Try again' : 'Tente novamente'),
         variant: "destructive"
       });
     }
@@ -393,7 +395,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                   className="bg-primary hover:bg-primary/90"
                 >
                   <FileText className="w-4 h-4 mr-2" />
-                  Gerar Relatório Geral
+                  {isEs ? "Generar Informe General" : isEn ? "Generate General Report" : "Gerar Relatório Geral"}
                 </Button>
                 <p className="text-base italic text-neutral-600">{t("dashboard.ecosystem")}</p>
               </div>
@@ -422,7 +424,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
           farmId={selectedFarm.farm_id}
           farmName={selectedFarm.farm_name}
           farmOwner={selectedFarm.owner_name}
-          userName={userProfile?.full_name || user.email || 'Usuário'}
+          userName={userProfile?.full_name || user.email || (isEs ? 'Usuario' : isEn ? 'User' : 'Usuário')}
         />
       </main>;
   }
@@ -448,7 +450,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Dashboard
               </Button>
-              <h1 className="text-xl font-semibold">Chamados de Suporte</h1>
+              <h1 className="text-xl font-semibold">{isEs ? "Tickets de Soporte" : isEn ? "Support Tickets" : "Chamados de Suporte"}</h1>
             </div>
           </div>
           <div className="container mx-auto px-4 py-8">
@@ -464,7 +466,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Dashboard
               </Button>
-              <h1 className="text-xl font-semibold">Conversão de planilhas (preview)</h1>
+              <h1 className="text-xl font-semibold">{isEs ? "Conversión de hojas de cálculo (vista previa)" : isEn ? "Spreadsheet conversion (preview)" : "Conversão de planilhas (preview)"}</h1>
             </div>
           </div>
           <div className="container mx-auto px-4 py-8">
@@ -480,7 +482,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Dashboard
               </Button>
-              <h1 className="text-xl font-semibold">Nexus - Sistema de Predição Genética</h1>
+              <h1 className="text-xl font-semibold">{isEs ? "Nexus - Sistema de Predicción Genética" : isEn ? "Nexus - Genetic Prediction System" : "Nexus - Sistema de Predição Genética"}</h1>
             </div>
           </div>
           <div className="container mx-auto px-4 py-8">
@@ -496,7 +498,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Dashboard
               </Button>
-              <h1 className="text-xl font-semibold">Plano Genético</h1>
+              <h1 className="text-xl font-semibold">{isEs ? "Plan Genético" : isEn ? "Genetic Plan" : "Plano Genético"}</h1>
             </div>
           </div>
           <div className="container mx-auto px-4 py-8">
@@ -585,7 +587,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Dashboard
                 </Button>
-                <h1 className="text-xl font-semibold">{selectedFarm?.farm_name} - Botijão Virtual</h1>
+                <h1 className="text-xl font-semibold">{selectedFarm?.farm_name} - {isEs ? "Tanque Virtual" : isEn ? "Virtual Tank" : "Botijão Virtual"}</h1>
               </div>
             </div>
             <div className="container mx-auto px-4 py-8">
@@ -610,7 +612,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Dashboard
                 </Button>
-                <h1 className="text-xl font-semibold">{selectedFarm?.farm_name} - Metas</h1>
+                <h1 className="text-xl font-semibold">{selectedFarm?.farm_name} - {isEs ? "Metas" : isEn ? "Goals" : "Metas"}</h1>
               </div>
             </div>
             <div className="container mx-auto px-4 py-8">
@@ -649,7 +651,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Dashboard
                 </Button>
-                <h1 className="text-xl font-semibold">{selectedFarm?.farm_name} - Pasta de Arquivos</h1>
+                <h1 className="text-xl font-semibold">{selectedFarm?.farm_name} - {isEs ? "Carpeta de Archivos" : isEn ? "File Folder" : "Pasta de Arquivos"}</h1>
               </div>
             </div>
             <div className="container mx-auto px-4 py-8">
@@ -668,7 +670,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
               Dashboard
             </Button>
             <h1 className="text-xl font-semibold">
-              {selectedFarm?.farm_name} - {currentView === 'herd' ? 'Rebanho' : currentView === 'segmentation' ? 'Segmentação' : currentView === 'bulls' ? 'Catálogo de Touros' : currentView === 'charts' ? 'Gráficos' : currentView === 'auditoria' ? 'Auditoria Genética' : 'Módulo'}
+              {selectedFarm?.farm_name} - {currentView === 'herd' ? (isEs ? 'Rebaño' : isEn ? 'Herd' : 'Rebanho') : currentView === 'segmentation' ? (isEs ? 'Segmentación' : isEn ? 'Segmentation' : 'Segmentação') : currentView === 'bulls' ? (isEs ? 'Catálogo de Toros' : isEn ? 'Bull Catalog' : 'Catálogo de Touros') : currentView === 'charts' ? (isEs ? 'Gráficos' : isEn ? 'Charts' : 'Gráficos') : currentView === 'auditoria' ? (isEs ? 'Auditoría Genética' : isEn ? 'Genetic Audit' : 'Auditoria Genética') : (isEs ? 'Módulo' : isEn ? 'Module' : 'Módulo')}
             </h1>
           </div>
         </div>
@@ -681,9 +683,13 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
               {currentView === 'charts' && <TrendingUp className="w-8 h-8 text-muted-foreground" />}
               {currentView === 'auditoria' && <Target className="w-8 h-8 text-muted-foreground" />}
             </div>
-            <h2 className="text-2xl font-bold">Módulo em Desenvolvimento</h2>
+            <h2 className="text-2xl font-bold">{isEs ? "Módulo en Desarrollo" : isEn ? "Module Under Development" : "Módulo em Desenvolvimento"}</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
-              Este módulo estará disponível em breve. Você poderá {currentView === 'herd' ? 'gerenciar seu rebanho e cadastrar fêmeas' : currentView === 'segmentation' ? 'segmentar animais por performance genética' : currentView === 'bulls' ? 'explorar o catálogo de touros e fazer seleções' : currentView === 'charts' ? 'visualizar gráficos e estatísticas do rebanho' : currentView === 'auditoria' ? 'navegar pela auditoria genética completa do rebanho' : 'usar esta funcionalidade'}.
+              {isEs
+                ? `Este módulo estará disponible pronto. Podrá ${currentView === 'herd' ? 'gestionar su rebaño y registrar hembras' : currentView === 'segmentation' ? 'segmentar animales por desempeño genético' : currentView === 'bulls' ? 'explorar el catálogo de toros y hacer selecciones' : currentView === 'charts' ? 'visualizar gráficos y estadísticas del rebaño' : currentView === 'auditoria' ? 'navegar por la auditoría genética completa del rebaño' : 'usar esta funcionalidad'}.`
+                : isEn
+                ? `This module will be available soon. You will be able to ${currentView === 'herd' ? 'manage your herd and register females' : currentView === 'segmentation' ? 'segment animals by genetic performance' : currentView === 'bulls' ? 'explore the bull catalog and make selections' : currentView === 'charts' ? 'view herd charts and statistics' : currentView === 'auditoria' ? 'browse the full genetic audit of the herd' : 'use this feature'}.`
+                : `Este módulo estará disponível em breve. Você poderá ${currentView === 'herd' ? 'gerenciar seu rebanho e cadastrar fêmeas' : currentView === 'segmentation' ? 'segmentar animais por performance genética' : currentView === 'bulls' ? 'explorar o catálogo de touros e fazer seleções' : currentView === 'charts' ? 'visualizar gráficos e estatísticas do rebanho' : currentView === 'auditoria' ? 'navegar pela auditoria genética completa do rebanho' : 'usar esta funcionalidade'}.`}
             </p>
           </div>
         </div>
@@ -766,7 +772,7 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
           <div className="space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
               <h2 className="text-3xl font-bold">
-                {t("farm.welcome")}, {userProfile?.full_name?.split(' ')[0] || 'Usuário'}!
+                {t("farm.welcome")}, {userProfile?.full_name?.split(' ')[0] || (isEs ? 'Usuario' : isEn ? 'User' : 'Usuário')}!
               </h2>
               <Badge
                 className={`shadow ${isAdmin ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
@@ -878,10 +884,10 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Building2 className="w-5 h-5 text-primary" />
-                    Total de Fazendas
+                    {isEs ? "Total de Fincas" : isEn ? "Total Farms" : "Total de Fazendas"}
                   </CardTitle>
                   <CardDescription>
-                    Fazendas cadastradas na sua conta
+                    {isEs ? "Fincas registradas en su cuenta" : isEn ? "Farms registered in your account" : "Fazendas cadastradas na sua conta"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -895,10 +901,10 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Users className="w-5 h-5 text-primary" />
-                    Total de Animais
+                    {isEs ? "Total de Animales" : isEn ? "Total Animals" : "Total de Animais"}
                   </CardTitle>
                   <CardDescription>
-                    Fêmeas cadastradas em todas as fazendas
+                    {isEs ? "Hembras registradas en todas las fincas" : isEn ? "Females registered across all farms" : "Fêmeas cadastradas em todas as fazendas"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { TooltipProps } from 'recharts';
 import {
   ResponsiveContainer,
@@ -58,6 +59,8 @@ const buildTooltipContent = (
   traits: TraitSeriesMeta[],
   showTrendLine: boolean,
   formatValue: TrendsChartProps['formatValue'],
+  isEn: boolean,
+  isEs: boolean,
 ) => {
   const { active, payload, label } = props as any;
 
@@ -71,8 +74,8 @@ const buildTooltipContent = (
   if (!showTrendLine) {
     return (
       <div className="rounded-md border bg-background/95 p-3 text-xs shadow">
-        <div className="text-sm font-semibold">Ano: {label ?? '—'}</div>
-        <div className="mt-1 text-muted-foreground">Tendência desativada</div>
+        <div className="text-sm font-semibold">{isEs ? 'Año' : isEn ? 'Year' : 'Ano'}: {label ?? '—'}</div>
+        <div className="mt-1 text-muted-foreground">{isEs ? 'Tendencia desactivada' : isEn ? 'Trend disabled' : 'Tendência desativada'}</div>
       </div>
     );
   }
@@ -107,7 +110,7 @@ const buildTooltipContent = (
 
   return (
     <div className="min-w-[220px] rounded-md border bg-background/95 p-3 text-xs shadow">
-      <div className="text-sm font-semibold">Ano: {label ?? '—'}</div>
+      <div className="text-sm font-semibold">{isEs ? 'Año' : isEn ? 'Year' : 'Ano'}: {label ?? '—'}</div>
       <div className="mt-2 space-y-2">
         {traitEntries.map(({ trait, zScore, delta, mean, hasTrend }) => (
           <div key={trait.key} className="space-y-1">
@@ -127,12 +130,12 @@ const buildTooltipContent = (
                     ΔGₜ: <span className="font-medium text-foreground">{formatValue(trait.key, delta)}</span>
                   </>
                 ) : (
-                  <span>Tendência indisponível (dados insuficientes)</span>
+                  <span>{isEs ? 'Tendencia no disponible (datos insuficientes)' : isEn ? 'Trend unavailable (insufficient data)' : 'Tendência indisponível (dados insuficientes)'}</span>
                 )}
               </div>
               {mean !== null && (
                 <div>
-                  Média observada: <span className="font-medium text-foreground">{formatValue(trait.key, mean)}</span>
+                  {isEs ? 'Promedio observado' : isEn ? 'Observed mean' : 'Média observada'}: <span className="font-medium text-foreground">{formatValue(trait.key, mean)}</span>
                 </div>
               )}
             </div>
@@ -144,9 +147,12 @@ const buildTooltipContent = (
 };
 
 export const TrendsChart: React.FC<TrendsChartProps> = ({ data, traits, showTrendLine, formatValue }) => {
+  const { locale } = useTranslation();
+  const isEn = locale === 'en-US';
+  const isEs = locale === 'es';
   const tooltipRenderer = React.useMemo(
-    () => (props: TooltipProps<number, string>) => buildTooltipContent(props, traits, showTrendLine, formatValue),
-    [traits, showTrendLine, formatValue],
+    () => (props: TooltipProps<number, string>) => buildTooltipContent(props, traits, showTrendLine, formatValue, isEn, isEs),
+    [traits, showTrendLine, formatValue, isEn, isEs],
   );
 
   // Calcular domínio dinâmico do eixo Y baseado nos valores Z-score
@@ -205,7 +211,7 @@ export const TrendsChart: React.FC<TrendsChartProps> = ({ data, traits, showTren
             strokeDasharray="5 4"
             dot={false}
             isAnimationActive={false}
-            name={`${trait.label} (tendência)`}
+            name={`${trait.label} (${isEs ? 'tendencia' : isEn ? 'trend' : 'tendência'})`}
             hide={!trait.hasTrend}
           />
         ))}

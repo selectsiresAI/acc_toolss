@@ -31,15 +31,15 @@ interface PendingInvite {
   created_at: string;
 }
 
-const ROLE_LABELS: Record<string, { ptBR: string; enUS: string }> = {
-  owner: { ptBR: "Proprietário", enUS: "Owner" },
-  editor: { ptBR: "Editor", enUS: "Editor" },
-  technician: { ptBR: "Técnico", enUS: "Technician" },
-  viewer: { ptBR: "Visualizador", enUS: "Viewer" },
+const ROLE_LABELS: Record<string, { ptBR: string; enUS: string; es: string }> = {
+  owner: { ptBR: "Proprietário", enUS: "Owner", es: "Propietario" },
+  editor: { ptBR: "Editor", enUS: "Editor", es: "Editor" },
+  technician: { ptBR: "Técnico", enUS: "Technician", es: "Técnico" },
+  viewer: { ptBR: "Visualizador", enUS: "Viewer", es: "Visualizador" },
 };
 
 export function ShareFarmDialog({ farmId, farmName, myRole }: ShareFarmDialogProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<string>("viewer");
@@ -210,7 +210,7 @@ export function ShareFarmDialog({ farmId, farmName, myRole }: ShareFarmDialogPro
   function getRoleLabel(r: string) {
     const labels = ROLE_LABELS[r];
     if (!labels) return r;
-    return t("share.roleOwner") === "Owner" ? labels.enUS : labels.ptBR;
+    return locale === "en-US" ? labels.enUS : locale === "es" ? labels.es : labels.ptBR;
   }
 
   const roleBadgeColor = (r: string) => {

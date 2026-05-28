@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { exportMultipleChartsToPDF, exportSingleChartToPDF } from "@/lib/pdf/exportCharts";
 import { useChartExport } from "./ChartExportProvider";
@@ -27,6 +28,9 @@ export function SingleExportButton({
   title: string;
   slug?: string;
 }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const { orientation } = useChartExport();
   const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const fileSlug = useMemo(() => buildSlug(slug ?? title), [slug, title]);
@@ -47,12 +51,15 @@ export function SingleExportButton({
         });
       }}
     >
-      Exportar PDF
+      {isEs ? "Exportar PDF" : isEn ? "Export PDF" : "Exportar PDF"}
     </Button>
   );
 }
 
 export function BatchExportBar({ step }: { step: number }) {
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const { items, selectedIds, toggle, clear, orientation, setOrientation } = useChartExport();
   const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const listForStep = useMemo(() => items.filter((i) => i.step === step), [items, step]);
@@ -68,7 +75,7 @@ export function BatchExportBar({ step }: { step: number }) {
   return (
     <div className="sticky top-0 z-30 mb-3 rounded-xl border bg-white p-3 shadow-sm">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-semibold">Selecionar para PDF (Step {step}):</span>
+        <span className="font-semibold">{isEs ? `Seleccionar para PDF (Paso ${step}):` : isEn ? `Select for PDF (Step ${step}):` : `Selecionar para PDF (Step ${step}):`}</span>
         {listForStep.map((i) => (
           <label key={i.id} className="flex items-center gap-2 text-sm">
             <input
@@ -82,16 +89,16 @@ export function BatchExportBar({ step }: { step: number }) {
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 text-sm">
-            <span className="text-muted-foreground">Formato PDF:</span>
+            <span className="text-muted-foreground">{isEs ? "Formato PDF:" : isEn ? "PDF Format:" : "Formato PDF:"}</span>
             <Button
               type="button"
               size="sm"
               variant={orientation === "l" ? "default" : "outline"}
               className={orientation === "l" ? "bg-[#ED1C24] hover:opacity-90 text-white" : ""}
               onClick={() => setOrientation("l")}
-              title="Paisagem – página deitada (horizontal)"
+              title={isEs ? "Horizontal – página apaisada" : isEn ? "Landscape – horizontal page" : "Paisagem – página deitada (horizontal)"}
             >
-              Paisagem
+              {isEs ? "Horizontal" : isEn ? "Landscape" : "Paisagem"}
             </Button>
             <Button
               type="button"
@@ -99,13 +106,13 @@ export function BatchExportBar({ step }: { step: number }) {
               variant={orientation === "p" ? "default" : "outline"}
               className={orientation === "p" ? "bg-[#ED1C24] hover:opacity-90 text-white" : ""}
               onClick={() => setOrientation("p")}
-              title="Retrato – página em pé (vertical)"
+              title={isEs ? "Vertical – página vertical" : isEn ? "Portrait – vertical page" : "Retrato – página em pé (vertical)"}
             >
-              Retrato
+              {isEs ? "Vertical" : isEn ? "Portrait" : "Retrato"}
             </Button>
           </div>
           <Button variant="outline" onClick={clear} disabled={selectedIds.size === 0}>
-            Limpar
+            {isEs ? "Limpiar" : isEn ? "Clear" : "Limpar"}
           </Button>
           <Button
             className="bg-[#ED1C24] hover:opacity-90 text-white"
@@ -125,7 +132,7 @@ export function BatchExportBar({ step }: { step: number }) {
               });
             }}
           >
-            Exportar PDF Selecionados ({selectedForStep.length})
+            {isEs ? `Exportar PDF Seleccionados (${selectedForStep.length})` : isEn ? `Export Selected PDF (${selectedForStep.length})` : `Exportar PDF Selecionados (${selectedForStep.length})`}
           </Button>
         </div>
       </div>

@@ -25,7 +25,8 @@ import { Target, ChevronDown, X } from "lucide-react";
 import { ChartExportProvider } from "@/components/pdf/ChartExportProvider";
 import { BatchExportBar, SingleExportButton } from "@/components/pdf/ExportButtons";
 import { useRegisterChart } from "@/components/pdf/useRegisterChart";
- import { formatPtaValue } from "@/utils/ptaFormat";
+import { formatPtaValue } from "@/utils/ptaFormat";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const DEFAULT_SELECTED: string[] = ["hhp_dollar", "tpi", "nm_dollar", "dpr", "pl", "scs"];
 const BINS = 30;
@@ -45,29 +46,29 @@ interface DescriptiveStats {
 interface IdealBenchmark {
   min: number;
   ideal: number;
-  description: string;
+  descKey: string;
 }
 
 // ========== Benchmarks Ideais ==========
 const IDEAL_BENCHMARKS: Record<string, IdealBenchmark> = {
-  hhp_dollar: { min: 400, ideal: 600, description: "Valor econômico para alta lucratividade" },
-  tpi: { min: 2400, ideal: 2800, description: "Índice de mérito genético superior" },
-  nm_dollar: { min: 500, ideal: 700, description: "Valor líquido de mérito elevado" },
-  cm_dollar: { min: 400, ideal: 600, description: "Índice de queijo ideal" },
-  fm_dollar: { min: 400, ideal: 600, description: "Índice de fluidos elevado" },
-  gm_dollar: { min: 400, ideal: 600, description: "Índice de graxa de alto valor" },
-  ptam: { min: 800, ideal: 1200, description: "Produção de leite elevada" },
-  ptaf: { min: 50, ideal: 80, description: "Produção de gordura superior" },
-  ptaf_pct: { min: 0.05, ideal: 0.10, description: "Percentual de gordura ideal" },
-  ptap: { min: 40, ideal: 60, description: "Produção de proteína elevada" },
-  ptap_pct: { min: 0.04, ideal: 0.08, description: "Percentual de proteína ideal" },
-  dpr: { min: 1.0, ideal: 2.5, description: "Taxa de prenhez elevada" },
-  pl: { min: 3.0, ideal: 6.0, description: "Longevidade produtiva superior" },
-  liv: { min: 3.0, ideal: 6.0, description: "Longevidade funcional ideal" },
-  scs: { min: 2.5, ideal: 2.7, description: "Contagem de células somáticas baixa (menor é melhor)" },
-  ccr: { min: 1.0, ideal: 2.5, description: "Taxa de concepção de vacas elevada" },
-  hcr: { min: 1.0, ideal: 2.5, description: "Taxa de concepção de novilhas elevada" },
-  ptat: { min: 1.5, ideal: 2.5, description: "Tipo funcional superior" },
+  hhp_dollar: { min: 400, ideal: 600, descKey: "ag.bench.hhp_dollar" },
+  tpi: { min: 2400, ideal: 2800, descKey: "ag.bench.tpi" },
+  nm_dollar: { min: 500, ideal: 700, descKey: "ag.bench.nm_dollar" },
+  cm_dollar: { min: 400, ideal: 600, descKey: "ag.bench.cm_dollar" },
+  fm_dollar: { min: 400, ideal: 600, descKey: "ag.bench.fm_dollar" },
+  gm_dollar: { min: 400, ideal: 600, descKey: "ag.bench.gm_dollar" },
+  ptam: { min: 800, ideal: 1200, descKey: "ag.bench.ptam" },
+  ptaf: { min: 50, ideal: 80, descKey: "ag.bench.ptaf" },
+  ptaf_pct: { min: 0.05, ideal: 0.10, descKey: "ag.bench.ptaf_pct" },
+  ptap: { min: 40, ideal: 60, descKey: "ag.bench.ptap" },
+  ptap_pct: { min: 0.04, ideal: 0.08, descKey: "ag.bench.ptap_pct" },
+  dpr: { min: 1.0, ideal: 2.5, descKey: "ag.bench.dpr" },
+  pl: { min: 3.0, ideal: 6.0, descKey: "ag.bench.pl" },
+  liv: { min: 3.0, ideal: 6.0, descKey: "ag.bench.liv" },
+  scs: { min: 2.5, ideal: 2.7, descKey: "ag.bench.scs" },
+  ccr: { min: 1.0, ideal: 2.5, descKey: "ag.bench.ccr" },
+  hcr: { min: 1.0, ideal: 2.5, descKey: "ag.bench.hcr" },
+  ptat: { min: 1.5, ideal: 2.5, descKey: "ag.bench.ptat" },
 };
 
 // ========== Funções Auxiliares ==========
@@ -156,10 +157,11 @@ type TraitSeries = {
 };
 
 function HistogramCard({ series, step }: { series: TraitSeries; step: number }) {
+  const { t } = useTranslation();
   const cardRef = useRef<HTMLDivElement>(null);
   const { stats } = series;
   const benchmark = IDEAL_BENCHMARKS[series.traitKey];
-  const chartTitle = `Distribuição — ${series.label}`;
+  const chartTitle = `${t("ag.dist.distribution")} — ${series.label}`;
   useRegisterChart(`step7-dist-${series.traitKey}`, step, chartTitle, cardRef);
 
   return (
@@ -176,15 +178,15 @@ function HistogramCard({ series, step }: { series: TraitSeries; step: number }) 
           {/* Estatísticas Resumidas */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 text-sm">
             <div className="bg-muted/50 px-2 py-1 rounded">
-              <div className="text-xs text-muted-foreground">Média</div>
+              <div className="text-xs text-muted-foreground">{t("ag.dist.mean")}</div>
                <div className="font-semibold">{formatPtaValue(series.label, stats.mean)}</div>
             </div>
             <div className="bg-muted/50 px-2 py-1 rounded">
-              <div className="text-xs text-muted-foreground">Mediana</div>
+              <div className="text-xs text-muted-foreground">{t("ag.dist.median")}</div>
                <div className="font-semibold">{formatPtaValue(series.label, stats.median)}</div>
             </div>
             <div className="bg-muted/50 px-2 py-1 rounded">
-              <div className="text-xs text-muted-foreground">Desvio Padrão</div>
+              <div className="text-xs text-muted-foreground">{t("ag.dist.stdDev")}</div>
                <div className="font-semibold">{formatPtaValue(series.label, stats.std)}</div>
             </div>
             <div className="bg-muted/50 px-2 py-1 rounded">
@@ -192,7 +194,7 @@ function HistogramCard({ series, step }: { series: TraitSeries; step: number }) 
               <div className="font-semibold">{stats.cv.toFixed(1)}%</div>
             </div>
             <div className="bg-muted/50 px-2 py-1 rounded">
-              <div className="text-xs text-muted-foreground">Mín - Máx</div>
+              <div className="text-xs text-muted-foreground">{t("ag.dist.minMax")}</div>
                <div className="font-semibold text-xs">{formatPtaValue(series.label, stats.min)} – {formatPtaValue(series.label, stats.max)}</div>
             </div>
             <div className="bg-muted/50 px-2 py-1 rounded">
@@ -206,7 +208,7 @@ function HistogramCard({ series, step }: { series: TraitSeries; step: number }) 
             <div className="mt-2 flex items-center gap-2 text-xs">
               <Target className="h-3 w-3" />
               <span className="text-muted-foreground">
-                Meta ideal: <strong>≥{benchmark.ideal}</strong> ({benchmark.description})
+                {t("ag.dist.idealGoal")} <strong>≥{benchmark.ideal}</strong> ({t(benchmark.descKey as any)})
               </span>
             </div>
           )}
@@ -230,7 +232,7 @@ function HistogramCard({ series, step }: { series: TraitSeries; step: number }) 
               />
               <YAxis 
                 allowDecimals={false}
-                label={{ value: 'Frequência', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
+                label={{ value: t("ag.dist.frequency"), angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
               />
               <Tooltip 
                 content={({ active, payload }) => {
@@ -240,10 +242,10 @@ function HistogramCard({ series, step }: { series: TraitSeries; step: number }) 
                     return (
                       <div className="bg-popover border border-border p-3 rounded-md shadow-lg text-sm">
                         <p className="font-semibold mb-1">{data.bin}</p>
-                        <p>Frequência: <strong className="text-primary">{data.n}</strong> ({pct}%)</p>
-                        <p className="text-xs text-muted-foreground mt-1">Centro: {data.midpoint.toFixed(2)}</p>
+                        <p>{t("ag.dist.frequency")}: <strong className="text-primary">{data.n}</strong> ({pct}%)</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t("ag.dist.center")} {data.midpoint.toFixed(2)}</p>
                         <p className="text-xs text-muted-foreground">
-                          {data.zScore < 0.5 ? '✓ Próximo da média' : data.zScore < 1.5 ? '→ Moderado' : '⚠️ Distante da média'}
+                          {data.zScore < 0.5 ? `✓ ${t("ag.dist.closeToMean")}` : data.zScore < 1.5 ? `→ ${t("ag.dist.moderate")}` : `⚠️ ${t("ag.dist.farFromMean")}`}
                         </p>
                       </div>
                     );
@@ -265,15 +267,15 @@ function HistogramCard({ series, step }: { series: TraitSeries; step: number }) 
         <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: "hsl(var(--chart-1))" }} />
-            <span>Próximo da média (±0.5σ)</span>
+            <span>{t("ag.dist.closeToMeanLegend")}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: "hsl(var(--chart-2))" }} />
-            <span>Moderado (0.5σ - 1.5σ)</span>
+            <span>{t("ag.dist.moderateLegend")}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: "hsl(var(--chart-3))" }} />
-            <span>Distante (&gt;1.5σ)</span>
+            <span>{t("ag.dist.farFromMeanLegend")}</span>
           </div>
         </div>
       </CardContent>
@@ -283,6 +285,7 @@ function HistogramCard({ series, step }: { series: TraitSeries; step: number }) 
 
 function Step7DistribuicaoContent() {
   const { farmId, ptasSelecionadas = [], setPTAs } = useAGFilters();
+  const { t } = useTranslation();
   const allTraits = useAllTraits();
 
   const [loading, setLoading] = useState(false);
@@ -414,21 +417,21 @@ function Step7DistribuicaoContent() {
             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="gap-2">
-                  Selecionar PTAs <ChevronDown className="h-4 w-4" />
+                  {t("ag.dist.selectPtas")} <ChevronDown className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-0" align="start">
                 <div className="p-3 border-b">
                   <Input
-                    placeholder="Buscar PTA..."
+                    placeholder={t("ag.dist.searchPta")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="h-8"
                   />
                 </div>
                 <div className="p-2 border-b flex gap-2">
-                  <Button size="sm" variant="ghost" onClick={selectAll}>Todas</Button>
-                  <Button size="sm" variant="ghost" onClick={clearAll}>Limpar</Button>
+                  <Button size="sm" variant="ghost" onClick={selectAll}>{t("ag.dist.all")}</Button>
+                  <Button size="sm" variant="ghost" onClick={clearAll}>{t("ag.dist.clear")}</Button>
                 </div>
                 <ScrollArea className="h-[300px]">
                   <div className="p-2 space-y-1">
@@ -450,7 +453,7 @@ function Step7DistribuicaoContent() {
             </Popover>
 
             <span className="text-sm text-muted-foreground">
-              {ptasSelecionadas.length} selecionadas
+              {ptasSelecionadas.length} {t("ag.dist.selected")}
             </span>
           </div>
 
@@ -472,7 +475,7 @@ function Step7DistribuicaoContent() {
         </CardContent>
       </Card>
 
-      {loading && <div className="text-sm text-muted-foreground">Carregando…</div>}
+      {loading && <div className="text-sm text-muted-foreground">{t("ag.dist.loading")}</div>}
 
       {series.map((s) => (
         <HistogramCard key={s.traitKey} series={s} step={7} />
@@ -480,7 +483,7 @@ function Step7DistribuicaoContent() {
 
       {series.length === 0 && !loading && (
         <div className="text-sm text-muted-foreground">
-          Selecione PTAs para visualizar a distribuição.
+          {t("ag.dist.selectToView")}
         </div>
       )}
     </div>

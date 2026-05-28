@@ -35,6 +35,7 @@ import { generateGeneralReport, downloadPDF } from '@/lib/pdf/generateGeneralRep
 import { useFileStore } from '@/hooks/useFileStore';
 import { useToast } from '@/hooks/use-toast';
 import ReportSectionRenderer from './ReportSectionRenderer';
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface GeneralReportModalProps {
   open: boolean;
@@ -61,11 +62,15 @@ const REPORT_GROUPS = [
   {
     id: 'herd',
     title: 'Dados do Rebanho',
+    titleEn: 'Herd Data',
+    titleEs: 'Datos del Rebaño',
     types: ['herd_summary', 'segmentation'] as ReportType[],
   },
   {
     id: 'auditoria',
     title: 'Auditoria Genética (7 Etapas)',
+    titleEn: 'Genetic Audit (7 Steps)',
+    titleEs: 'Auditoría Genética (7 Pasos)',
     types: [
       'auditoria_step1',
       'auditoria_step2',
@@ -101,6 +106,9 @@ export default function GeneralReportModal({
     reset,
   } = useGeneralReport();
 
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
   const [showRenderer, setShowRenderer] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { addReport } = useFileStore();
@@ -110,8 +118,8 @@ export default function GeneralReportModal({
     const selectedReports = getSelectedReports();
     if (selectedReports.length === 0) {
       toast({
-        title: 'Nenhum relatório selecionado',
-        description: 'Selecione pelo menos um relatório para gerar o PDF.',
+        title: isEs ? 'Ningún informe seleccionado' : isEn ? 'No report selected' : 'Nenhum relatório selecionado',
+        description: isEs ? 'Seleccione al menos un informe para generar el PDF.' : isEn ? 'Select at least one report to generate the PDF.' : 'Selecione pelo menos um relatório para gerar o PDF.',
         variant: 'destructive',
       });
       return;
@@ -121,7 +129,7 @@ export default function GeneralReportModal({
     setShowRenderer(true);
 
     // Wait for renderer to mount and render charts (needs time for async data fetching)
-    setProgress(5, 'Carregando dados dos relatórios...');
+    setProgress(5, isEs ? 'Cargando datos de los informes...' : isEn ? 'Loading report data...' : 'Carregando dados dos relatórios...');
     await new Promise(resolve => setTimeout(resolve, 3500));
 
     try {
@@ -156,14 +164,14 @@ export default function GeneralReportModal({
           metadata: {
             createdAt: new Date().toISOString(),
             size: blob.size,
-            description: `Relatório geral consolidado - ${selectedReports.length} seções`,
+            description: isEs ? `Informe general consolidado - ${selectedReports.length} secciones` : isEn ? `Consolidated general report - ${selectedReports.length} sections` : `Relatório geral consolidado - ${selectedReports.length} seções`,
           },
           fileBlob: blob,
         });
 
         toast({
-          title: 'Relatório gerado com sucesso!',
-          description: 'O arquivo foi baixado e salvo na Pasta de Arquivos.',
+          title: isEs ? '¡Informe generado exitosamente!' : isEn ? 'Report generated successfully!' : 'Relatório gerado com sucesso!',
+          description: isEs ? 'El archivo se descargó y se guardó en la carpeta de Archivos.' : isEn ? 'The file has been downloaded and saved to the Files folder.' : 'O arquivo foi baixado e salvo na Pasta de Arquivos.',
         });
 
         setTimeout(() => {
@@ -174,8 +182,8 @@ export default function GeneralReportModal({
     } catch (error) {
       console.error('Error generating report:', error);
       toast({
-        title: 'Erro ao gerar relatório',
-        description: 'Ocorreu um erro durante a geração. Tente novamente.',
+        title: isEs ? 'Error al generar informe' : isEn ? 'Error generating report' : 'Erro ao gerar relatório',
+        description: isEs ? 'Ocurrió un error durante la generación. Intente nuevamente.' : isEn ? 'An error occurred during generation. Please try again.' : 'Ocorreu um erro durante a geração. Tente novamente.',
         variant: 'destructive',
       });
     } finally {
@@ -207,10 +215,10 @@ export default function GeneralReportModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
-              Gerar Relatório Geral
+              {isEs ? "Generar Informe General" : isEn ? "Generate General Report" : "Gerar Relatório Geral"}
             </DialogTitle>
             <DialogDescription>
-              {farmName} - Selecione os relatórios para incluir no PDF consolidado
+              {farmName} - {isEs ? "Seleccione los informes para incluir en el PDF consolidado" : isEn ? "Select reports to include in the consolidated PDF" : "Selecione os relatórios para incluir no PDF consolidado"}
             </DialogDescription>
           </DialogHeader>
 
@@ -218,7 +226,7 @@ export default function GeneralReportModal({
             <div className="flex-1 flex flex-col items-center justify-center py-12 space-y-6">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
               <div className="text-center space-y-2">
-                <p className="font-medium">{progressMessage || 'Gerando relatório...'}</p>
+                <p className="font-medium">{progressMessage || (isEs ? 'Generando informe...' : isEn ? 'Generating report...' : 'Gerando relatório...')}</p>
                 <Progress value={progress} className="w-64" />
                 <p className="text-sm text-muted-foreground">{progress}%</p>
               </div>
@@ -241,7 +249,7 @@ export default function GeneralReportModal({
                         <AccordionTrigger className="hover:no-underline py-3 px-2">
                           <div className="flex items-center gap-3 flex-1">
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium text-left">{group.title}</div>
+                              <div className="font-medium text-left">{isEs ? (group as any).titleEs : isEn ? (group as any).titleEn : group.title}</div>
                             </div>
                             {selectedInGroup > 0 && (
                               <Badge variant="default" className="text-xs">
@@ -254,7 +262,7 @@ export default function GeneralReportModal({
                           <div className="space-y-1">
                             {isAuditoria && groupReports.length > 3 && (
                               <div className="text-xs text-muted-foreground pb-1">
-                                Role para ver todas as 7 etapas.
+                                {isEs ? "Desplácese para ver los 7 pasos." : isEn ? "Scroll to see all 7 steps." : "Role para ver todas as 7 etapas."}
                               </div>
                             )}
 
@@ -272,7 +280,7 @@ export default function GeneralReportModal({
                                   <div className="flex items-center gap-2">
                                     <span className="text-muted-foreground">{REPORT_ICONS[report.type]}</span>
                                     <span className="font-medium text-sm">
-                                      {isAuditoria ? `Etapa ${idx + 1} — ${report.label.replace(/^Auditoria\s+-\s+/i, '')}` : report.label}
+                                      {isAuditoria ? `${isEs ? "Paso" : isEn ? "Step" : "Etapa"} ${idx + 1} — ${report.label.replace(/^Auditoria\s+-\s+/i, '')}` : report.label}
                                     </span>
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -294,12 +302,12 @@ export default function GeneralReportModal({
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Settings2 className="h-4 w-4" />
-                  Opções do PDF
+                  {isEs ? "Opciones del PDF" : isEn ? "PDF Options" : "Opções do PDF"}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Orientação</Label>
+                    <Label>{isEs ? "Orientación" : isEn ? "Orientation" : "Orientação"}</Label>
                     <RadioGroup
                       value={config.orientation}
                       onValueChange={(v) => updateConfig({ orientation: v as 'landscape' | 'portrait' })}
@@ -308,41 +316,41 @@ export default function GeneralReportModal({
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="landscape" id="landscape" />
                         <Label htmlFor="landscape" className="font-normal cursor-pointer">
-                          Paisagem
+                          {isEs ? "Horizontal" : isEn ? "Landscape" : "Paisagem"}
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="portrait" id="portrait" />
                         <Label htmlFor="portrait" className="font-normal cursor-pointer">
-                          Retrato
+                          {isEs ? "Vertical" : isEn ? "Portrait" : "Retrato"}
                         </Label>
                       </div>
                     </RadioGroup>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Opções</Label>
+                    <Label>{isEs ? "Opciones" : isEn ? "Options" : "Opções"}</Label>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <Checkbox
                           checked={config.includeCover}
                           onCheckedChange={(c) => updateConfig({ includeCover: !!c })}
                         />
-                        <span className="text-sm">Incluir Capa</span>
+                        <span className="text-sm">{isEs ? "Incluir Portada" : isEn ? "Include Cover" : "Incluir Capa"}</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <Checkbox
                           checked={config.includeIndex}
                           onCheckedChange={(c) => updateConfig({ includeIndex: !!c })}
                         />
-                        <span className="text-sm">Incluir Índice</span>
+                        <span className="text-sm">{isEs ? "Incluir Índice" : isEn ? "Include Index" : "Incluir Índice"}</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <Checkbox
                           checked={config.includePageNumbers}
                           onCheckedChange={(c) => updateConfig({ includePageNumbers: !!c })}
                         />
-                        <span className="text-sm">Numerar Páginas</span>
+                        <span className="text-sm">{isEs ? "Numerar Páginas" : isEn ? "Page Numbers" : "Numerar Páginas"}</span>
                       </label>
                     </div>
                   </div>
@@ -350,9 +358,13 @@ export default function GeneralReportModal({
 
                 <div className="flex items-center justify-between text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
                   <span>
-                    {selectedCount} relatório{selectedCount !== 1 ? 's' : ''} selecionado{selectedCount !== 1 ? 's' : ''}
+                    {isEs
+                      ? `${selectedCount} informe${selectedCount !== 1 ? 's' : ''} seleccionado${selectedCount !== 1 ? 's' : ''}`
+                      : isEn
+                      ? `${selectedCount} report${selectedCount !== 1 ? 's' : ''} selected`
+                      : `${selectedCount} relatório${selectedCount !== 1 ? 's' : ''} selecionado${selectedCount !== 1 ? 's' : ''}`}
                   </span>
-                  <span>~{estimatedPages} páginas estimadas</span>
+                  <span>~{estimatedPages} {isEs ? "páginas estimadas" : isEn ? "estimated pages" : "páginas estimadas"}</span>
                 </div>
               </div>
             </>
@@ -360,18 +372,18 @@ export default function GeneralReportModal({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating}>
-              Cancelar
+              {isEs ? "Cancelar" : isEn ? "Cancel" : "Cancelar"}
             </Button>
             <Button onClick={handleGenerate} disabled={isGenerating || selectedCount === 0}>
               {isGenerating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Gerando...
+                  {isEs ? "Generando..." : isEn ? "Generating..." : "Gerando..."}
                 </>
               ) : (
                 <>
                   <Download className="mr-2 h-4 w-4" />
-                  Gerar PDF Consolidado
+                  {isEs ? "Generar PDF Consolidado" : isEn ? "Generate Consolidated PDF" : "Gerar PDF Consolidado"}
                 </>
               )}
             </Button>

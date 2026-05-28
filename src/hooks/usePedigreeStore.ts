@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getLocale } from '@/lib/i18n';
 import {
   NEXUS2_PTA_DEFINITIONS,
   NEXUS2_PTA_KEY_TO_LABEL,
@@ -223,19 +224,23 @@ export const getBullFromCache = (naab: string, cache: Record<string, Bull>): Bul
 };
 
 export const validateNaabs = (input: PedigreeInput): string[] => {
+  const loc = getLocale();
+  const isEn = loc === 'en-US';
+  const isEs = loc === 'es';
+  const l = (pt: string, en: string, es: string) => isEs ? es : isEn ? en : pt;
   const errors: string[] = [];
-  
+
   if (!input.sireNaab.trim()) {
-    errors.push('NAAB do Pai é obrigatório');
+    errors.push(l('NAAB do Pai é obrigatório', 'Sire NAAB is required', 'NAAB del Padre es obligatorio'));
   }
-  
+
   if (!input.mgsNaab.trim()) {
-    errors.push('NAAB do Avô Materno é obrigatório');
+    errors.push(l('NAAB do Avô Materno é obrigatório', 'MGS NAAB is required', 'NAAB del Abuelo Materno es obligatorio'));
   }
-  
+
   if (!input.mmgsNaab.trim()) {
-    errors.push('NAAB do Bisavô Materno é obrigatório');
+    errors.push(l('NAAB do Bisavô Materno é obrigatório', 'MMGS NAAB is required', 'NAAB del Bisabuelo Materno es obligatorio'));
   }
-  
+
   return errors;
 };

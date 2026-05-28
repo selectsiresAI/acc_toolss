@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ interface EstruturalPopulacionalProps {
 }
 
 export default function EstruturalPopulacional({ className }: EstruturalPopulacionalProps) {
+  const { t } = useTranslation();
   const { selectedHerdId, dashboardCounts, refreshFromSupabase } = useHerdStore();
   const [activeTab, setActiveTab] = useState("auto");
   const [manualCounts, setManualCounts] = useState({
@@ -74,13 +76,13 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
     <div className={className}>
       <Card>
         <CardHeader>
-          <CardTitle>Estrutura Populacional</CardTitle>
+          <CardTitle>{t('pop.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="auto">Automático</TabsTrigger>
-              <TabsTrigger value="manual">Manual</TabsTrigger>
+              <TabsTrigger value="auto">{t('pop.automatic')}</TabsTrigger>
+              <TabsTrigger value="manual">{t('pop.manual')}</TabsTrigger>
             </TabsList>
             
             <TabsContent value="auto" className="space-y-4">
@@ -93,12 +95,12 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
                   className="flex items-center gap-2"
                 >
                   <RefreshCw className="w-4 h-4" />
-                  Recalcular
+                  {t('pop.recalculate')}
                 </Button>
                 
                 {selectedHerdId && totalAptas > 0 && (
                   <span className="text-sm text-green-600 font-medium">
-                    ✅ Estrutura calculada automaticamente: {totalAptas} fêmeas aptas
+                    ✅ {t('pop.calculated')} {totalAptas} {t('pop.eligibleFemales')}
                   </span>
                 )}
               </div>
@@ -106,9 +108,9 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
               {showEmptyAlert && (
                 <Alert className="border-yellow-200 bg-yellow-50">
                   <AlertDescription className="text-yellow-800">
-                    {!selectedHerdId 
-                      ? "❌ Selecione um rebanho na página principal para calcular automaticamente a estrutura populacional"
-                      : "⚠️ Nenhuma fêmea encontrada no rebanho selecionado. Verifique se os dados estão carregados na página Rebanho."
+                    {!selectedHerdId
+                      ? `❌ ${t('pop.noHerdSelected')}`
+                      : `⚠️ ${t('pop.noFemalesFound')}`
                     }
                   </AlertDescription>
                 </Alert>
@@ -116,7 +118,7 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="input-novilhas">Novilhas (paridade = 0)</Label>
+                  <Label htmlFor="input-novilhas">{t('pop.heifersParity')}</Label>
                   <Input
                     id="input-novilhas"
                     data-testid="input-novilhas"
@@ -128,7 +130,7 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
                 </div>
                 
                 <div>
-                  <Label htmlFor="input-primiparas">Primíparas (paridade = 1)</Label>
+                  <Label htmlFor="input-primiparas">{t('pop.primiparousParity')}</Label>
                   <Input
                     id="input-primiparas"
                     data-testid="input-primiparas"
@@ -140,7 +142,7 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
                 </div>
                 
                 <div>
-                  <Label htmlFor="input-secundiparas">Secundíparas (paridade = 2)</Label>
+                  <Label htmlFor="input-secundiparas">{t('pop.secondiparousParity')}</Label>
                   <Input
                     id="input-secundiparas"
                     data-testid="input-secundiparas"
@@ -152,7 +154,7 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
                 </div>
                 
                 <div>
-                  <Label htmlFor="input-multiparas">Multíparas (paridade ≥ 3)</Label>
+                  <Label htmlFor="input-multiparas">{t('pop.multiparousParity')}</Label>
                   <Input
                     id="input-multiparas"
                     data-testid="input-multiparas"
@@ -165,7 +167,7 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
               </div>
 
               <div className="mt-4">
-                <Label htmlFor="input-total-aptas">Total de fêmeas aptas</Label>
+                <Label htmlFor="input-total-aptas">{t('pop.totalEligible')}</Label>
                 <Input
                   id="input-total-aptas"
                   data-testid="input-total-aptas"
@@ -179,12 +181,12 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
             
             <TabsContent value="manual" className="space-y-4">
               <div className="text-sm text-blue-600 mb-4">
-                ℹ️ Modo manual: Você pode editar os valores diretamente. Para voltar aos dados automáticos, clique na aba "Automático".
+                {t('pop.manualHint')}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="manual-novilhas">Novilhas (paridade = 0)</Label>
+                  <Label htmlFor="manual-novilhas">{t('pop.heifersParity')}</Label>
                   <Input
                     id="manual-novilhas"
                     data-testid="input-novilhas"
@@ -196,7 +198,7 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
                 </div>
                 
                 <div>
-                  <Label htmlFor="manual-primiparas">Primíparas (paridade = 1)</Label>
+                  <Label htmlFor="manual-primiparas">{t('pop.primiparousParity')}</Label>
                   <Input
                     id="manual-primiparas"
                     data-testid="input-primiparas"
@@ -208,7 +210,7 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
                 </div>
                 
                 <div>
-                  <Label htmlFor="manual-secundiparas">Secundíparas (paridade = 2)</Label>
+                  <Label htmlFor="manual-secundiparas">{t('pop.secondiparousParity')}</Label>
                   <Input
                     id="manual-secundiparas"
                     data-testid="input-secundiparas"
@@ -220,7 +222,7 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
                 </div>
                 
                 <div>
-                  <Label htmlFor="manual-multiparas">Multíparas (paridade ≥ 3)</Label>
+                  <Label htmlFor="manual-multiparas">{t('pop.multiparousParity')}</Label>
                   <Input
                     id="manual-multiparas"
                     data-testid="input-multiparas"
@@ -233,7 +235,7 @@ export default function EstruturalPopulacional({ className }: EstruturalPopulaci
               </div>
 
               <div className="mt-4">
-                <Label htmlFor="manual-total-aptas">Total de fêmeas aptas</Label>
+                <Label htmlFor="manual-total-aptas">{t('pop.totalEligible')}</Label>
                 <Input
                   id="manual-total-aptas"
                   data-testid="input-total-aptas"

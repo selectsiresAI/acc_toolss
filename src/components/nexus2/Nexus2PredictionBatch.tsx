@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { t } from '@/lib/i18n';
+import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 import { getBullByNaab } from '@/supabase/queries/bulls';
 import { supabase } from '@/integrations/supabase/client';
@@ -150,7 +151,7 @@ const normalizeBirthDate = (dateStr: string): string | null => {
   return dateStr;
 };
 
-const buildResultExportRows = (rows: BatchRow[]) =>
+const buildResultExportRows = (rows: BatchRow[], isEn = false) =>
   rows
     .filter((row) => row.status === 'valid' && row.prediction)
     .map((row) => {
@@ -225,7 +226,7 @@ const buildResultExportRows = (rows: BatchRow[]) =>
          'ftp': formatPredictionValue('FTP', pred?.ftp ?? null),
          'RFI': formatPredictionValue('RFI', pred?.rfi ?? null),
          'GFI': formatPredictionValue('GFI', pred?.gfi ?? null),
-        'Fonte': 'Predição'
+        'Fonte': isEs ? 'Predicción' : isEn ? 'Prediction' : 'Predição'
       };
     });
 
@@ -322,6 +323,9 @@ interface Nexus2PredictionBatchProps {
 const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedFarmId }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { toast } = useToast();
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
 
   const [rows, setRows] = useState<BatchRow[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -791,7 +795,7 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
   };
 
   const exportResults = (format: 'xlsx' | 'csv') => {
-    const data = buildResultExportRows(rows);
+    const data = buildResultExportRows(rows, isEn);
 
     if (!data.length) {
       toast({
@@ -1124,7 +1128,7 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
                         {PREDICTION_TRAITS.map((trait) => (
                           <TableHead key={`prediction-${trait.key}`}>{trait.label}</TableHead>
                         ))}
-                        <TableHead>Fonte</TableHead>
+                        <TableHead>{isEs ? "Fuente" : isEn ? "Source" : "Fonte"}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1159,7 +1163,7 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
                                  {formatPredictionValue(trait.label, row.prediction?.[trait.key] ?? null)}
                               </TableCell>
                             ))}
-                            <TableCell>Predição</TableCell>
+                            <TableCell>{isEs ? "Predicción" : isEn ? "Prediction" : "Predição"}</TableCell>
                           </TableRow>
                         ))}
                     </TableBody>

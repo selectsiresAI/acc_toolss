@@ -8,6 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getHelpContent } from "./helpContent";
 import { SupportDialog } from "@/components/feedback/SupportDialog";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface HelpCenterProps {
   open: boolean;
@@ -18,9 +19,12 @@ interface HelpCenterProps {
 export function HelpCenter({ open, onOpenChange, context = 'dashboard' }: HelpCenterProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [supportOpen, setSupportOpen] = useState(false);
-  
+  const { locale } = useTranslation();
+  const isEn = locale === "en-US";
+  const isEs = locale === "es";
+
   // Obter conteúdo contextual baseado na página atual
-  const helpContent = getHelpContent(context);
+  const helpContent = getHelpContent(context, locale);
   
   // Função para navegar e fechar o modal
   const handleNavigate = (path: string) => {
@@ -52,7 +56,7 @@ export function HelpCenter({ open, onOpenChange, context = 'dashboard' }: HelpCe
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <HelpCircle className="h-5 w-5" />
-            Central de Ajuda
+            {isEs ? "Centro de Ayuda" : isEn ? "Help Center" : "Central de Ajuda"}
           </SheetTitle>
         </SheetHeader>
 
@@ -61,7 +65,7 @@ export function HelpCenter({ open, onOpenChange, context = 'dashboard' }: HelpCe
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar ajuda..."
+              placeholder={isEs ? "Buscar ayuda..." : isEn ? "Search help..." : "Buscar ajuda..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -72,13 +76,13 @@ export function HelpCenter({ open, onOpenChange, context = 'dashboard' }: HelpCe
           <Tabs defaultValue="faq" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="faq">FAQ</TabsTrigger>
-              <TabsTrigger value="recursos">Recursos</TabsTrigger>
+              <TabsTrigger value="recursos">{isEs ? "Recursos" : isEn ? "Resources" : "Recursos"}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="faq" className="space-y-4 mt-4">
               {filteredFAQ.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  Nenhuma pergunta encontrada
+                  {isEs ? "No se encontraron preguntas" : isEn ? "No questions found" : "Nenhuma pergunta encontrada"}
                 </p>
               ) : (
                 <Accordion type="single" collapsible className="w-full">
@@ -101,12 +105,12 @@ export function HelpCenter({ open, onOpenChange, context = 'dashboard' }: HelpCe
             <TabsContent value="recursos" className="space-y-4 mt-4">
               {filteredResources.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  Nenhum recurso encontrado
+                  {isEs ? "No se encontraron recursos" : isEn ? "No resources found" : "Nenhum recurso encontrado"}
                 </p>
               ) : (
                 <div className="space-y-3">
                   {filteredResources.map((resource, idx) => {
-                    const Icon = resource.type === "Vídeo" ? Video : Book;
+                    const Icon = (resource.type === "Vídeo" || resource.type === "Video") ? Video : Book;
                     return (
                       <Card key={idx} className="cursor-pointer hover:bg-accent transition-colors">
                         <CardHeader className="pb-3">
@@ -137,19 +141,19 @@ export function HelpCenter({ open, onOpenChange, context = 'dashboard' }: HelpCe
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
                 <MessageCircle className="h-4 w-4" />
-                Ainda precisa de ajuda?
+                {isEs ? "¿Aún necesita ayuda?" : isEn ? "Still need help?" : "Ainda precisa de ajuda?"}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Entre em contato com nossa equipe de suporte
+                {isEs ? "Contacte a nuestro equipo de soporte" : isEn ? "Contact our support team" : "Entre em contato com nossa equipe de suporte"}
               </p>
               <Button 
                 className="w-full" 
                 size="sm"
                 onClick={() => setSupportOpen(true)}
               >
-                Falar com Suporte
+                {isEs ? "Hablar con Soporte" : isEn ? "Talk to Support" : "Falar com Suporte"}
               </Button>
             </CardContent>
           </Card>

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Save, Trash2, Plus, Target, TrendingUp, Users, Milk, Heart, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from '@/hooks/useTranslation';
 import { HelpButton } from "@/components/help/HelpButton";
 import { HelpHint } from "@/components/help/HelpHint";
 interface Farm {
@@ -138,6 +139,47 @@ const metasProducaoPadrao: Omit<MetaProducao, 'id' | 'valorAtual' | 'valorMeta'>
   unidade: "%"
 }];
 const categoriasPopulacionais = ["Novilhas (0-12 meses)", "Novilhas (12-24 meses)", "Novilhas Prenhes", "Primíparas", "Secundíparas", "Multíparas", "Vacas Secas", "Vacas em Lactação", "Doadoras", "Receptoras"];
+
+const TRAIT_NAME_KEYS: Record<string, string> = {
+  "Escore Corporal Médio": "metas.trait.bodyScore",
+  "Peso Médio": "metas.trait.avgWeight",
+  "Altura Média": "metas.trait.avgHeight",
+  "Taxa de Prenhez": "metas.trait.pregnancyRate",
+  "Taxa de Concepção": "metas.trait.conceptionRate",
+  "Intervalo entre Partos": "metas.trait.calvingInterval",
+  "Idade ao Primeiro Parto": "metas.trait.firstCalvingAge",
+  "Taxa de Retenção de Placenta": "metas.trait.placentaRetention",
+  "Taxa de Mastite": "metas.trait.mastitisRate",
+  "Produção de Leite/Dia": "metas.trait.dailyMilk",
+  "Produção de Leite/Lactação": "metas.trait.lactationMilk",
+  "Teor de Gordura": "metas.trait.fatContent",
+  "Teor de Proteína": "metas.trait.proteinContent",
+  "CCS Médio": "metas.trait.avgScc",
+  "Persistência de Lactação": "metas.trait.lactationPersistence",
+};
+
+const UNIT_KEYS: Record<string, string> = {
+  "pontos": "metas.units.points",
+  "dólares": "metas.units.dollars",
+  "libras": "metas.units.pounds",
+  "dias": "metas.units.days",
+  "meses": "metas.units.months",
+  "litros": "metas.units.liters",
+  "mil/ml": "metas.units.thousandPerMl",
+};
+
+const POP_CAT_KEYS: Record<string, string> = {
+  "Novilhas (0-12 meses)": "metas.popCat.heifers0_12",
+  "Novilhas (12-24 meses)": "metas.popCat.heifers12_24",
+  "Novilhas Prenhes": "metas.popCat.pregnantHeifers",
+  "Primíparas": "metas.popCat.primiparous",
+  "Secundíparas": "metas.popCat.secondiparous",
+  "Multíparas": "metas.popCat.multiparous",
+  "Vacas Secas": "metas.popCat.dryCows",
+  "Vacas em Lactação": "metas.popCat.lactatingCows",
+  "Doadoras": "metas.popCat.donors",
+  "Receptoras": "metas.popCat.recipients",
+};
 export default function MetasPage({
   farm,
   onBack
@@ -153,6 +195,7 @@ export default function MetasPage({
   const {
     toast
   } = useToast();
+  const { t, locale } = useTranslation();
 
   // Carregar dados salvos do localStorage
   useEffect(() => {
@@ -223,8 +266,8 @@ export default function MetasPage({
     setMetas(metasAtualizadas);
     localStorage.setItem(`metas-${farm.id}`, JSON.stringify(metasAtualizadas));
     toast({
-      title: "Metas salvas",
-      description: "Suas metas foram salvas com sucesso."
+      title: t("metas.saved"),
+      description: t("metas.savedDesc")
     });
   };
   const atualizarMetaGenetica = (id: string, campo: 'valorAtual' | 'valorMeta', valor: number) => {
@@ -267,8 +310,8 @@ export default function MetasPage({
     inicializarMetasPadrao();
     localStorage.removeItem(`metas-${farm.id}`);
     toast({
-      title: "Metas reinicializadas",
-      description: "Todas as metas foram resetadas para os valores padrão."
+      title: t("metas.resetDone"),
+      description: t("metas.resetDesc")
     });
   };
   const calcularProgressoGenetico = (valorAtual: number, valorMeta: number) => {
@@ -286,28 +329,28 @@ export default function MetasPage({
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">Metas da Fazenda</h1>
-            <HelpHint content="Estabeleça objetivos mensuráveis em 4 áreas: Genética, Reproductiva, Produção e Populacional. Acompanhe o progresso em tempo real" />
+            <h1 className="text-2xl font-bold">{t("metas.title")}</h1>
+            <HelpHint content={t("metas.helpHint")} />
           </div>
           <div className="flex items-center gap-3">
             <Button variant="outline" onClick={limparTodasMetas} className="text-red-600">
               <Trash2 className="w-4 h-4 mr-2" />
-              Reinicializar
+              {t("metas.reset")}
             </Button>
             <Button onClick={salvarMetas}>
               <Save className="w-4 h-4 mr-2" />
-              Salvar Metas
+              {t("metas.save")}
             </Button>
           </div>
         </div>
 
         <Tabs defaultValue="geneticas" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="geneticas">Genéticas</TabsTrigger>
-            <TabsTrigger value="reproductivas">Reproductivas</TabsTrigger>
-            <TabsTrigger value="producao">Produção</TabsTrigger>
-            <TabsTrigger value="populacionais">Populacionais</TabsTrigger>
-            <TabsTrigger value="anotacoes">Anotações</TabsTrigger>
+            <TabsTrigger value="geneticas">{t("metas.tabGenetics")}</TabsTrigger>
+            <TabsTrigger value="reproductivas">{t("metas.tabReproductive")}</TabsTrigger>
+            <TabsTrigger value="producao">{t("metas.tabProduction")}</TabsTrigger>
+            <TabsTrigger value="populacionais">{t("metas.tabPopulation")}</TabsTrigger>
+            <TabsTrigger value="anotacoes">{t("metas.tabNotes")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="geneticas" className="space-y-6">
@@ -315,27 +358,27 @@ export default function MetasPage({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="w-5 h-5" />
-                  Metas Genéticas e Fenotípicas
+                  {t("metas.geneticTitle")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {metas.metasGeneticas.map(meta => <div key={meta.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
                     <div>
-                      <Label className="text-sm font-medium">{meta.nome}</Label>
-                      <p className="text-xs text-muted-foreground">{meta.categoria === 'genetica' ? 'Genética' : 'Fenotípica'}</p>
+                      <Label className="text-sm font-medium">{TRAIT_NAME_KEYS[meta.nome] ? t(TRAIT_NAME_KEYS[meta.nome] as any) : meta.nome}</Label>
+                      <p className="text-xs text-muted-foreground">{meta.categoria === 'genetica' ? t("metas.genetic") : t("metas.phenotypic")}</p>
                     </div>
                     <div>
-                      <Label className="text-sm">Valor Atual</Label>
+                      <Label className="text-sm">{t("metas.currentValue")}</Label>
                       <Input type="number" step="0.01" value={meta.valorAtual} onChange={e => atualizarMetaGenetica(meta.id, 'valorAtual', parseFloat(e.target.value) || 0)} placeholder="0" />
                     </div>
                     <div>
-                      <Label className="text-sm">Meta</Label>
+                      <Label className="text-sm">{t("metas.goal")}</Label>
                       <Input type="number" step="0.01" value={meta.valorMeta} onChange={e => atualizarMetaGenetica(meta.id, 'valorMeta', parseFloat(e.target.value) || 0)} placeholder="0" />
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-sm">
                         <span className="font-medium">{calcularProgressoGenetico(meta.valorAtual, meta.valorMeta).toFixed(1)}%</span>
-                        <p className="text-xs text-muted-foreground">{meta.unidade}</p>
+                        <p className="text-xs text-muted-foreground">{UNIT_KEYS[meta.unidade] ? t(UNIT_KEYS[meta.unidade] as any) : meta.unidade}</p>
                       </div>
                       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-primary transition-all" style={{
@@ -353,26 +396,26 @@ export default function MetasPage({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Heart className="w-5 h-5" />
-                  Metas Reproductivas
+                  {t("metas.reproductiveTitle")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {metas.metasReproductivas.map(meta => <div key={meta.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
                     <div>
-                      <Label className="text-sm font-medium">{meta.nome}</Label>
+                      <Label className="text-sm font-medium">{TRAIT_NAME_KEYS[meta.nome] ? t(TRAIT_NAME_KEYS[meta.nome] as any) : meta.nome}</Label>
                     </div>
                     <div>
-                      <Label className="text-sm">Valor Atual</Label>
+                      <Label className="text-sm">{t("metas.currentValue")}</Label>
                       <Input type="number" step="0.01" value={meta.valorAtual} onChange={e => atualizarMetaReproductiva(meta.id, 'valorAtual', parseFloat(e.target.value) || 0)} placeholder="0" />
                     </div>
                     <div>
-                      <Label className="text-sm">Meta</Label>
+                      <Label className="text-sm">{t("metas.goal")}</Label>
                       <Input type="number" step="0.01" value={meta.valorMeta} onChange={e => atualizarMetaReproductiva(meta.id, 'valorMeta', parseFloat(e.target.value) || 0)} placeholder="0" />
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-sm">
                         <span className="font-medium">{calcularProgressoGenetico(meta.valorAtual, meta.valorMeta).toFixed(1)}%</span>
-                        <p className="text-xs text-muted-foreground">{meta.unidade}</p>
+                        <p className="text-xs text-muted-foreground">{UNIT_KEYS[meta.unidade] ? t(UNIT_KEYS[meta.unidade] as any) : meta.unidade}</p>
                       </div>
                       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-green-500 transition-all" style={{
@@ -390,26 +433,26 @@ export default function MetasPage({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Milk className="w-5 h-5" />
-                  Metas de Produção
+                  {t("metas.productionTitle")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {metas.metasProducao.map(meta => <div key={meta.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
                     <div>
-                      <Label className="text-sm font-medium">{meta.nome}</Label>
+                      <Label className="text-sm font-medium">{TRAIT_NAME_KEYS[meta.nome] ? t(TRAIT_NAME_KEYS[meta.nome] as any) : meta.nome}</Label>
                     </div>
                     <div>
-                      <Label className="text-sm">Valor Atual</Label>
+                      <Label className="text-sm">{t("metas.currentValue")}</Label>
                       <Input type="number" step="0.01" value={meta.valorAtual} onChange={e => atualizarMetaProducao(meta.id, 'valorAtual', parseFloat(e.target.value) || 0)} placeholder="0" />
                     </div>
                     <div>
-                      <Label className="text-sm">Meta</Label>
+                      <Label className="text-sm">{t("metas.goal")}</Label>
                       <Input type="number" step="0.01" value={meta.valorMeta} onChange={e => atualizarMetaProducao(meta.id, 'valorMeta', parseFloat(e.target.value) || 0)} placeholder="0" />
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-sm">
                         <span className="font-medium">{calcularProgressoGenetico(meta.valorAtual, meta.valorMeta).toFixed(1)}%</span>
-                        <p className="text-xs text-muted-foreground">{meta.unidade}</p>
+                        <p className="text-xs text-muted-foreground">{UNIT_KEYS[meta.unidade] ? t(UNIT_KEYS[meta.unidade] as any) : meta.unidade}</p>
                       </div>
                       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-blue-500 transition-all" style={{
@@ -427,26 +470,26 @@ export default function MetasPage({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
-                  Metas Populacionais
+                  {t("metas.populationTitle")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {metas.metasPopulacionais.map(meta => <div key={meta.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
                     <div>
-                      <Label className="text-sm font-medium">{meta.categoria}</Label>
+                      <Label className="text-sm font-medium">{POP_CAT_KEYS[meta.categoria] ? t(POP_CAT_KEYS[meta.categoria] as any) : meta.categoria}</Label>
                     </div>
                     <div>
-                      <Label className="text-sm">Quantidade Atual</Label>
+                      <Label className="text-sm">{t("metas.currentQuantity")}</Label>
                       <Input type="number" value={meta.quantidadeAtual} onChange={e => atualizarMetaPopulacional(meta.id, 'quantidadeAtual', parseInt(e.target.value) || 0)} placeholder="0" />
                     </div>
                     <div>
-                      <Label className="text-sm">Meta</Label>
+                      <Label className="text-sm">{t("metas.goal")}</Label>
                       <Input type="number" value={meta.quantidadeMeta} onChange={e => atualizarMetaPopulacional(meta.id, 'quantidadeMeta', parseInt(e.target.value) || 0)} placeholder="0" />
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-sm">
                         <span className="font-medium">{calcularProgressoPopulacional(meta.quantidadeAtual, meta.quantidadeMeta).toFixed(1)}%</span>
-                        <p className="text-xs text-muted-foreground">animais</p>
+                        <p className="text-xs text-muted-foreground">{t("metas.animals")}</p>
                       </div>
                       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-orange-500 transition-all" style={{
@@ -464,23 +507,23 @@ export default function MetasPage({
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Target className="w-5 h-5" />
-                  Anotações e Observações
+                  {t("metas.notesTitle")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
                     <Label className="text-sm font-medium mb-2 block">
-                      Anotações Gerais da Fazenda
+                      {t("metas.generalNotes")}
                     </Label>
-                    <Textarea placeholder="Digite suas anotações sobre metas, estratégias, observações importantes, números iniciais, auditoria genética, etc..." value={metas.anotacoes} onChange={e => setMetas(prev => ({
+                    <Textarea placeholder={t("metas.notesPlaceholder")} value={metas.anotacoes} onChange={e => setMetas(prev => ({
                     ...prev,
                     anotacoes: e.target.value
                   }))} className="min-h-[200px]" />
                   </div>
                   
                   {metas.dataAtualizacao && <div className="text-sm text-muted-foreground">
-                      Última atualização: {new Date(metas.dataAtualizacao).toLocaleString('pt-BR')}
+                      {t("metas.lastUpdate")} {new Date(metas.dataAtualizacao).toLocaleString(locale)}
                     </div>}
                 </div>
               </CardContent>
@@ -489,29 +532,29 @@ export default function MetasPage({
             {/* Card de resumo */}
             <Card>
               <CardHeader>
-                <CardTitle>Resumo das Metas</CardTitle>
+                <CardTitle>{t("metas.summaryTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="text-center p-4 bg-muted rounded-lg">
-                    <h3 className="font-medium">Metas Genéticas</h3>
+                    <h3 className="font-medium">{t("metas.geneticGoals")}</h3>
                     <p className="text-2xl font-bold text-primary">{metas.metasGeneticas.length}</p>
-                    <p className="text-sm text-muted-foreground">definidas</p>
+                    <p className="text-sm text-muted-foreground">{t("metas.defined")}</p>
                   </div>
                   <div className="text-center p-4 bg-muted rounded-lg">
-                    <h3 className="font-medium">Metas Reproductivas</h3>
+                    <h3 className="font-medium">{t("metas.reproductiveGoals")}</h3>
                     <p className="text-2xl font-bold text-green-600">{metas.metasReproductivas.length}</p>
-                    <p className="text-sm text-muted-foreground">definidas</p>
+                    <p className="text-sm text-muted-foreground">{t("metas.defined")}</p>
                   </div>
                   <div className="text-center p-4 bg-muted rounded-lg">
-                    <h3 className="font-medium">Metas de Produção</h3>
+                    <h3 className="font-medium">{t("metas.productionGoals")}</h3>
                     <p className="text-2xl font-bold text-blue-600">{metas.metasProducao.length}</p>
-                    <p className="text-sm text-muted-foreground">definidas</p>
+                    <p className="text-sm text-muted-foreground">{t("metas.defined")}</p>
                   </div>
                   <div className="text-center p-4 bg-muted rounded-lg">
-                    <h3 className="font-medium">Categorias Populacionais</h3>
+                    <h3 className="font-medium">{t("metas.populationCategories")}</h3>
                     <p className="text-2xl font-bold text-orange-600">{metas.metasPopulacionais.length}</p>
-                    <p className="text-sm text-muted-foreground">definidas</p>
+                    <p className="text-sm text-muted-foreground">{t("metas.defined")}</p>
                   </div>
                 </div>
               </CardContent>

@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, FileText } from "lucide-react";
 import ImportFemalesUploader from './ImportFemalesUploader';
 import { HhpRequiredTraitsCard } from './HhpRequiredTraitsCard';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface FemaleUploadModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ const FemaleUploadModal: React.FC<FemaleUploadModalProps> = ({
   farmName,
   onImportSuccess,
 }) => {
+  const { t } = useTranslation();
   const downloadTemplate = React.useCallback(() => {
     const headers = [
       'identifier','name','cdcb_id','birth_date','category','parity_order',
@@ -63,9 +65,9 @@ const FemaleUploadModal: React.FC<FemaleUploadModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Importar Fêmeas</DialogTitle>
+          <DialogTitle>{t("femaleUpload.title")}</DialogTitle>
           <DialogDescription>
-            Faça upload de um arquivo CSV ou Excel com os dados das fêmeas para a fazenda {farmName}.
+            {t("femaleUpload.desc")} {farmName}.
           </DialogDescription>
         </DialogHeader>
 
@@ -73,7 +75,7 @@ const FemaleUploadModal: React.FC<FemaleUploadModalProps> = ({
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              O arquivo pode conter colunas em ordem diferente. Campos como id, farm_id, ptas, created_at e updated_at são ignorados (gerenciados automaticamente pelo sistema).
+              {t("femaleUpload.columnsNote")}
             </AlertDescription>
           </Alert>
 
@@ -84,14 +86,14 @@ const FemaleUploadModal: React.FC<FemaleUploadModalProps> = ({
           <div className="flex gap-2">
             <Button variant="outline" onClick={downloadTemplate} className="flex-1">
               <FileText className="w-4 h-4 mr-2" />
-              Baixar Template
+              {t("bulls.template")}
             </Button>
           </div>
 
           <div className="text-xs text-muted-foreground">
-            <strong>Formatos aceitos:</strong> CSV, Excel (.xlsx, .xls, .xlsm)<br />
-            <strong>Tamanho máximo:</strong> 10MB<br />
-            <strong>Codificação:</strong> UTF-8 (recomendado)
+            CSV, Excel (.xlsx, .xls, .xlsm)<br />
+            <strong>{t("femaleUpload.maxSize")}</strong> 10MB<br />
+            <strong>{t("femaleUpload.encoding")}</strong> {t("femaleUpload.encodingRecommended")}
           </div>
         </div>
       </DialogContent>
