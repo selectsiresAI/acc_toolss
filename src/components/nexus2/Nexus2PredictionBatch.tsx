@@ -151,7 +151,7 @@ const normalizeBirthDate = (dateStr: string): string | null => {
   return dateStr;
 };
 
-const buildResultExportRows = (rows: BatchRow[], isEn = false) =>
+const buildResultExportRows = (rows: BatchRow[], isEn = false, isEs = false) =>
   rows
     .filter((row) => row.status === 'valid' && row.prediction)
     .map((row) => {
