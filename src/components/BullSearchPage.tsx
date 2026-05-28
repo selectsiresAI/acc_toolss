@@ -564,7 +564,7 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
     if (rankedBulls.length === 0) return;
     import('xlsx').then(({ utils, writeFile }) => {
       import('@/lib/excel-date-formatter').then(({ autoFormatDateColumns }) => {
-        const isEn = locale === 'en';
+        const isEn = locale === 'en-US';
         const isEs = locale === 'es';
         const headers = ['NAAB', isEs ? 'Nombre' : isEn ? 'Name' : 'Nome', isEs ? 'Registro' : isEn ? 'Registration' : 'Registro', isEs ? 'Empresa' : isEn ? 'Company' : 'Empresa', isEs ? 'Fecha Nac.' : isEn ? 'Birth Date' : 'Data Nasc.', isEs ? 'Padre NAAB' : isEn ? 'Sire NAAB' : 'Pai NAAB', isEs ? 'Abuelo Materno' : isEn ? 'Maternal Grandsire' : 'Avô Materno', 'Score', 'HHP$', 'TPI', 'NM$', 'PTAM', 'CFP'];
         const dataRows = rankedBulls.map(bull => [
