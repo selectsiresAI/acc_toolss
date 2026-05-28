@@ -795,7 +795,7 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
   };
 
   const exportResults = (format: 'xlsx' | 'csv') => {
-    const data = buildResultExportRows(rows, isEn);
+    const data = buildResultExportRows(rows, isEn, isEs);
 
     if (!data.length) {
       toast({
