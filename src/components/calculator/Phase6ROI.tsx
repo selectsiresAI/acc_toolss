@@ -4,11 +4,11 @@ import { useGeneticCalculator } from "@/hooks/useGeneticCalculator";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const formatCurrency = (value: number, locale: string = 'pt-BR') => {
-  const currency = locale === 'pt-BR' ? 'BRL' : 'USD';
-  const displayLocale = locale === 'es' ? 'es-MX' : locale;
+  // M4: Sempre BRL — custos e receitas são em Reais
+  const displayLocale = locale === 'es' ? 'es-MX' : locale === 'en-US' ? 'pt-BR' : locale;
   return new Intl.NumberFormat(displayLocale, {
     style: 'currency',
-    currency,
+    currency: 'BRL',
   }).format(value);
 };
 
@@ -193,6 +193,7 @@ export function Phase6ROI() {
                   <td className="border border-gray-300 p-2 text-center">{roi.dairyMaleCalves}</td>
                   <td className="border border-gray-300 p-2 text-center">{formatCurrency(100, locale)}</td>
                   <td className="border border-gray-300 p-2 text-center">{formatCurrency(roi.dairyMaleCalves * 100, locale)}</td>
+
                   <td className="border border-gray-300 p-2 text-center">-</td>
                 </tr>
                 <tr>
@@ -214,7 +215,7 @@ export function Phase6ROI() {
                   <td className="border border-gray-300 p-2 text-center font-semibold">-</td>
                   <td className="border border-gray-300 p-2 text-center font-semibold">-</td>
                   <td className="border border-gray-300 p-2 text-center font-semibold">
-                    {formatCurrency(roi.dairyMaleCalves * 100 + roi.beefCalves * 400 + roi.beefHeifers * 500, locale)}
+                    {formatCurrency(roi.totalRevenue, locale)}
                   </td>
                   <td className="border border-gray-300 p-2 text-center font-semibold">-</td>
                 </tr>
@@ -234,7 +235,7 @@ export function Phase6ROI() {
             <div>
               <span className="text-gray-600">{isEs ? "Ingresos por ventas:" : isEn ? "Sales revenue:" : "Receita vendas:"}</span>
               <span className="font-bold ml-2">
-                {formatCurrency(roi.dairyMaleCalves * 100 + roi.beefCalves * 400 + roi.beefHeifers * 500, locale)}
+                {formatCurrency(roi.totalRevenue, locale)}
               </span>
             </div>
             <div>

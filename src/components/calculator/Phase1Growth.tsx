@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,20 @@ export function Phase1Growth({ useReferenceNumbers, setUseReferenceNumbers }: Ph
   const updateField = <K extends keyof typeof growth>(key: K, value: number) => {
     setGrowthInputs((prev) => ({ ...prev, [key]: value }));
   };
+
+  // C5: Write reference values to state when checkbox is on
+  const REFERENCE_VALUES = {
+    cullingRate: 22.5,
+    calvingIntervalMonths: 12.5,
+    firstCalvingAge: 23,
+    abortionsCows: 15,
+  };
+
+  useEffect(() => {
+    if (useReferenceNumbers) {
+      setGrowthInputs((prev) => ({ ...prev, ...REFERENCE_VALUES }));
+    }
+  }, [useReferenceNumbers, setGrowthInputs]);
 
   return (
     <TooltipProvider>
@@ -63,7 +77,7 @@ export function Phase1Growth({ useReferenceNumbers, setUseReferenceNumbers }: Ph
                 </div>
                 <Input
                   type="number"
-                  value={useReferenceNumbers ? 22.5 : growth.cullingRate}
+                  value={growth.cullingRate}
                   onChange={(e) => updateField("cullingRate", Number(e.target.value))}
                   className="mt-1"
                   disabled={useReferenceNumbers}
@@ -83,7 +97,7 @@ export function Phase1Growth({ useReferenceNumbers, setUseReferenceNumbers }: Ph
                 </div>
                 <Input
                   type="number"
-                  value={useReferenceNumbers ? 12.5 : growth.calvingIntervalMonths}
+                  value={growth.calvingIntervalMonths}
                   onChange={(e) => updateField("calvingIntervalMonths", Number(e.target.value))}
                   className="mt-1"
                   disabled={useReferenceNumbers}
@@ -103,7 +117,7 @@ export function Phase1Growth({ useReferenceNumbers, setUseReferenceNumbers }: Ph
                 </div>
                 <Input
                   type="number"
-                  value={useReferenceNumbers ? 23 : growth.firstCalvingAge}
+                  value={growth.firstCalvingAge}
                   onChange={(e) => updateField("firstCalvingAge", Number(e.target.value))}
                   className="mt-1"
                   disabled={useReferenceNumbers}
@@ -223,7 +237,7 @@ export function Phase1Growth({ useReferenceNumbers, setUseReferenceNumbers }: Ph
                 </div>
                 <Input
                   type="number"
-                  value={useReferenceNumbers ? 15 : growth.abortionsCows}
+                  value={growth.abortionsCows}
                   onChange={(e) => updateField("abortionsCows", Number(e.target.value))}
                   className="mt-1"
                   disabled={useReferenceNumbers}

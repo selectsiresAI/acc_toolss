@@ -6,7 +6,6 @@ export type GrowthInputs = {
   cullingRate: number;                    // Taxa de descarte (%)
   calvingIntervalMonths: number;          // Intervalo entre partos (meses)
   firstCalvingAge: number;                // Idade ao primeiro parto (meses)
-  firstCalfMortality: number;             // Mortes do primeiro parto (%)
   stillbornHeifers: number;               // Novilhas natimortas (%)
   heiferDeathsPreWeaning: number;         // Novilhas mortas/vendidas após nasc. até o parto (%)
   targetHerdSize: number;                 // Tamanho do rebanho desejado (nº vacas em lactação)
@@ -172,7 +171,6 @@ export const DEFAULT_GROWTH_INPUTS: GrowthInputs = {
   cullingRate: 20,
   calvingIntervalMonths: 12.8,
   firstCalvingAge: 23,
-  firstCalfMortality: 23,
   stillbornHeifers: 3,
   heiferDeathsPreWeaning: 40,
   targetHerdSize: 1400,

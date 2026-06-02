@@ -166,10 +166,9 @@ function calculateOutputs(inputs: CalculatorInputs): CalculatorOutputs {
   // L9 = M7
   const CALCULATE_STRATEGY_L9 = CALC_M7;
 
-  // AM24, AM28, AM31 - Parâmetros de prenhez intermediários
-  // Derivados das taxas de concepção médias
+  // M2: Parâmetros de prenhez intermediários - usando taxas de concepção diretamente
   const AM24 = (conception.cows.conventional + conception.heifers.conventional) / 2 || 35;
-  const AM28 = AM24 * 1.1; // Ajuste baseado em padrões do setor
+  const AM28 = (conception.cows.conventional + conception.cows.sexedSemen) / 2 || AM24;
   const AM31 = (conception.heifers.sexedSemen + conception.heifers.conventional) / 2 || 45;
 
   // ============================================
@@ -178,7 +177,7 @@ function calculateOutputs(inputs: CalculatorInputs): CalculatorOutputs {
   
   // D30, D31 - Bases de cálculo
   const WWS_D30 = (AM28 / INPUT_PAGE_D6) * 12;
-  const WWS_D31 = AM24 / (INPUT_PAGE_D7 / 100); // Convertendo % para decimal
+  const WWS_D31 = AM31 / (INPUT_PAGE_D7 / 100); // Usando AM31 (novilhas) em vez de AM24
 
   // D23, D24 - Trimestre
   const WWS_D23 = AM24 > 0 ? WWS_D30 / AM24 : 0;
@@ -231,19 +230,19 @@ function calculateOutputs(inputs: CalculatorInputs): CalculatorOutputs {
       trimester: cowsInsemTrimester,
       monthly: cowsInsemMonthly,
       current: Math.round(currentInsemCows),
-      difference: cowsInsemTrimester - Math.round(currentInsemCows),
+      difference: cowsInsemMonthly - Math.round(currentInsemCows),
     } as InseminationProjection,
     heifers: {
       trimester: heifersInsemTrimester,
       monthly: heifersInsemMonthly,
       current: Math.round(currentInsemHeifers),
-      difference: heifersInsemTrimester - Math.round(currentInsemHeifers),
+      difference: heifersInsemMonthly - Math.round(currentInsemHeifers),
     } as InseminationProjection,
     total: {
       trimester: cowsInsemTrimester + heifersInsemTrimester,
       monthly: cowsInsemMonthly + heifersInsemMonthly,
       current: Math.round(currentInsemCows + currentInsemHeifers),
-      difference: (cowsInsemTrimester + heifersInsemTrimester) - 
+      difference: (cowsInsemMonthly + heifersInsemMonthly) -
                   Math.round(currentInsemCows + currentInsemHeifers),
     } as InseminationProjection,
   };
@@ -261,19 +260,19 @@ function calculateOutputs(inputs: CalculatorInputs): CalculatorOutputs {
       trimester: cowsPregTrimester,
       monthly: Math.round(cowsPregTrimester / 3),
       current: Math.round(currentPregCows),
-      difference: cowsPregTrimester - Math.round(currentPregCows),
+      difference: Math.round(cowsPregTrimester / 3) - Math.round(currentPregCows),
     } as PregnancyProjection,
     heifers: {
       trimester: heifersPregTrimester,
       monthly: Math.round(heifersPregTrimester / 3),
       current: Math.round(currentPregHeifers),
-      difference: heifersPregTrimester - Math.round(currentPregHeifers),
+      difference: Math.round(heifersPregTrimester / 3) - Math.round(currentPregHeifers),
     } as PregnancyProjection,
     total: {
       trimester: cowsPregTrimester + heifersPregTrimester,
       monthly: Math.round((cowsPregTrimester + heifersPregTrimester) / 3),
       current: Math.round(currentPregCows + currentPregHeifers),
-      difference: (cowsPregTrimester + heifersPregTrimester) - 
+      difference: Math.round((cowsPregTrimester + heifersPregTrimester) / 3) -
                   Math.round(currentPregCows + currentPregHeifers),
     } as PregnancyProjection,
   };
@@ -320,31 +319,25 @@ function calculateOutputs(inputs: CalculatorInputs): CalculatorOutputs {
   // ============================================
   
   // ---- SUBSTITUIÇÕES NECESSÁRIAS ----
-  
+
+  // Taxas de mortalidade (definidas primeiro, usadas em SURVIVAL_RATE)
+  const stillbornRate = growth.stillbornHeifers / 100; // ex: 8% → 0.08
+  const postBirthMortalityRate = growth.heiferDeathsPreWeaning / 100; // ex: 40% → 0.40
+
   // Novilhas necessárias ENTRANDO NO REBANHO (lactação)
-  // Fórmula: tamanho_rebanho * taxa_descarte * (intervalo_partos / 12)
   const heifersNeededAtLactation = Math.round(
     growth.targetHerdSize * (growth.cullingRate / 100) * (growth.calvingIntervalMonths / 12)
   );
-  
-  // Taxa de sobrevivência fixa do Excel (0.64)
-  // Representa sobrevivência do nascimento até entrada no rebanho
-  const SURVIVAL_RATE = 0.64;
-  
+
+  // C3: Taxa de sobrevivência calculada dos inputs do usuário
+  const SURVIVAL_RATE = (1 - stillbornRate) * (1 - postBirthMortalityRate);
+
   // Novilhas necessárias AO NASCER (bezerras vivas)
-  // Fórmula: necessárias_lactação / taxa_sobrevivência
   const heifersNeededAtBirth = Math.round(heifersNeededAtLactation / SURVIVAL_RATE);
   
-  // ---- SUBSTITUIÇÕES CRIADAS ----
-  // Lógica baseada na planilha Excel do usuário
-  
-  // Taxas de mortalidade
-  const stillbornRate = growth.stillbornHeifers / 100; // ex: 8% → 0.08
-  const postBirthMortalityRate = growth.heiferDeathsPreWeaning / 100; // ex: 40% → 0.40
-  
-  // Prenhezes anuais totais (vacas + novilhas)
-  const annualPregnancies = 
-    (growth.pregnantCowsPerMonth + growth.pregnantHeifersPerMonth) * 12;
+  // C4: Prenhezes anuais usando projeções calculadas (não valores atuais)
+  const annualPregnancies =
+    (pregnancies.cows.monthly + pregnancies.heifers.monthly) * 12;
   
   // Percentuais de uso de sêmen (0-100) vindos da estratégia
   const semenSexedPct = calculateSemenTypePercentage('sexed', strategy.heifersPlan, strategy.cowsPlan, strategy.heifersGroup, strategy.cowsGroup);
@@ -380,7 +373,7 @@ function calculateOutputs(inputs: CalculatorInputs): CalculatorOutputs {
   // Valores de compatibilidade com a UI existente
   const heifersNeeded = heifersNeededAtBirth;
 
-  // Custos por dose (valores configuráveis)
+  // C1: Custos por dose (valores em R$, consistentes com UI)
   const COST_SEXED = 200;
   const COST_CONV = 50;
   const COST_BEEF = 20;
@@ -396,10 +389,10 @@ function calculateOutputs(inputs: CalculatorInputs): CalculatorOutputs {
   const beefCalves = Math.round(annualBeef * (conception.cows.beef / 100));
   const beefHeifers = Math.round(beefCalves * 0.5);
 
-  // Receitas (valores configuráveis)
-  const VALUE_DAIRY_MALE = 1000;
-  const VALUE_BEEF_CALF = 5000;
-  const VALUE_BEEF_HEIFER = 5000;
+  // C1: Receitas por animal (valores em R$, consistentes com UI)
+  const VALUE_DAIRY_MALE = 100;
+  const VALUE_BEEF_CALF = 400;
+  const VALUE_BEEF_HEIFER = 500;
 
   const totalRevenue = 
     (dairyMaleCalves * VALUE_DAIRY_MALE) + 

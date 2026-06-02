@@ -160,7 +160,7 @@ export function Phase7Summary() {
           <div className="w-full bg-gray-200 rounded-full h-8 mb-4">
             <div 
               className="bg-blue-500 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" 
-              style={{ width: `${Math.min((roi.heifersNeeded / roi.totalHeifersBorn) * 100, 100)}%` }}
+              style={{ width: `${Math.min(roi.totalHeifersBorn > 0 ? (roi.heifersNeeded / roi.totalHeifersBorn) * 100 : 0, 100)}%` }}
             >
               {roi.heifersNeeded}
             </div>
