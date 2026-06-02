@@ -119,172 +119,63 @@ async function fetchBullsByNaabsMultiColumn(
     return resultMap;
   }
 
-  // Expand each NAAB into all plausible variants (HO↔H, leading zeros)
-  const variantToOriginal = new Map<string, string>(); // variant → original naab
+  // Expand each NAAB into all plausible variants (HO↔H, leading zeros, breed+number)
   const allVariants = new Set<string>();
+  const variantToOriginal = new Map<string, string>();
   for (const naab of cleaned) {
-    const vars = naabVariants(naab);
-    for (const v of vars) {
+    for (const v of naabVariants(naab)) {
       allVariants.add(v);
       if (!variantToOriginal.has(v)) variantToOriginal.set(v, naab);
+    }
+    // Also add breed+number suffixes for cross-company matching
+    for (const s of naabBreedNumberSuffixes(naab)) {
+      allVariants.add(s);
+      if (!variantToOriginal.has(s)) variantToOriginal.set(s, naab);
     }
   }
   const expandedNaabs = Array.from(allVariants);
 
-  console.debug(`[import] fetching bulls for ${cleaned.length} unique naabs → ${expandedNaabs.length} variants (chunksize=${lookupChunkSize})`);
+  console.debug(`[import] fetching bulls via aliases for ${cleaned.length} naabs → ${expandedNaabs.length} variants`);
 
+  // Batch lookup via bull_naab_aliases table (indexed, <1ms per lookup)
   const chunks = chunkArray(expandedNaabs, lookupChunkSize);
   for (const chunk of chunks) {
     try {
-      // try multi-column exact matches first (using expanded variants)
-      const qSire = supabase.from('bulls').select('id, naab_code, name, sire_naab, mgs_naab, mmgs_naab, code_normalized').in('sire_naab', chunk);
-      const qMgs = supabase.from('bulls').select('id, naab_code, name, sire_naab, mgs_naab, mmgs_naab, code_normalized').in('mgs_naab', chunk);
-      const qMmgs = supabase.from('bulls').select('id, naab_code, name, sire_naab, mgs_naab, mmgs_naab, code_normalized').in('mmgs_naab', chunk);
+      const { data, error } = await supabase
+        .from('bull_naab_aliases')
+        .select('naab_variant, bull_id, bulls!inner(id, naab_code, name, code_normalized)')
+        .in('naab_variant', chunk);
 
-      const [rS, rM, rMM] = await Promise.all([qSire, qMgs, qMmgs]);
-
-      const responses = [rS, rM, rMM];
-      for (const res of responses) {
-        if (res.error) {
-          // surface auth/RLS errors clearly
-          console.error('[import] fetch error', res.error);
-          throw res.error;
-        }
-        (res.data || []).forEach((row: any) => {
-          // Collect all keys this bull can be known by
-          const allKeys: string[] = [];
-          ['sire_naab', 'mgs_naab', 'mmgs_naab'].forEach((col) => {
-            const key = normalizeNaab(row[col]);
-            if (key) allKeys.push(key);
-          });
-          if (row.code_normalized) {
-            const k = normalizeNaab(row.code_normalized);
-            if (k) allKeys.push(k);
-          }
-          if (row.naab_code) {
-            const k2 = normalizeNaab(row.naab_code);
-            if (k2) allKeys.push(k2);
-          }
-          // Map each key and its variants back to the result
-          for (const key of allKeys) {
-            if (!resultMap.has(key)) resultMap.set(key, row);
-            // Also map the original naab that generated this variant
-            const orig = variantToOriginal.get(key);
+      if (error) {
+        console.error('[import] aliases lookup error, falling back to direct query', error);
+        // Fallback: direct bulls table lookup by code_normalized
+        const { data: fallbackData, error: fbError } = await supabase
+          .from('bulls')
+          .select('id, naab_code, name, code_normalized')
+          .in('code_normalized', chunk);
+        if (!fbError && fallbackData) {
+          for (const row of fallbackData) {
+            const key = normalizeNaab(row.code_normalized);
+            if (key && !resultMap.has(key)) resultMap.set(key, row);
+            const orig = key ? variantToOriginal.get(key) : null;
             if (orig && !resultMap.has(orig)) resultMap.set(orig, row);
-            // Generate variants for the key itself to cover reverse lookups
-            for (const v of naabVariants(key)) {
-              if (!resultMap.has(v)) resultMap.set(v, row);
-              const vOrig = variantToOriginal.get(v);
-              if (vOrig && !resultMap.has(vOrig)) resultMap.set(vOrig, row);
-            }
           }
-        });
+        }
+        continue;
       }
 
-      // For any remaining naabs not matched, try lookup by code_normalized and naab_code
-      const unmatched = chunk.filter(k => !resultMap.has(k));
-      if (unmatched.length > 0) {
-        // Also expand unmatched into their variants for code_normalized lookup
-        const unmatchedExpanded = new Set<string>();
-        for (const u of unmatched) {
-          unmatchedExpanded.add(u);
-          const orig = variantToOriginal.get(u);
-          if (orig) for (const v of naabVariants(orig)) unmatchedExpanded.add(v);
-        }
-        const expandedArr = Array.from(unmatchedExpanded);
-
-        const qCode = await supabase
-          .from('bulls')
-          .select('id, naab_code, name, sire_naab, mgs_naab, mmgs_naab, code_normalized')
-          .in('code_normalized', expandedArr);
-        const qNaab = await supabase
-          .from('bulls')
-          .select('id, naab_code, name, sire_naab, mgs_naab, mmgs_naab, code_normalized')
-          .in('naab_code', expandedArr);
-
-        for (const qResult of [qCode, qNaab]) {
-          if (qResult.error) {
-            console.debug('[import] code fallback query error', qResult.error);
-            continue;
-          }
-          (qResult.data || []).forEach((row: any) => {
-            const candidates = [
-              normalizeNaab(row.code_normalized),
-              normalizeNaab(row.naab_code),
-              normalizeNaab(row.sire_naab),
-              normalizeNaab(row.mgs_naab),
-              normalizeNaab(row.mmgs_naab),
-            ].filter(Boolean) as string[];
-            for (const k of candidates) {
-              if (!resultMap.has(k)) resultMap.set(k, row);
-              const orig = variantToOriginal.get(k);
-              if (orig && !resultMap.has(orig)) resultMap.set(orig, row);
-              for (const v of naabVariants(k)) {
-                if (!resultMap.has(v)) resultMap.set(v, row);
-                const vOrig = variantToOriginal.get(v);
-                if (vOrig && !resultMap.has(vOrig)) resultMap.set(vOrig, row);
-              }
-            }
-          });
-        }
-      }
-      // Final fallback: for still-unmatched naabs, try breed+number suffix
-      // ignoring company prefix (e.g., 011HO12771 → match any %HO12771 or %H12771)
-      const stillUnmatched = chunk.filter(k => {
-        if (resultMap.has(k)) return false;
-        const orig = variantToOriginal.get(k);
-        if (orig && resultMap.has(orig)) return false;
-        return true;
-      });
-      if (stillUnmatched.length > 0) {
-        // Collect unique breed+number suffixes to search
-        const suffixToOriginals = new Map<string, string[]>();
-        for (const u of stillUnmatched) {
-          const orig = variantToOriginal.get(u) || u;
-          const suffixes = naabBreedNumberSuffixes(orig);
-          for (const s of suffixes) {
-            if (!suffixToOriginals.has(s)) suffixToOriginals.set(s, []);
-            suffixToOriginals.get(s)!.push(orig);
-          }
-        }
-
-        if (suffixToOriginals.size > 0) {
-          // Build LIKE queries: code_normalized LIKE '%HO12771' OR code_normalized LIKE '%H12771'
-          const likeFilters = Array.from(suffixToOriginals.keys())
-            .map(s => `code_normalized.like.%${s}`)
-            .join(',');
-
-          console.debug(`[import] breed+number fallback for ${suffixToOriginals.size} suffixes`);
-          const qSuffix = await supabase
-            .from('bulls')
-            .select('id, naab_code, name, sire_naab, mgs_naab, mmgs_naab, code_normalized')
-            .or(likeFilters)
-            .limit(500);
-
-          if (qSuffix.error) {
-            console.debug('[import] breed+number fallback error', qSuffix.error);
-          } else {
-            (qSuffix.data || []).forEach((row: any) => {
-              const rowNorm = normalizeNaab(row.code_normalized) || '';
-              // Check which suffixes this row matches
-              for (const [suffix, originals] of suffixToOriginals.entries()) {
-                if (rowNorm.endsWith(suffix)) {
-                  for (const orig of originals) {
-                    if (!resultMap.has(orig)) {
-                      console.debug(`[import] breed+number match: ${orig} → ${row.naab_code} (${row.name})`);
-                      resultMap.set(orig, row);
-                    }
-                  }
-                  // Also map all variants of the originals
-                  for (const orig of originals) {
-                    for (const v of naabVariants(orig)) {
-                      if (!resultMap.has(v)) resultMap.set(v, row);
-                    }
-                  }
-                }
-              }
-            });
-          }
+      for (const alias of (data || [])) {
+        const bull = (alias as any).bulls;
+        if (!bull) continue;
+        const variant = alias.naab_variant;
+        // Map the variant itself
+        if (!resultMap.has(variant)) resultMap.set(variant, bull);
+        // Map the original naab that generated this variant
+        const orig = variantToOriginal.get(variant);
+        if (orig && !resultMap.has(orig)) resultMap.set(orig, bull);
+        // Also map by all keys of this bull
+        for (const key of [normalizeNaab(bull.naab_code), normalizeNaab(bull.code_normalized)]) {
+          if (key && !resultMap.has(key)) resultMap.set(key, bull);
         }
       }
     } catch (err) {
