@@ -121,7 +121,7 @@ function calculateWeightedMean(values: Array<{value: number, weight: number}>): 
   if (totalWeight === 0) return 0;
   
   const weightedSum = values.reduce((sum, item) => sum + (item.value * item.weight), 0);
-  return Math.round(weightedSum / totalWeight);
+  return weightedSum / totalWeight;
 }
 
 export const usePTAStore = create<PTAStoreState>((set, get) => ({
