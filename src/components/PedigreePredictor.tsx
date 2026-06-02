@@ -21,6 +21,7 @@ import {
 import { Calculator, Upload, Download } from 'lucide-react';
 import { utils, writeFileXLSX } from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
+import { getBullByNaab } from '@/supabase/queries/bulls';
 import { parseUniversalSpreadsheet } from '@/utils/headerNormalizer';
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -124,113 +125,81 @@ const clearAndReloadData = () => {
   alert('Agora usando dados direto do Supabase! Dados sempre atualizados.');
 };
 
-// Função de busca de touro via Supabase bulls_denorm
+// Função de busca de touro via RPC get_bull_by_naab (com fallback por sufixo)
 const fetchBullFromDatabase = async (naab: string): Promise<Bull | null> => {
-  const cleanNaab = naab.toUpperCase().trim();
-  
   try {
-    const { data, error } = await supabase
-      .rpc('get_bulls_denorm')
-      .eq('code', cleanNaab)
-      .single();
+    const bullData = await getBullByNaab(naab);
+    if (!bullData) return null;
 
-    if (error) {
-      return null;
-    }
-
-    if (data) {
-      
-      // Converter dados do Supabase para o formato Bull
-      const bullData = data as any;
-      const convertedBull: Bull = {
-        naab: bullData.code,
-        name: bullData.name || 'N/A',
-        company: bullData.company || 'N/A',
-        ptas: {
-          // Índices Econômicos
-          hhp_dollar: bullData.hhp_dollar ?? null,
-          tpi: bullData.tpi ?? null,
-          nm_dollar: bullData.nm_dollar ?? null,
-          cm_dollar: bullData.cm_dollar ?? null,
-          fm_dollar: bullData.fm_dollar ?? null,
-          gm_dollar: bullData.gm_dollar ?? null,
-          f_sav: bullData.f_sav ?? null,
-          
-          // Produção de Leite
-          milk: bullData.ptam ?? null, // PTAM = Milk in Supabase
-          fat: bullData.ptaf ?? null,
-          protein: bullData.ptap ?? null,
-          ptam: bullData.ptam ?? null,
-          cfp: bullData.cfp ?? null,
-          ptaf: bullData.ptaf ?? null,
-          ptaf_pct: bullData.ptaf_pct ?? null,
-          ptap: bullData.ptap ?? null,
-          ptap_pct: bullData.ptap_pct ?? null,
-          pl: bullData.pl ?? null,
-          
-          // Fertilidade
-          dpr: bullData.dpr ?? null,
-          
-          // Saúde e Longevidade
-          liv: bullData.liv ?? null,
-          scs: bullData.scs ?? null,
-          mast: bullData.mast ?? null,
-          met: bullData.met ?? null,
-          rp: bullData.rp ?? null,
-          da: bullData.da ?? null,
-          ket: bullData.ket ?? null,
-          mf: bullData.mf ?? null,
-          
-          // Conformação
-          ptat: bullData.ptat ?? null,
-          udc: bullData.udc ?? null,
-          flc: bullData.flc ?? null,
-          sce: bullData.sce ?? null,
-          dce: bullData.dce ?? null,
-          ssb: bullData.ssb ?? null,
-          dsb: bullData.dsb ?? null,
-          h_liv: bullData.h_liv ?? null,
-          
-          // Reprodução
-          ccr: bullData.ccr ?? null,
-          hcr: bullData.hcr ?? null,
-          
-          // Outras características
-          fi: bullData.fi ?? null,
-          bwc: bullData.bwc ?? null,
-          
-          // Conformação Detalhada
-          sta: bullData.sta ?? null,
-          str: bullData.str ?? null,
-          dfm: bullData.dfm ?? null,
-          rua: bullData.rua ?? null,
-          rls: bullData.rls ?? null,
-          rtp: bullData.rtp ?? null,
-          ftl: bullData.ftl ?? null,
-          rw: bullData.rw ?? null,
-          rlr: bullData.rlr ?? null,
-          fta: bullData.fta ?? null,
-          fls: bullData.fls ?? null,
-          fua: bullData.fua ?? null,
-          ruh: bullData.ruh ?? null,
-          ruw: bullData.ruw ?? null,
-          ucl: bullData.ucl ?? null,
-          udp: bullData.udp ?? null,
-          ftp: bullData.ftp ?? null,
-          
-          // Eficiência Alimentar
-          rfi: bullData.rfi ?? null,
-          gfi: bullData.gfi ?? null
-        }
-      };
-      
-      return convertedBull;
-    }
+    const d = bullData as any;
+    return {
+      naab: d.code,
+      name: d.name || 'N/A',
+      company: d.company || 'N/A',
+      ptas: {
+        hhp_dollar: d.hhp_dollar ?? null,
+        tpi: d.tpi ?? null,
+        nm_dollar: d.nm_dollar ?? null,
+        cm_dollar: d.cm_dollar ?? null,
+        fm_dollar: d.fm_dollar ?? null,
+        gm_dollar: d.gm_dollar ?? null,
+        f_sav: d.f_sav ?? null,
+        milk: d.ptam ?? null,
+        fat: d.ptaf ?? null,
+        protein: d.ptap ?? null,
+        ptam: d.ptam ?? null,
+        cfp: d.cfp ?? null,
+        ptaf: d.ptaf ?? null,
+        ptaf_pct: d.ptaf_pct ?? null,
+        ptap: d.ptap ?? null,
+        ptap_pct: d.ptap_pct ?? null,
+        pl: d.pl ?? null,
+        dpr: d.dpr ?? null,
+        liv: d.liv ?? null,
+        scs: d.scs ?? null,
+        mast: d.mast ?? null,
+        met: d.met ?? null,
+        rp: d.rp ?? null,
+        da: d.da ?? null,
+        ket: d.ket ?? null,
+        mf: d.mf ?? null,
+        ptat: d.ptat ?? null,
+        udc: d.udc ?? null,
+        flc: d.flc ?? null,
+        sce: d.sce ?? null,
+        dce: d.dce ?? null,
+        ssb: d.ssb ?? null,
+        dsb: d.dsb ?? null,
+        h_liv: d.h_liv ?? null,
+        ccr: d.ccr ?? null,
+        hcr: d.hcr ?? null,
+        fi: d.fi ?? null,
+        bwc: d.bwc ?? null,
+        sta: d.sta ?? null,
+        str: d.str ?? null,
+        dfm: d.dfm ?? null,
+        rua: d.rua ?? null,
+        rls: d.rls ?? null,
+        rtp: d.rtp ?? null,
+        ftl: d.ftl ?? null,
+        rw: d.rw ?? null,
+        rlr: d.rlr ?? null,
+        fta: d.fta ?? null,
+        fls: d.fls ?? null,
+        fua: d.fua ?? null,
+        ruh: d.ruh ?? null,
+        ruw: d.ruw ?? null,
+        ucl: d.ucl ?? null,
+        udp: d.udp ?? null,
+        ftp: d.ftp ?? null,
+        rfi: d.rfi ?? null,
+        gfi: d.gfi ?? null
+      }
+    };
   } catch (error) {
     console.error('Erro ao buscar touro no Supabase:', error);
+    return null;
   }
-  
-  return null;
 };
 
 const PedigreePredictor: React.FC = () => {
