@@ -252,6 +252,28 @@ const extractErrorMessage = (error: unknown): string => {
 
 type FemaleInsert = Database['public']['Tables']['females']['Insert'];
 
+// Mapeia chaves de PREDICTION_TRAITS para colunas reais da tabela females
+const TRAIT_TO_FEMALE_COLUMN: Partial<Record<PredictionTraitKey, keyof FemaleInsert>> = {
+  ptam: 'pta_milk',
+  ptaf: 'pta_fat',
+  ptaf_pct: 'pta_fat_pct',
+  ptap: 'pta_protein',
+  ptap_pct: 'pta_protein_pct',
+  pl: 'pta_pl',
+  dpr: 'pta_dpr',
+  hcr: 'pta_hcr',
+  liv: 'pta_livability',
+  scs: 'pta_scs',
+  ptat: 'pta_ptat',
+  udc: 'pta_udc',
+  flc: 'pta_flc',
+  sce: 'pta_sce',
+  dce: 'pta_sire_sce',
+  ccr: 'pta_ccr',
+  mf: 'mf_num',
+  str: 'str_num',
+};
+
 const buildResultInsertRows = (rows: BatchRow[], farmId: string): FemaleInsert[] => {
   const nowIso = new Date().toISOString();
 
@@ -272,18 +294,15 @@ const buildResultInsertRows = (rows: BatchRow[], farmId: string): FemaleInsert[]
         birth_date: normalizeBirthDate(row.dataNascimento) ?? null,
         created_at: nowIso,
         updated_at: nowIso,
-        ptas: null
+        ptas: null,
       };
 
-      const predictionValues = PREDICTION_TRAITS.reduce((acc, trait) => {
-        acc[trait.key] = row.prediction?.[trait.key] ?? null;
-        return acc;
-      }, {} as Partial<Record<PredictionTraitKey, number | null>>);
+      for (const trait of PREDICTION_TRAITS) {
+        const column = (TRAIT_TO_FEMALE_COLUMN[trait.key] ?? trait.key) as string;
+        insertRecord[column] = row.prediction?.[trait.key] ?? null;
+      }
 
-      return {
-        ...insertRecord,
-        ...(predictionValues as Partial<FemaleInsert>)
-      };
+      return insertRecord as FemaleInsert;
     });
 };
 
