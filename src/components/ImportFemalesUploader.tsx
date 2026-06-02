@@ -243,7 +243,7 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
         {loading ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            {t("files.uploading")}
+            {t("files.uploading")}{progress ? ` — ${progress}` : ''}
           </>
         ) : (
           t("herd.import")
