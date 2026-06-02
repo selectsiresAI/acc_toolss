@@ -118,6 +118,51 @@ export async function getBullByNaab(naab: string): Promise<BullsDenormSelection 
   return { id: bull_id, ...bullData } as BullsDenormSelection;
 }
 
+/**
+ * Batch lookup: one RPC call for all NAABs (uses indexed columns, ~60ms for 40 NAABs).
+ * Returns a Map from input_naab → BullsDenormSelection.
+ */
+export async function getBullsByNaabs(naabs: string[]): Promise<Map<string, BullsDenormSelection>> {
+  const cleaned = naabs
+    .map(n => normalizeNaabCode(n))
+    .filter(Boolean);
+
+  const unique = Array.from(new Set(cleaned));
+  const result = new Map<string, BullsDenormSelection>();
+
+  if (unique.length === 0) return result;
+
+  const { data, error } = await supabase
+    .rpc('get_bulls_by_naabs', { p_naabs: unique });
+
+  if (error) {
+    console.error('[getBullsByNaabs] RPC error, falling back to individual lookups', error);
+    // Fallback: individual calls
+    for (const naab of unique) {
+      const bull = await getBullByNaab(naab);
+      if (bull) result.set(naab, bull);
+    }
+    return result;
+  }
+
+  for (const row of (data || [])) {
+    const { input_naab, bull_id, found, ...bullData } = row as any;
+    if (found && input_naab) {
+      result.set(input_naab, { id: bull_id, ...bullData } as BullsDenormSelection);
+    }
+  }
+
+  // Also map original (non-normalized) NAABs to their results
+  for (const naab of naabs) {
+    const norm = normalizeNaabCode(naab);
+    if (norm && result.has(norm) && !result.has(naab.toUpperCase().trim())) {
+      result.set(naab.toUpperCase().trim(), result.get(norm)!);
+    }
+  }
+
+  return result;
+}
+
 export async function searchBulls(term: string, limit = 10): Promise<BullsDenormSelection[]> {
   const normalized = term.trim();
 

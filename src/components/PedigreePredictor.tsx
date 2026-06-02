@@ -21,7 +21,7 @@ import {
 import { Calculator, Upload, Download } from 'lucide-react';
 import { utils, writeFileXLSX } from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
-import { getBullByNaab } from '@/supabase/queries/bulls';
+import { getBullByNaab, getBullsByNaabs } from '@/supabase/queries/bulls';
 import { parseUniversalSpreadsheet } from '@/utils/headerNormalizer';
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -325,85 +325,99 @@ const PedigreePredictor: React.FC = () => {
     if (!batchFile) return;
 
     setIsProcessing(true);
-    
+
     try {
       const jsonData = await parseUniversalSpreadsheet(batchFile);
 
-      const results: BatchResult[] = [];
-
-      for (let i = 0; i < jsonData.length; i++) {
-        const row = jsonData[i];
-
+      // Parse all rows first
+      const parsedRows: { input: BatchInput; pedigreeData: { sireNaab: string; mgsNaab: string; mmgsNaab: string }; validationErrors: string[] }[] = [];
+      for (const row of jsonData) {
         const input: BatchInput = {
           idFazenda: row.idFazenda || '',
           nome: row.Nome || '',
           dataNascimento: row.dataNascimento || '',
-          naabPai: row.naabPai || '',
-          naabAvoMaterno: row.naabAvoMaterno || '',
-          naabBisavoMaterno: row.naabBisavoMaterno || ''
+          naabPai: (row.naabPai?.toString().trim() || ''),
+          naabAvoMaterno: (row.naabAvoMaterno?.toString().trim() || ''),
+          naabBisavoMaterno: (row.naabBisavoMaterno?.toString().trim() || '')
         };
-        
-        // Clean up NAAB codes (remove any extra spaces and ensure they're valid)
-        input.naabPai = input.naabPai?.toString().trim() || '';
-        input.naabAvoMaterno = input.naabAvoMaterno?.toString().trim() || '';
-        input.naabBisavoMaterno = input.naabBisavoMaterno?.toString().trim() || '';
+        const pedigreeData = { sireNaab: input.naabPai, mgsNaab: input.naabAvoMaterno, mmgsNaab: input.naabBisavoMaterno };
+        parsedRows.push({ input, pedigreeData, validationErrors: validateNaabs(pedigreeData) });
+      }
 
-        const pedigreeData = {
-          sireNaab: input.naabPai,
-          mgsNaab: input.naabAvoMaterno,
-          mmgsNaab: input.naabBisavoMaterno
+      // Collect ALL unique NAABs not already in cache
+      const allNaabs = new Set<string>();
+      for (const { input, validationErrors } of parsedRows) {
+        if (validationErrors.length > 0) continue;
+        for (const naab of [input.naabPai, input.naabAvoMaterno, input.naabBisavoMaterno]) {
+          if (naab && !getBullFromCache(naab, bullsCache)) allNaabs.add(naab);
+        }
+      }
+
+      // ONE batch RPC call for all NAABs (~60ms for 40+ NAABs)
+      const bullsMap = allNaabs.size > 0 ? await getBullsByNaabs(Array.from(allNaabs)) : new Map();
+
+      // Convert RPC results to Bull type and cache them
+      const toBull = (d: any): Bull => ({
+        naab: d.code,
+        name: d.name || 'N/A',
+        company: d.company || 'N/A',
+        ptas: {
+          hhp_dollar: d.hhp_dollar ?? null, tpi: d.tpi ?? null,
+          nm_dollar: d.nm_dollar ?? null, cm_dollar: d.cm_dollar ?? null,
+          fm_dollar: d.fm_dollar ?? null, gm_dollar: d.gm_dollar ?? null,
+          f_sav: d.f_sav ?? null, milk: d.ptam ?? null, fat: d.ptaf ?? null,
+          protein: d.ptap ?? null, ptam: d.ptam ?? null, cfp: d.cfp ?? null,
+          ptaf: d.ptaf ?? null, ptaf_pct: d.ptaf_pct ?? null,
+          ptap: d.ptap ?? null, ptap_pct: d.ptap_pct ?? null, pl: d.pl ?? null,
+          dpr: d.dpr ?? null, liv: d.liv ?? null, scs: d.scs ?? null,
+          mast: d.mast ?? null, met: d.met ?? null, rp: d.rp ?? null,
+          da: d.da ?? null, ket: d.ket ?? null, mf: d.mf ?? null,
+          ptat: d.ptat ?? null, udc: d.udc ?? null, flc: d.flc ?? null,
+          sce: d.sce ?? null, dce: d.dce ?? null, ssb: d.ssb ?? null,
+          dsb: d.dsb ?? null, h_liv: d.h_liv ?? null, ccr: d.ccr ?? null,
+          hcr: d.hcr ?? null, fi: d.fi ?? null, bwc: d.bwc ?? null,
+          sta: d.sta ?? null, str: d.str ?? null, dfm: d.dfm ?? null,
+          rua: d.rua ?? null, rls: d.rls ?? null, rtp: d.rtp ?? null,
+          ftl: d.ftl ?? null, rw: d.rw ?? null, rlr: d.rlr ?? null,
+          fta: d.fta ?? null, fls: d.fls ?? null, fua: d.fua ?? null,
+          ruh: d.ruh ?? null, ruw: d.ruw ?? null, ucl: d.ucl ?? null,
+          udp: d.udp ?? null, ftp: d.ftp ?? null, rfi: d.rfi ?? null,
+          gfi: d.gfi ?? null
+        }
+      });
+
+      // Cache all fetched bulls
+      for (const [naab, data] of bullsMap) {
+        setBullCache(naab, toBull(data));
+      }
+
+      // Process each row using the pre-fetched data
+      const results: BatchResult[] = [];
+      for (const { input, pedigreeData, validationErrors } of parsedRows) {
+        if (validationErrors.length > 0) {
+          results.push({ ...input, status: 'error', errors: validationErrors });
+          continue;
+        }
+
+        const findBull = (naab: string): Bull | undefined => {
+          const cached = getBullFromCache(naab, bullsCache);
+          if (cached) return cached;
+          const fetched = bullsMap.get(naab.toUpperCase().trim()) || bullsMap.get(naab);
+          return fetched ? toBull(fetched) : undefined;
         };
 
-        const errors = validateNaabs(pedigreeData);
-        
-        if (errors.length === 0) {
-          // Try to get from cache first, if not found, fetch from Supabase
-          let sire = getBullFromCache(input.naabPai, bullsCache);
-          let mgs = getBullFromCache(input.naabAvoMaterno, bullsCache);
-          let mmgs = getBullFromCache(input.naabBisavoMaterno, bullsCache);
-          
-          // Fetch missing bulls from Supabase
-          if (!sire && input.naabPai) {
-            sire = await fetchBullFromDatabase(input.naabPai);
-            if (sire) {
-              setBullCache(input.naabPai, sire);
-            }
-          }
+        const sire = input.naabPai ? findBull(input.naabPai) : undefined;
+        const mgs = input.naabAvoMaterno ? findBull(input.naabAvoMaterno) : undefined;
+        const mmgs = input.naabBisavoMaterno ? findBull(input.naabBisavoMaterno) : undefined;
 
-          if (!mgs && input.naabAvoMaterno) {
-            mgs = await fetchBullFromDatabase(input.naabAvoMaterno);
-            if (mgs) {
-              setBullCache(input.naabAvoMaterno, mgs);
-            }
-          }
-
-          if (!mmgs && input.naabBisavoMaterno) {
-            mmgs = await fetchBullFromDatabase(input.naabBisavoMaterno);
-            if (mmgs) {
-              setBullCache(input.naabBisavoMaterno, mmgs);
-            }
-          }
-          
-          if (sire) {
-            const predictedPTAs = predictFromPedigree(sire, mgs, mmgs);
-            
-            results.push({
-              ...input,
-              status: 'success',
-              predictedPTAs
-            });
-          } else {
-            results.push({
-              ...input,
-              status: 'error',
-              errors: [isEs ? `Padre con NAAB ${input.naabPai} no encontrado en la base de datos` : isEn ? `Sire with NAAB ${input.naabPai} not found in database` : `Pai com NAAB ${input.naabPai} não encontrado no banco de dados`]
-            });
-          }
+        if (sire) {
+          const predictedPTAs = predictFromPedigree(sire, mgs, mmgs);
+          results.push({ ...input, status: 'success', predictedPTAs });
         } else {
           results.push({
             ...input,
             status: 'error',
-            errors
+            errors: [isEs ? `Padre con NAAB ${input.naabPai} no encontrado en la base de datos` : isEn ? `Sire with NAAB ${input.naabPai} not found in database` : `Pai com NAAB ${input.naabPai} não encontrado no banco de dados`]
           });
         }
       }
