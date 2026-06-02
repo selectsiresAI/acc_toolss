@@ -614,7 +614,7 @@ const HerdPage: React.FC<HerdPageProps> = ({
                     </div>}
                   <div className="relative">
                     <div className="max-h-[70vh] overflow-x-auto overflow-y-auto rounded-md border" style={stickyColumnVars}>
-                      <table className="w-full min-w-[1200px] table-auto border-collapse">
+                      <table className="w-full min-w-[900px] table-auto border-collapse">
                         <thead className="sticky top-0 z-40 bg-foreground text-background shadow-sm [&>tr>th]:sticky [&>tr>th]:top-0 [&>tr>th]:z-40 [&>tr>th]:whitespace-nowrap [&>tr>th]:min-w-max [&>tr>th]:align-middle [&>tr>th]:px-3 [&>tr>th]:py-2 [&>tr>th]:text-left [&>tr>th]:text-xs [&>tr>th]:font-semibold [&>tr>th]:tracking-tight [&>tr>th]:bg-foreground [&>tr>th]:text-background">
                           <tr>
                             <th className="sticky top-0 z-[60] bg-foreground text-background shadow-[6px_0_12px_-6px_rgba(15,23,42,0.45)]" style={stickyColumnStyles.select}>

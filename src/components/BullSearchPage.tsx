@@ -877,14 +877,14 @@ const BullSearchPage: React.FC<BullSearchPageProps> = ({
                   {t('bulls.page')} {page + 1} / {totalPages || 1}
                 </span>
                 <Button
-                  variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages - 1}
+                  variant="outline" size="icon" className="h-7 w-7" disabled={totalPages === 0 || page >= totalPages - 1}
                   onClick={() => setPage(p => p + 1)}
                 >
                   <ChevronRight size={14} />
                 </Button>
                 <Button
-                  variant="outline" size="sm" disabled={page >= totalPages - 1}
-                  onClick={() => setPage(totalPages - 1)}
+                  variant="outline" size="sm" disabled={totalPages === 0 || page >= totalPages - 1}
+                  onClick={() => setPage(Math.max(0, totalPages - 1))}
                   className="h-7 px-2 text-xs"
                 >
                   {totalPages || 1}

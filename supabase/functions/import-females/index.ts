@@ -59,10 +59,11 @@ function validateNumber(value: unknown, min?: number, max?: number): number | nu
       s = s.replace(/,/g, '');
     }
   } else if (hasComma) {
-    // Ambiguous: "3,167" could be US thousands (3167) or BR decimal (3.167).
-    // Heuristic: if exactly 3 digits after the comma and no other comma, assume US thousands.
     const parts = s.split(',');
-    if (parts.length === 2 && /^\d{3}$/.test(parts[1])) {
+    // Only treat as US thousands if: single comma, exactly 3 digits after,
+    // AND integer part is 4+ digits (e.g. "1,234" "10,000")
+    // Otherwise treat comma as decimal (Brazilian/European: "10,5" → "10.5")
+    if (parts.length === 2 && /^\d{3}$/.test(parts[1]) && /^-?\d{4,}$/.test(parts[0])) {
       s = s.replace(/,/g, '');
     } else {
       s = s.replace(',', '.');
@@ -162,17 +163,20 @@ function validateRecord(record: any, farmId: string): FemaleRecord | null {
   return validated;
 }
 
-function parseCSV(csvContent: string): any[] {
+function parseCSV(csvContent: string): { records: any[]; unmappedCols: string[] } {
   let content = csvContent;
   if (content.charCodeAt(0) === 0xFEFF) {
     content = content.slice(1);
   }
 
   const lines = content.trim().split('\n');
-  if (lines.length < 2) return [];
+  if (lines.length < 2) return { records: [], unmappedCols: [] };
 
   const firstLine = lines[0];
-  const delimiter = firstLine.includes(';') ? ';' : ',';
+  const semicolons = (firstLine.match(/;/g) || []).length;
+  const commas = (firstLine.match(/,/g) || []).length;
+  const tabs = (firstLine.match(/\t/g) || []).length;
+  const delimiter = tabs > semicolons && tabs > commas ? '\t' : semicolons > commas ? ';' : ',';
 
   console.log("Detected CSV delimiter: '" + delimiter + "'");
 
@@ -209,6 +213,104 @@ function parseCSV(csvContent: string): any[] {
     'kappa-casein': 'kappa_casein',
     'fonte': 'fonte',
     'tw': 'rw',
+    // PTA fields
+    'tpi': 'tpi',
+    'cfp': 'cfp',
+    'gl': 'gl',
+    'rfi': 'rfi',
+    'fi': 'fi',
+    'bwc': 'bwc',
+    'sta': 'sta',
+    'dfm': 'dfm',
+    'rua': 'rua',
+    'rls': 'rls',
+    'rtp': 'rtp',
+    'ftl': 'ftl',
+    'rw': 'rw',
+    'rlr': 'rlr',
+    'fta': 'fta',
+    'fls': 'fls',
+    'fua': 'fua',
+    'ruh': 'ruh',
+    'ruw': 'ruw',
+    'ucl': 'ucl',
+    'udp': 'udp',
+    'ftp': 'ftp',
+    'mast': 'mast',
+    'met': 'met',
+    'rp': 'rp',
+    'da': 'da',
+    'ket': 'ket',
+    'ssb': 'ssb',
+    'dsb': 'dsb',
+    'gfi': 'gfi',
+    // Dollar indexes
+    'hhp dollar': 'hhp_dollar',
+    'nm dollar': 'nm_dollar',
+    'cm dollar': 'cm_dollar',
+    'fm dollar': 'fm_dollar',
+    'gm dollar': 'gm_dollar',
+    'hhp$®': 'hhp_dollar',
+    // Portuguese/Spanish/English variations
+    'nome': 'name',
+    'identificador': 'identifier',
+    'brinco': 'identifier',
+    'tag': 'identifier',
+    'id animal': 'identifier',
+    'ear tag': 'identifier',
+    'animal id': 'identifier',
+    'cow id': 'identifier',
+    'female id': 'identifier',
+    'data nascimento': 'birth_date',
+    'data de nascimento': 'birth_date',
+    'fecha nacimiento': 'birth_date',
+    'birth date': 'birth_date',
+    'naab pai': 'sire_naab',
+    'naab sire': 'sire_naab',
+    'naab do pai': 'sire_naab',
+    'sire naab': 'sire_naab',
+    'sire naab code': 'sire_naab',
+    'sire code': 'sire_naab',
+    'pai': 'sire_naab',
+    'codigo pai': 'sire_naab',
+    'naab avo': 'mgs_naab',
+    'naab mgs': 'mgs_naab',
+    'mgs naab': 'mgs_naab',
+    'mgs': 'mgs_naab',
+    'avo materno': 'mgs_naab',
+    'naab bisavo': 'mmgs_naab',
+    'naab mmgs': 'mmgs_naab',
+    'mmgs naab': 'mmgs_naab',
+    'mmgs': 'mmgs_naab',
+    'bisavo materno': 'mmgs_naab',
+    'categoria': 'category',
+    'category': 'category',
+    'paridade': 'parity_order',
+    'parity': 'parity_order',
+    'parity order': 'parity_order',
+    'ordem parto': 'parity_order',
+    'lactacao': 'parity_order',
+    'cdcb': 'cdcb_id',
+    'cdcb id': 'cdcb_id',
+    'registration': 'cdcb_id',
+    'registro': 'cdcb_id',
+    'beta casein': 'beta_casein',
+    'kappa casein': 'kappa_casein',
+    'beta caseina': 'beta_casein',
+    'kappa caseina': 'kappa_casein',
+    'source': 'fonte',
+    'origin': 'fonte',
+    'origem': 'fonte',
+    'pta milk': 'pta_milk',
+    'pta fat': 'pta_fat',
+    'pta protein': 'pta_protein',
+    'pta type': 'pta_ptat',
+    'pta scs': 'pta_scs',
+    'pta pl': 'pta_pl',
+    'pta dpr': 'pta_dpr',
+    'pta livability': 'pta_livability',
+    'pta ccr': 'pta_ccr',
+    'pta hcr': 'pta_hcr',
   };
 
   const headerLine = lines[0];
@@ -245,6 +347,14 @@ function parseCSV(csvContent: string): any[] {
   }
 
   console.log("Parsed " + allHeaders.length + " headers");
+
+  // Log which raw headers weren't mapped for debugging
+  const rawCols = lines[0].split(delimiter).map((h: string) => h.trim().replace(/"/g, '').replace(/\ufeff/g, '').toLowerCase());
+  const recognizedCols = new Set([...allHeaders, ...forbiddenFields]);
+  const unmappedCols = rawCols.filter((h: string) => h && !recognizedCols.has(h) && !recognizedCols.has(columnMapping[h] || ''));
+  if (unmappedCols.length > 0) {
+    console.warn("[import-females] Unrecognized columns (passed through as-is): " + unmappedCols.join(', '));
+  }
 
   const records: any[] = [];
 
@@ -289,7 +399,7 @@ function parseCSV(csvContent: string): any[] {
   }
 
   console.log("Parsed " + records.length + " records from CSV");
-  return records;
+  return { records, unmappedCols };
 }
 
 Deno.serve(async (req) => {
@@ -363,7 +473,7 @@ Deno.serve(async (req) => {
       }
 
       const csvContent = await file.text();
-      const parsedRecords = parseCSV(csvContent);
+      const { records: parsedRecords, unmappedCols } = parseCSV(csvContent);
 
       if (parsedRecords.length === 0) {
         return jsonResponse(req, { error: "Arquivo CSV vazio ou invalido" }, 400);
@@ -450,6 +560,7 @@ Deno.serve(async (req) => {
         validation_errors: errors.length,
         insert_errors: insertErrors.length,
         duplicates_removed: duplicatesRemoved,
+        unmapped_columns: unmappedCols,
         errors: errors.slice(0, 100),
       });
     } catch (error) {

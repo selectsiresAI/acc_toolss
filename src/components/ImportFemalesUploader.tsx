@@ -59,8 +59,9 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
       defval: null,
     });
     const headerRow = headerRows[0] ?? [];
+    const identifierAliases = ['identifier', 'id', 'identificador', 'brinco', 'tag', 'eartag', 'ear tag', 'id animal', 'animal id', 'cow id', 'female id'];
     const hasIdentifier = headerRow.some((header) =>
-      typeof header === 'string' && header.trim().toLowerCase() === 'identifier',
+      typeof header === 'string' && identifierAliases.includes(header.trim().toLowerCase()),
     );
 
     if (!hasIdentifier) {
@@ -157,6 +158,7 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
       let totalInsertErrors = 0;
       let totalDuplicatesRemoved = 0;
       let lastBatchId: string | undefined;
+      let allUnmappedColumns: string[] = [];
       const failedChunks: number[] = [];
 
       for (let idx = 0; idx < chunks.length; idx++) {
@@ -169,6 +171,9 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
           totalInsertErrors += payload?.insert_errors || 0;
           totalDuplicatesRemoved += payload?.duplicates_removed || 0;
           if (payload?.import_batch_id) lastBatchId = payload.import_batch_id;
+          if (payload?.unmapped_columns?.length > 0 && allUnmappedColumns.length === 0) {
+            allUnmappedColumns = payload.unmapped_columns;
+          }
         } catch (err) {
           console.error(`Chunk ${idx + 1} failed`, err);
           failedChunks.push(idx + 1);
@@ -180,6 +185,9 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
       if (totalDuplicatesRemoved > 0) summaryParts.push(`${totalDuplicatesRemoved} duplicates removed`);
       if (totalValidationErrors > 0) summaryParts.push(`${totalValidationErrors} rows skipped`);
       if (chunks.length > 1) summaryParts.push(`${chunks.length} chunks`);
+      if (allUnmappedColumns.length > 0) {
+        summaryParts.push(`⚠️ ${allUnmappedColumns.length} unrecognized columns`);
+      }
 
       if (totalInserted === 0 && (totalInsertErrors > 0 || failedChunks.length > 0)) {
         toastError(`${t("femaleImport.uploadFailed")} ${failedChunks.length} chunk(s) failed, ${totalInsertErrors} ${t("femaleImport.insertErrors")}.`);
@@ -223,7 +231,7 @@ export default function ImportFemalesUploader({ farmId, onSuccess }: Props) {
   return (
     <div className="space-y-3">
       <Label className="text-sm">
-        {t("femaleImport.invalidFormat")} — <b>identifier</b>
+        CSV / Excel (.xlsx) — {t("herd.col.name")}: <b>identifier</b> (brinco, tag, id)
       </Label>
       <Input
         ref={inputRef}
