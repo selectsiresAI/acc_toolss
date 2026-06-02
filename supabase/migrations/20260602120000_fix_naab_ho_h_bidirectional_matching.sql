@@ -113,7 +113,39 @@ BEGIN
 END;
 $fn$;
 
--- Update get_bull_by_naab to try all NAAB variants (HO<->H, leading zeros)
+-- Extract breed+number suffix from a NAAB code (ignoring company prefix)
+-- E.g. '200HO10624' -> ARRAY['HO10624','H10624'], '7H12988' -> ARRAY['H12988','HO12988']
+CREATE OR REPLACE FUNCTION public.naab_breed_number_suffixes(naab text)
+RETURNS text[]
+LANGUAGE plpgsql
+IMMUTABLE
+SET search_path TO 'public'
+AS $fn$
+DECLARE
+  parts text[];
+  suffix text;
+  result text[];
+BEGIN
+  IF naab IS NULL THEN RETURN ARRAY[]::text[]; END IF;
+  parts := regexp_match(naab, '^(\d+)((?:HO|JE|BS|AY|GU|MS|H|J|B|A|G|M)\d+)$');
+  IF parts IS NULL THEN RETURN ARRAY[]::text[]; END IF;
+  suffix := parts[2];
+  result := ARRAY[suffix];
+  -- Add HO<->H variant
+  parts := regexp_match(suffix, '^HO(\d+)$');
+  IF parts IS NOT NULL THEN
+    result := result || ('H' || parts[1]);
+  ELSE
+    parts := regexp_match(suffix, '^H(\d+)$');
+    IF parts IS NOT NULL THEN
+      result := result || ('HO' || parts[1]);
+    END IF;
+  END IF;
+  RETURN result;
+END;
+$fn$;
+
+-- Update get_bull_by_naab: exact match with variants + fallback by breed+number
 DROP FUNCTION IF EXISTS public.get_bull_by_naab(text);
 
 CREATE OR REPLACE FUNCTION public.get_bull_by_naab(naab text)
@@ -128,62 +160,20 @@ RETURNS TABLE(
     sire_naab text,
     mgs_naab text,
     mmgs_naab text,
-    hhp_dollar numeric,
-    tpi numeric,
-    nm_dollar numeric,
-    cm_dollar numeric,
-    fm_dollar numeric,
-    gm_dollar numeric,
-    f_sav numeric,
-    ptam numeric,
-    cfp numeric,
-    ptaf numeric,
-    ptaf_pct numeric,
-    ptap numeric,
-    ptap_pct numeric,
-    pl numeric,
-    dpr numeric,
-    liv numeric,
-    scs numeric,
-    mast numeric,
-    met numeric,
-    rp numeric,
-    da numeric,
-    ket numeric,
-    mf numeric,
-    ptat numeric,
-    udc numeric,
-    flc numeric,
-    sce numeric,
-    dce numeric,
-    ssb numeric,
-    dsb numeric,
-    h_liv numeric,
-    ccr numeric,
-    hcr numeric,
-    fi numeric,
-    bwc numeric,
-    sta numeric,
-    str numeric,
-    dfm numeric,
-    rua numeric,
-    rls numeric,
-    rtp numeric,
-    ftl numeric,
-    rw numeric,
-    rlr numeric,
-    fta numeric,
-    fls numeric,
-    fua numeric,
-    ruh numeric,
-    ruw numeric,
-    ucl numeric,
-    udp numeric,
-    ftp numeric,
-    rfi numeric,
-    beta_casein text,
-    kappa_casein text,
-    gfi numeric
+    hhp_dollar numeric, tpi numeric, nm_dollar numeric, cm_dollar numeric,
+    fm_dollar numeric, gm_dollar numeric, f_sav numeric, ptam numeric,
+    cfp numeric, ptaf numeric, ptaf_pct numeric, ptap numeric,
+    ptap_pct numeric, pl numeric, dpr numeric, liv numeric,
+    scs numeric, mast numeric, met numeric, rp numeric,
+    da numeric, ket numeric, mf numeric, ptat numeric,
+    udc numeric, flc numeric, sce numeric, dce numeric,
+    ssb numeric, dsb numeric, h_liv numeric, ccr numeric,
+    hcr numeric, fi numeric, bwc numeric, sta numeric,
+    str numeric, dfm numeric, rua numeric, rls numeric,
+    rtp numeric, ftl numeric, rw numeric, rlr numeric,
+    fta numeric, fls numeric, fua numeric, ruh numeric,
+    ruw numeric, ucl numeric, udp numeric, ftp numeric,
+    rfi numeric, beta_casein text, kappa_casein text, gfi numeric
 )
 LANGUAGE plpgsql
 STABLE
@@ -193,6 +183,7 @@ AS $$
 DECLARE
   normalized_input text;
   all_variants text[];
+  suffixes text[];
 BEGIN
   normalized_input := public.expand_naab_query(naab);
 
@@ -216,79 +207,59 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Generate all variants (HO<->H, JE<->J, etc.)
+  -- Try exact match with all variants (HO<->H, leading zeros)
   all_variants := public.naab_variants(normalized_input);
 
   RETURN QUERY
-  SELECT
-    true,
-    bd.id,
-    bd.code,
-    bd.name,
-    bd.registration,
-    bd.birth_date,
-    bd.company,
-    bd.sire_naab,
-    bd.mgs_naab,
-    bd.mmgs_naab,
-    bd.hhp_dollar,
-    bd.tpi,
-    bd.nm_dollar,
-    bd.cm_dollar,
-    bd.fm_dollar,
-    bd.gm_dollar,
-    bd.f_sav,
-    bd.ptam,
-    bd.cfp,
-    bd.ptaf,
-    bd.ptaf_pct,
-    bd.ptap,
-    bd.ptap_pct,
-    bd.pl,
-    bd.dpr,
-    bd.liv,
-    bd.scs,
-    bd.mast,
-    bd.met,
-    bd.rp,
-    bd.da,
-    bd.ket,
-    bd.mf,
-    bd.ptat,
-    bd.udc,
-    bd.flc,
-    bd.sce,
-    bd.dce,
-    bd.ssb,
-    bd.dsb,
-    bd.h_liv,
-    bd.ccr,
-    bd.hcr,
-    bd.fi,
-    bd.bwc,
-    bd.sta,
-    bd.str,
-    bd.dfm,
-    bd.rua,
-    bd.rls,
-    bd.rtp,
-    bd.ftl,
-    bd.rw,
-    bd.rlr,
-    bd.fta,
-    bd.fls,
-    bd.fua,
-    bd.ruh,
-    bd.ruw,
-    bd.ucl,
-    bd.udp,
-    bd.ftp,
-    bd.rfi,
-    bd.beta_casein,
-    bd.kappa_casein,
-    bd.gfi
+  SELECT true,
+    bd.id, bd.code, bd.name, bd.registration, bd.birth_date, bd.company,
+    bd.sire_naab, bd.mgs_naab, bd.mmgs_naab,
+    bd.hhp_dollar, bd.tpi, bd.nm_dollar, bd.cm_dollar,
+    bd.fm_dollar, bd.gm_dollar, bd.f_sav, bd.ptam,
+    bd.cfp, bd.ptaf, bd.ptaf_pct, bd.ptap,
+    bd.ptap_pct, bd.pl, bd.dpr, bd.liv,
+    bd.scs, bd.mast, bd.met, bd.rp,
+    bd.da, bd.ket, bd.mf, bd.ptat,
+    bd.udc, bd.flc, bd.sce, bd.dce,
+    bd.ssb, bd.dsb, bd.h_liv, bd.ccr,
+    bd.hcr, bd.fi, bd.bwc, bd.sta,
+    bd.str, bd.dfm, bd.rua, bd.rls,
+    bd.rtp, bd.ftl, bd.rw, bd.rlr,
+    bd.fta, bd.fls, bd.fua, bd.ruh,
+    bd.ruw, bd.ucl, bd.udp, bd.ftp,
+    bd.rfi, bd.beta_casein, bd.kappa_casein, bd.gfi
   FROM public.bulls_denorm bd
   WHERE public.normalize_naab(bd.code) = ANY(all_variants)
+  LIMIT 1;
+
+  IF FOUND THEN RETURN; END IF;
+
+  -- Fallback: match by breed+number suffix (ignoring company prefix)
+  suffixes := public.naab_breed_number_suffixes(normalized_input);
+  IF array_length(suffixes, 1) IS NULL THEN RETURN; END IF;
+
+  RETURN QUERY
+  SELECT true,
+    bd.id, bd.code, bd.name, bd.registration, bd.birth_date, bd.company,
+    bd.sire_naab, bd.mgs_naab, bd.mmgs_naab,
+    bd.hhp_dollar, bd.tpi, bd.nm_dollar, bd.cm_dollar,
+    bd.fm_dollar, bd.gm_dollar, bd.f_sav, bd.ptam,
+    bd.cfp, bd.ptaf, bd.ptaf_pct, bd.ptap,
+    bd.ptap_pct, bd.pl, bd.dpr, bd.liv,
+    bd.scs, bd.mast, bd.met, bd.rp,
+    bd.da, bd.ket, bd.mf, bd.ptat,
+    bd.udc, bd.flc, bd.sce, bd.dce,
+    bd.ssb, bd.dsb, bd.h_liv, bd.ccr,
+    bd.hcr, bd.fi, bd.bwc, bd.sta,
+    bd.str, bd.dfm, bd.rua, bd.rls,
+    bd.rtp, bd.ftl, bd.rw, bd.rlr,
+    bd.fta, bd.fls, bd.fua, bd.ruh,
+    bd.ruw, bd.ucl, bd.udp, bd.ftp,
+    bd.rfi, bd.beta_casein, bd.kappa_casein, bd.gfi
+  FROM public.bulls_denorm bd
+  WHERE public.normalize_naab(bd.code) LIKE '%' || suffixes[1]
+     OR (array_length(suffixes, 1) > 1 AND public.normalize_naab(bd.code) LIKE '%' || suffixes[2])
+  ORDER BY bd.tpi DESC NULLS LAST
   LIMIT 1;
 END;
 $$;

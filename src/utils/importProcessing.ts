@@ -88,6 +88,25 @@ function naabVariants(naab: string): string[] {
   return Array.from(variants);
 }
 
+/**
+ * Extract breed+number suffix from a NAAB code, ignoring the company prefix.
+ * E.g. "011HO12771" → "HO12771", "200H10624" → "H10624"
+ * Returns both HO and H variants of the suffix for matching.
+ */
+function naabBreedNumberSuffixes(naab: string): string[] {
+  const m = naab.match(/^\d+((?:HO|H|JE|J|BS|B|AY|A|GU|G|MS|M)\d+)$/);
+  if (!m) return [];
+  const suffix = m[1];
+  const suffixes = new Set<string>();
+  suffixes.add(suffix);
+  // Also add HO↔H variant of the suffix
+  const hoM = suffix.match(/^HO(\d+)$/);
+  if (hoM) suffixes.add(`H${hoM[1]}`);
+  const hM = suffix.match(/^H(\d+)$/);
+  if (hM && !hoM) suffixes.add(`HO${hM[1]}`);
+  return Array.from(suffixes);
+}
+
 async function fetchBullsByNaabsMultiColumn(
   supabase: SupabaseClient,
   naabs: string[],
@@ -207,6 +226,65 @@ async function fetchBullsByNaabsMultiColumn(
               }
             }
           });
+        }
+      }
+      // Final fallback: for still-unmatched naabs, try breed+number suffix
+      // ignoring company prefix (e.g., 011HO12771 → match any %HO12771 or %H12771)
+      const stillUnmatched = chunk.filter(k => {
+        if (resultMap.has(k)) return false;
+        const orig = variantToOriginal.get(k);
+        if (orig && resultMap.has(orig)) return false;
+        return true;
+      });
+      if (stillUnmatched.length > 0) {
+        // Collect unique breed+number suffixes to search
+        const suffixToOriginals = new Map<string, string[]>();
+        for (const u of stillUnmatched) {
+          const orig = variantToOriginal.get(u) || u;
+          const suffixes = naabBreedNumberSuffixes(orig);
+          for (const s of suffixes) {
+            if (!suffixToOriginals.has(s)) suffixToOriginals.set(s, []);
+            suffixToOriginals.get(s)!.push(orig);
+          }
+        }
+
+        if (suffixToOriginals.size > 0) {
+          // Build LIKE queries: code_normalized LIKE '%HO12771' OR code_normalized LIKE '%H12771'
+          const likeFilters = Array.from(suffixToOriginals.keys())
+            .map(s => `code_normalized.like.%${s}`)
+            .join(',');
+
+          console.debug(`[import] breed+number fallback for ${suffixToOriginals.size} suffixes`);
+          const qSuffix = await supabase
+            .from('bulls')
+            .select('id, naab_code, name, sire_naab, mgs_naab, mmgs_naab, code_normalized')
+            .or(likeFilters)
+            .limit(500);
+
+          if (qSuffix.error) {
+            console.debug('[import] breed+number fallback error', qSuffix.error);
+          } else {
+            (qSuffix.data || []).forEach((row: any) => {
+              const rowNorm = normalizeNaab(row.code_normalized) || '';
+              // Check which suffixes this row matches
+              for (const [suffix, originals] of suffixToOriginals.entries()) {
+                if (rowNorm.endsWith(suffix)) {
+                  for (const orig of originals) {
+                    if (!resultMap.has(orig)) {
+                      console.debug(`[import] breed+number match: ${orig} → ${row.naab_code} (${row.name})`);
+                      resultMap.set(orig, row);
+                    }
+                  }
+                  // Also map all variants of the originals
+                  for (const orig of originals) {
+                    for (const v of naabVariants(orig)) {
+                      if (!resultMap.has(v)) resultMap.set(v, row);
+                    }
+                  }
+                }
+              }
+            });
+          }
         }
       }
     } catch (err) {
