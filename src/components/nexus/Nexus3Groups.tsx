@@ -53,9 +53,10 @@ interface TraitSectionProps {
   isEs: boolean;
   onRemove: () => void;
   sharedBulls?: SharedBull[]; // quando presente: usa pacote único, sem busca/seleção interna
+  registerChart?: (trait: string, el: HTMLDivElement | null) => void;
 }
 
-function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove, sharedBulls }: TraitSectionProps) {
+function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove, sharedBulls, registerChart }: TraitSectionProps) {
   const useShared = Array.isArray(sharedBulls);
   const [mothers, setMothers] = useState<MotherPoint[]>([]);
   const [bullQuery, setBullQuery] = useState("");
@@ -65,6 +66,13 @@ function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove, sharedBul
   const [err, setErr] = useState<string | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Registra/desregistra o ref do gráfico no parent para exportação múltipla
+  useEffect(() => {
+    if (!registerChart) return;
+    registerChart(trait, chartRef.current);
+    return () => registerChart(trait, null);
+  }, [trait, registerChart]);
 
   const metric = ANIMAL_METRIC_COLUMNS.find((m) => m.key === trait);
   const traitLabel = metric?.label || trait.toUpperCase();
