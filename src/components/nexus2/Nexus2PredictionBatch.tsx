@@ -205,7 +205,7 @@ const buildResultExportRows = (rows: BatchRow[], isEn = false, isEs = false) =>
          'CCR': formatPredictionValue('CCR', pred?.ccr ?? null),
          'HCR': formatPredictionValue('HCR', pred?.hcr ?? null),
          'FI': formatPredictionValue('FI', pred?.fi ?? null),
-         'GL': '', // Not available in prediction
+         'GL': formatPredictionValue('GL', pred?.gl ?? null),
          'bwc': formatPredictionValue('BWC', pred?.bwc ?? null),
          'sta': formatPredictionValue('STA', pred?.sta ?? null),
          'str': formatPredictionValue('STR', pred?.str ?? null),

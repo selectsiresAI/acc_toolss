@@ -82,7 +82,8 @@ export const PREDICTION_TRAITS = [
   { key: 'udp', label: 'UDP' },
   { key: 'ftp', label: 'FTP' },
   { key: 'rfi', label: 'RFI' },
-  { key: 'gfi', label: 'GFI' }
+  { key: 'gfi', label: 'GFI' },
+  { key: 'gl', label: 'GL' }
 ] as const;
 
 export const SUMMARY_TRAITS = [

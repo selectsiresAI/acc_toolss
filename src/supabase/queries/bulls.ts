@@ -68,7 +68,8 @@ const SELECT_COLUMNS = [
   'rfi',
   'beta_casein',
   'kappa_casein',
-  'gfi'
+  'gfi',
+  'gl'
 ] as const;
 
 export type BullsDenormSelection = Pick<BullsDenormRow, typeof SELECT_COLUMNS[number]>;
