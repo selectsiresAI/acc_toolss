@@ -52,9 +52,11 @@ interface TraitSectionProps {
   isEn: boolean;
   isEs: boolean;
   onRemove: () => void;
+  sharedBulls?: SharedBull[]; // quando presente: usa pacote único, sem busca/seleção interna
 }
 
-function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove }: TraitSectionProps) {
+function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove, sharedBulls }: TraitSectionProps) {
+  const useShared = Array.isArray(sharedBulls);
   const [mothers, setMothers] = useState<MotherPoint[]>([]);
   const [bullQuery, setBullQuery] = useState("");
   const [results, setResults] = useState<BullRow[]>([]);
@@ -87,8 +89,9 @@ function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove }: TraitSe
     })();
   }, [farmId, trait, supabase]);
 
-  // Busca de touros — debounce 300ms
+  // Busca de touros — debounce 300ms (somente no modo separado)
   useEffect(() => {
+    if (useShared) return;
     const t = setTimeout(async () => {
       if (!bullQuery) return setResults([]);
       try {
@@ -107,9 +110,17 @@ function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove }: TraitSe
       }
     }, 300);
     return () => clearTimeout(t);
-  }, [bullQuery, trait, supabase]);
+  }, [bullQuery, trait, supabase, useShared]);
 
   const bullsAvg = useMemo(() => {
+    if (useShared) {
+      const list = sharedBulls!.filter((b) => b.values[trait] != null);
+      if (!list.length) return 0;
+      const sumW = list.reduce((acc, b) => acc + (b.percent ?? 100), 0);
+      if (!sumW) return 0;
+      const sum = list.reduce((acc, b) => acc + (Number(b.values[trait]) || 0) * (b.percent ?? 100), 0);
+      return sum / sumW;
+    }
     if (!chosen.length) return 0;
     const sumW = chosen.reduce((acc, b) => acc + (b.percent ?? 100), 0);
     if (!sumW) return 0;
@@ -118,7 +129,7 @@ function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove }: TraitSe
       0
     );
     return sum / sumW;
-  }, [chosen]);
+  }, [chosen, sharedBulls, trait, useShared]);
 
   const chartData = useMemo(() => {
     if (!mothers.length) return [];
