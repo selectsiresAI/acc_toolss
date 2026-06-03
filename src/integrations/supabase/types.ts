@@ -2836,7 +2836,6 @@ export type Database = {
           ftp: number | null
           fua: number | null
           gfi: number | null
-          gl: number | null
           gm_dollar: number | null
           h_liv: number | null
           hcr: number | null
@@ -4463,6 +4462,7 @@ export type Database = {
           ftp: number
           fua: number
           gfi: number
+          gl: number
           gm_dollar: number
           h_liv: number
           hcr: number
@@ -4546,6 +4546,7 @@ export type Database = {
           ftp: number
           fua: number
           gfi: number
+          gl: number
           gm_dollar: number
           h_liv: number
           hcr: number
