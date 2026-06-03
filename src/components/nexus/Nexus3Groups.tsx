@@ -260,6 +260,7 @@ function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove, sharedBul
         </div>
       </div>
 
+      {!useShared && (
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700">
@@ -294,8 +295,9 @@ function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove, sharedBul
           </div>
         )}
       </div>
+      )}
 
-      {chosen.length > 0 && (
+      {!useShared && chosen.length > 0 && (
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h3 className="text-sm font-semibold text-gray-900">{isEs ? "Toros seleccionados" : isEn ? "Selected sires" : "Touros selecionados"}</h3>
           <div className="mt-4 space-y-3">
@@ -322,6 +324,15 @@ function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove, sharedBul
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {useShared && sharedBulls && sharedBulls.length > 0 && (
+        <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-4 text-xs text-gray-500">
+          {isEs ? "Usando paquete compartido con " : isEn ? "Using shared package with " : "Usando pacote compartilhado com "}
+          <span className="font-semibold text-gray-700">{sharedBulls.length}</span>
+          {isEs ? " toro(s). Valor para este PTA: " : isEn ? " sire(s). Value for this PTA: " : " touro(s). Valor para esta PTA: "}
+          <span className="font-semibold text-gray-700">{formatPtaValue(trait, bullsAvg)}</span>
         </div>
       )}
 
