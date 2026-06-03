@@ -869,6 +869,78 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
         </div>
       )}
 
+      {/* Painel de exportação múltipla */}
+      {selectedTraits.length > 0 && (
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">
+                {isEs ? "Exportar gráficos a PDF" : isEn ? "Export charts to PDF" : "Exportar gráficos para PDF"}
+              </h3>
+              <p className="mt-1 text-xs text-gray-500">
+                {isEs
+                  ? "Seleccione cuáles gráficos incluir en un único PDF."
+                  : isEn
+                  ? "Choose which charts to include in a single PDF."
+                  : "Selecione quais gráficos incluir em um único PDF."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={selectAllExport}
+                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                {isEs ? "Seleccionar todos" : isEn ? "Select all" : "Selecionar todos"}
+              </button>
+              <button
+                type="button"
+                onClick={clearExport}
+                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                {isEs ? "Limpiar" : isEn ? "Clear" : "Limpar"}
+              </button>
+              <button
+                type="button"
+                disabled={isExportingAll || exportSelection.size === 0}
+                onClick={exportSelectedCharts}
+                className="inline-flex items-center gap-2 rounded-md bg-[#ED1C24] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#c8161d] disabled:opacity-50"
+              >
+                {isExportingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {isEs
+                  ? `Exportar (${exportSelection.size})`
+                  : isEn
+                  ? `Export (${exportSelection.size})`
+                  : `Exportar (${exportSelection.size})`}
+              </button>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {selectedTraits.map((t) => {
+              const metric = ANIMAL_METRIC_COLUMNS.find((m) => m.key === t);
+              const label = metric?.label || t.toUpperCase();
+              const checked = exportSelection.has(t);
+              return (
+                <label
+                  key={t}
+                  className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition ${
+                    checked ? "border-[#ED1C24] bg-[#ED1C24]/5" : "border-gray-200 hover:bg-gray-50"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleExport(t)}
+                    className="h-4 w-4 accent-[#ED1C24]"
+                  />
+                  <span className="font-medium text-gray-800">{label}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Seções por trait (empilhadas, roláveis) */}
       <div className="space-y-8">
         {farmId && selectedTraits.map((t) => (
@@ -881,6 +953,7 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
             isEs={isEs}
             onRemove={() => removeTraitSection(t)}
             sharedBulls={mode === "shared" ? sharedBulls : undefined}
+            registerChart={registerChart}
           />
         ))}
         {selectedTraits.length === 0 && (
