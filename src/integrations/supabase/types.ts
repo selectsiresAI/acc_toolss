@@ -925,6 +925,7 @@ export type Database = {
           email: string | null
           id: string
           nome: string
+          profile_id: string | null
           updated_at: string
         }
         Insert: {
@@ -934,6 +935,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome: string
+          profile_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -943,6 +945,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome?: string
+          profile_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1177,6 +1180,49 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "farm_dashboard_kpis"
             referencedColumns: ["farm_id"]
+          },
+        ]
+      }
+      farm_technician_links: {
+        Row: {
+          created_at: string | null
+          farm_id: string
+          id: string
+          technician_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          farm_id: string
+          id?: string
+          technician_id: string
+        }
+        Update: {
+          created_at?: string | null
+          farm_id?: string
+          id?: string
+          technician_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "farm_technician_links_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "farm_technician_links_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farm_dashboard_kpis"
+            referencedColumns: ["farm_id"]
+          },
+          {
+            foreignKeyName: "farm_technician_links_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1999,6 +2045,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           default_farm_id: string | null
+          deleted_at: string | null
           email: string
           full_name: string | null
           id: string
@@ -2010,6 +2057,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           default_farm_id?: string | null
+          deleted_at?: string | null
           email: string
           full_name?: string | null
           id: string
@@ -2021,6 +2069,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           default_farm_id?: string | null
+          deleted_at?: string | null
           email?: string
           full_name?: string | null
           id?: string
@@ -2068,6 +2117,7 @@ export type Database = {
           email: string | null
           id: string
           nome: string
+          profile_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2078,6 +2128,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome: string
+          profile_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2088,6 +2139,7 @@ export type Database = {
           email?: string | null
           id?: string
           nome?: string
+          profile_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2099,6 +2151,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      result_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          notified_at: string | null
+          recipient_email: string
+          recipient_name: string | null
+          recipient_profile_id: string | null
+          recipient_type: string
+          service_order_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notified_at?: string | null
+          recipient_email: string
+          recipient_name?: string | null
+          recipient_profile_id?: string | null
+          recipient_type: string
+          service_order_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notified_at?: string | null
+          recipient_email?: string
+          recipient_name?: string | null
+          recipient_profile_id?: string | null
+          recipient_type?: string
+          service_order_id?: string
+        }
+        Relationships: []
       }
       satisfaction_surveys: {
         Row: {
@@ -2657,6 +2742,45 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      technicians: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          crmv: string | null
+          deleted_at: string | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          profile_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          crmv?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          profile_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          crmv?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          profile_id?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
