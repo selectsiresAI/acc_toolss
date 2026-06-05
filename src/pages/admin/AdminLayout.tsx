@@ -16,6 +16,7 @@ interface AdminLayoutProps {
 
 const adminLinksConfig = [
   { labelPt: "Visão geral", labelEn: "Overview", labelEs: "Vista general", to: "/admin" },
+  { labelPt: "Resultados Genômicos", labelEn: "Genomic Results", labelEs: "Resultados Genómicos", to: "/admin/results" },
   { labelPt: "Tickets de suporte", labelEn: "Support Tickets", labelEs: "Tickets de soporte", to: "/admin/support-tickets" },
   { labelPt: "i18n Dashboard", labelEn: "i18n Dashboard", labelEs: "Panel i18n", to: "/admin/i18n" },
   { labelPt: "Glossário Técnico", labelEn: "Technical Glossary", labelEs: "Glosario Técnico", to: "/admin/glossary" },

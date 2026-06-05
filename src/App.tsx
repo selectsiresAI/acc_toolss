@@ -20,6 +20,7 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import GlossaryManager from "@/pages/admin/GlossaryManager";
 import TranslationBatch from "@/pages/admin/TranslationBatch";
 import I18nDashboard from "@/pages/admin/I18nDashboard";
+import ResultsProcessingPage from "@/pages/admin/ResultsProcessingPage";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const AppContent = () => {
@@ -112,6 +113,7 @@ const AppContent = () => {
           }
         >
           <Route index element={<AdminDashboard />} />
+          <Route path="results" element={<ResultsProcessingPage />} />
           <Route path="support-tickets" element={<SupportTicketsPage />} />
           <Route path="i18n" element={<I18nDashboard />} />
           <Route path="glossary" element={<GlossaryManager />} />
