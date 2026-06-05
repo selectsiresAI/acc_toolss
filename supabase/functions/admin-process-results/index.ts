@@ -46,11 +46,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const trackerDb = createClient(
-      Deno.env.get("TRACKER_URL")!,
-      Deno.env.get("TRACKER_SERVICE_ROLE_KEY")!,
-    );
-
     const url = new URL(req.url);
     const action = url.pathname.split("/").pop();
 
@@ -58,8 +53,8 @@ Deno.serve(async (req: Request) => {
     // GET /admin-process-results/orders
     // ============================
     if (req.method === "GET" && action === "orders") {
-      // Get orders from Tracker with file paths
-      const { data: orders, error } = await trackerDb
+      // Get orders from Platform with file paths
+      const { data: orders, error } = await platformDb
         .from("service_orders")
         .select("id, ordem_servico_ssgen, nome_produto, etapa_atual, client_id, result_file_path, numero_amostras, liberacao_n_amostras, created_at")
         .not("result_file_path", "is", null)
@@ -68,11 +63,11 @@ Deno.serve(async (req: Request) => {
 
       if (error) throw error;
 
-      // Get client names from Tracker
+      // Get client names from Platform
       const clientIds = [...new Set((orders ?? []).map((o: { client_id: string }) => o.client_id).filter(Boolean))];
       let clientMap: Record<string, string> = {};
       if (clientIds.length > 0) {
-        const { data: clients } = await trackerDb
+        const { data: clients } = await platformDb
           .from("clients")
           .select("id, nome")
           .in("id", clientIds);
@@ -170,9 +165,9 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      // Upload to Tracker storage
+      // Upload to Platform storage
       const storagePath = `${serviceOrderId}/${file.name}`;
-      const { error: uploadErr } = await trackerDb.storage
+      const { error: uploadErr } = await platformDb.storage
         .from("order-results")
         .upload(storagePath, file, { upsert: true });
 
@@ -183,8 +178,8 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      // Update service order in Tracker
-      await trackerDb
+      // Update service order in Platform
+      await platformDb
         .from("service_orders")
         .update({
           result_file_path: storagePath,
@@ -193,7 +188,7 @@ Deno.serve(async (req: Request) => {
         .eq("id", serviceOrderId);
 
       // Get client_id for this order
-      const { data: so } = await trackerDb
+      const { data: so } = await platformDb
         .from("service_orders")
         .select("client_id")
         .eq("id", serviceOrderId)
