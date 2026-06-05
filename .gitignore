@@ -22,3 +22,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase temp
+supabase/.temp/
+
+# Python
+__pycache__/
+*.pyc
+
+# Temp data
+tmp_*.json
+PLAN*.md
