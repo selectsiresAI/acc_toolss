@@ -4730,6 +4730,10 @@ export type Database = {
       parse_flexible_date: { Args: { date_str: string }; Returns: string }
       parse_staging_date: { Args: { date_str: string }; Returns: string }
       recalc_placeholder_bulls: { Args: never; Returns: undefined }
+      recompute_hhp_batch: {
+        Args: { p_batch?: number; p_table: string }
+        Returns: number
+      }
       remove_bull_from_farm: {
         Args: { bull_uuid: string; farm_uuid: string }
         Returns: {
