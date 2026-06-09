@@ -434,6 +434,28 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       setLastFarmId(currentFarmId);
     }
   }, [currentFarmId, lastFarmId, resetStateForFarmChange, toast]);
+
+  // Verificar se o rebanho atual possui segmentações salvas
+  useEffect(() => {
+    if (!currentFarmId || dataSource !== 'database') {
+      setHasSegmentation(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { count, error } = await (supabase.from('female_segmentations') as any)
+        .select('female_id', { count: 'exact', head: true })
+        .eq('client_id', currentFarmId);
+      if (cancelled) return;
+      if (error) {
+        console.error('Erro ao verificar segmentações:', error);
+        setHasSegmentation(null);
+      } else {
+        setHasSegmentation((count ?? 0) > 0);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [currentFarmId, dataSource]);
   const loadFemalesFromDatabase = async () => {
     if (selectedClassifications.length === 0 || selectedCategories.length === 0) {
       toast({
