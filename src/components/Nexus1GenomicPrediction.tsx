@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Download, Calculator, ArrowLeft, Users, Target, Database, FileUp, Search, Plus, X, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Upload, Download, Calculator, ArrowLeft, Users, Target, Database, FileUp, Search, Plus, X, ChevronRight, ChevronLeft, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { utils, writeFileXLSX } from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { parseUniversalSpreadsheet } from '@/utils/headerNormalizer';
@@ -68,6 +69,7 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
   const [isCalculating, setIsCalculating] = useState(false);
   const [loadingDatabase, setLoadingDatabase] = useState(false);
   const [lastFarmId, setLastFarmId] = useState<string | null>(null);
+  const [hasSegmentation, setHasSegmentation] = useState<boolean | null>(null);
 
   // Estados para busca de touros
   const [naabSearch, setNaabSearch] = useState('');
@@ -432,6 +434,28 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
       setLastFarmId(currentFarmId);
     }
   }, [currentFarmId, lastFarmId, resetStateForFarmChange, toast]);
+
+  // Verificar se o rebanho atual possui segmentações salvas
+  useEffect(() => {
+    if (!currentFarmId || dataSource !== 'database') {
+      setHasSegmentation(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { count, error } = await (supabase.from('female_segmentations') as any)
+        .select('female_id', { count: 'exact', head: true })
+        .eq('client_id', currentFarmId);
+      if (cancelled) return;
+      if (error) {
+        console.error('Erro ao verificar segmentações:', error);
+        setHasSegmentation(null);
+      } else {
+        setHasSegmentation((count ?? 0) > 0);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [currentFarmId, dataSource]);
   const loadFemalesFromDatabase = async () => {
     if (selectedClassifications.length === 0 || selectedCategories.length === 0) {
       toast({
@@ -695,6 +719,35 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
                       {isEs ? "Seleccione un hato en el dashboard para habilitar el listado de hembras segmentadas." : isEn ? "Select a herd on the dashboard to enable segmented female listing." : "Selecione um rebanho no dashboard para habilitar a listagem de fêmeas segmentadas."}
                     </p>}
                 </div>
+
+                {currentFarmId && hasSegmentation === false && (
+                  <Alert variant="destructive" className="border-amber-500/50 bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 [&>svg]:text-amber-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>
+                      {isEs ? "Este hato aún no tiene segmentación" : isEn ? "This herd has no segmentation yet" : "Este rebanho ainda não tem segmentação"}
+                    </AlertTitle>
+                    <AlertDescription className="space-y-3">
+                      <p>
+                        {isEs
+                          ? "Para usar 'Hembras Segmentadas' en Nexus 1, primero ejecute la segmentación en la página de Segmentación (elija el índice y los percentiles, luego guarde)."
+                          : isEn
+                          ? "To use 'Segmented Females' in Nexus 1, first run segmentation on the Segmentation page (choose the index and percentiles, then save)."
+                          : "Para usar 'Fêmeas Segmentadas' no Nexus 1, primeiro execute a segmentação na página de Segmentação (escolha o índice e os percentis e salve)."}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-white"
+                        onClick={() => {
+                          window.dispatchEvent(new CustomEvent('toolss:navigate-module', { detail: { view: 'segmentation' } }));
+                        }}
+                      >
+                        {isEs ? "Ir a Segmentación" : isEn ? "Go to Segmentation" : "Ir para Segmentação"}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div>
                   <Label className="text-sm font-medium">{isEs ? "Clasificaciones" : isEn ? "Classifications" : "Classificações"}</Label>
                   <div className="flex flex-wrap gap-2 mt-2">

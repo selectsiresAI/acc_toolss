@@ -93,6 +93,17 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
   useEffect(() => {
     loadUserData();
   }, []);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { view?: DashboardView } | undefined;
+      if (detail?.view) {
+        setCurrentView(detail.view);
+      }
+    };
+    window.addEventListener('toolss:navigate-module', handler as EventListener);
+    return () => window.removeEventListener('toolss:navigate-module', handler as EventListener);
+  }, []);
   const loadUserData = async () => {
     try {
       setIsLoading(true);
