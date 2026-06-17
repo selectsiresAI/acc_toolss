@@ -549,18 +549,15 @@ function Step6ProgressCompareContent() {
                           fillOpacity={0.14}
                         />
 
-                        {(() => {
-                          const LegendAny = Legend as any;
-                          return (
-                            <LegendAny
-                              payload={[
-                                { value: groupA, type: "square", color: "hsl(var(--primary))", id: "legend-a" },
-                                { value: groupB, type: "square", color: "hsl(var(--muted-foreground))", id: "legend-b" },
-                              ]}
-                              wrapperStyle={{ paddingTop: 8 }}
-                            />
-                          );
-                        })()}
+                        <Legend
+                          {...({
+                            payload: [
+                              { value: groupA, type: "square", color: "hsl(var(--primary))", id: "legend-a" },
+                              { value: groupB, type: "square", color: "hsl(var(--muted-foreground))", id: "legend-b" },
+                            ],
+                          } as any)}
+                          wrapperStyle={{ paddingTop: 8 }}
+                        />
                         <Tooltip content={(props) => <RadarTooltip {...props} groupA={groupA} groupB={groupB} />} />
                       </RadarChart>
                     </ResponsiveContainer>
