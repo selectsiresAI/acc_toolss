@@ -103,7 +103,7 @@ export const DetectionTable: React.FC<DetectionTableProps> = ({
             <TableHead className="w-[180px]">{isEs ? "Encabezado original" : isEn ? "Original header" : "Cabeçalho original"}</TableHead>
             <TableHead>{isEs ? "Método" : isEn ? "Method" : "Método"}</TableHead>
             <TableHead>{isEs ? "Confianza" : isEn ? "Confidence" : "Confiança"}</TableHead>
-            <TableHead className="w-[280px]">{isEs ? "Clave canónica sugerida" : isEn ? "Suggested canonical key" : "Chave canônica sugerida"}</TableHead>
+            <TableHead className="w-[280px]">{isEs ? "Nombre sugerido" : isEn ? "Suggested name" : "Nome sugerido"}</TableHead>
             <TableHead className="w-[100px]">{isEs ? "Excluir" : isEn ? "Exclude" : "Excluir"}</TableHead>
             <TableHead className="w-[140px]">{isEs ? "Aprobado" : isEn ? "Approved" : "Aprovado"}</TableHead>
           </TableRow>
