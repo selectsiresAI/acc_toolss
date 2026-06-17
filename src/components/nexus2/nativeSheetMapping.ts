@@ -159,7 +159,7 @@ const FUZZY_MIN = 0.82;
 
 export function detectNativeMapping(headers: string[]): DetectedField[] {
   const used = new Set<string>();
-  const normalizedHeaders = headers.map((h) => ({ original: h, key: norm(h), fuzzy: norm(h, true) }));
+  const normalizedHeaders = headers.map((h) => ({ original: h, key: norm(h), fuzzy: normFuzzy(h) }));
 
   const result: DetectedField[] = [];
 
@@ -199,7 +199,7 @@ export function detectNativeMapping(headers: string[]): DetectedField[] {
     for (const h of normalizedHeaders) {
       if (used.has(h.original)) continue;
       for (const alias of detected.target.aliases) {
-        const aliasFuzzy = norm(alias, true);
+        const aliasFuzzy = normFuzzy(alias);
         const score = jaroWinkler(h.fuzzy, aliasFuzzy);
         if (score > bestScore) {
           bestScore = score;
