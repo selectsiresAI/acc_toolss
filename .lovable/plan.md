@@ -1,50 +1,35 @@
+## Goal
 
-## Objetivo
+In Nexus 2, when the maternal grandsire (MGS) or maternal great-grandsire (MGGS) NAAB is **provided but not recognized** in our bull database, fall back to the same "average bull" placeholders we already use when those fields are left blank — so the row stays valid and the prediction runs. The sire (pai) NAAB continues to be required and is **not** subject to this fallback.
 
-Na aba "Processamento em Lote" do Nexus 2, adicionar uma **segunda área de upload** ao lado da atual ("Enviar planilha"), permitindo que o usuário envie a planilha **nativa do seu software de rebanho** (IDEAGRI, Afidata, DairyComp, planilhas próprias, etc.) sem precisar reformatar manualmente. O sistema detecta automaticamente as 6 colunas necessárias, mostra uma revisão rápida do mapeamento e injeta as linhas no fluxo de validação NAAB + predição já existente.
+## Today's behavior
 
-## UX
+- Blank MGS → uses placeholder `007HO00001` (2020 average). Row stays valid.
+- Blank MGGS → uses placeholder `007HO00002` (2017 average). Row stays valid.
+- **Unrecognized MGS/MGGS NAAB** (typo, foreign code, not in DB) → row is marked invalid with `mgsNotFound` / `mmgsNotFound`, prediction is skipped, and the NAAB is exported in "missing NAABs".
 
-Na seção "Processamento em Lote", o usuário verá dois caminhos lado a lado (cards):
+## New behavior
 
-```text
-┌─────────────────────────────┐  ┌─────────────────────────────┐
-│ Planilha no formato ToolSS  │  │ Planilha nativa (auto)      │
-│ [Enviar planilha]           │  │ [Enviar planilha nativa]    │
-│ Colunas: ID_Fazenda, Nome…  │  │ Detectamos as colunas para  │
-│                             │  │ você. Sem reformatar nada.  │
-└─────────────────────────────┘  └─────────────────────────────┘
-```
+- Unrecognized MGS NAAB → silently swap to the 2020 placeholder, mark `usedPlaceholder.mgs = true`, keep row valid.
+- Unrecognized MGGS NAAB → silently swap to the 2017 placeholder, mark `usedPlaceholder.mmgs = true`, keep row valid.
+- Sire (pai) unchanged: a missing or unrecognized sire still invalidates the row.
+- The unresolved NAABs continue to be tracked so the "Export missing NAABs" sheet keeps working — they're still useful to surface back to the user — but they no longer block the prediction.
 
-Ao enviar uma planilha nativa:
-1. Lemos a primeira aba e extraímos os cabeçalhos originais.
-2. Para cada uma das 6 colunas-alvo (ID_Fazenda, Nome, Data_de_Nascimento, naab_pai, naab_avo_materno, naab_bisavo_materno), buscamos a melhor correspondência usando o `defaultLegendBank` + heurísticas regex + `jaroWinkler` (mesmas funções já usadas em `src/pages/tools/conversao`).
-3. Abre um **diálogo de revisão** mostrando, para cada coluna-alvo: a coluna detectada da planilha do usuário, método (legenda/regex/fuzzy), confiança, e um `Select` para o usuário trocar se necessário. Campos com confiança ≥ 0.88 ou match por legenda já vêm pré-aprovados.
-4. Botão "Confirmar e carregar" converte internamente as linhas no formato canônico esperado pelo `parseFile` atual e popula o estado `rows` do componente — daí em diante é o mesmo fluxo (preview, validação de NAABs no Supabase, predição, envio ao rebanho).
+## Files to change
 
-Quando não é possível detectar `naab_pai`, bloqueamos o "Confirmar" (campo obrigatório). `data_nascimento`, `naab_avo_materno` e `naab_bisavo_materno` são opcionais (o sistema já trata placeholders).
+1. `src/components/nexus2/Nexus2PredictionBatch.tsx`
+   - In the row-finalization loop (around lines 654–697), when `naabAvoMaterno` is provided but `bullCache.get(...)` returns `null`, substitute `mgsPlaceholder` and set `usedPlaceholder.mgs = true` instead of pushing `mgsNotFound` into `errors`/`fieldErrors`. Same treatment for `naabBisavoMaterno` / `mggsPlaceholder`.
+   - Keep the unresolved NAAB recorded for the "missing NAABs" export (it already derives from rows; add a lightweight `unresolvedNaabs` marker on the row if needed so the export still lists them).
+   - Leave sire logic untouched.
 
-## Implementação técnica
+2. `src/components/nexus2/Nexus2PredictionIndividual.tsx`
+   - Mirror the same fallback in the individual flow (around lines 394 / 408): if the user types an MGS/MGGS NAAB that doesn't resolve, swap to the placeholder, surface a non-blocking warning, and proceed with the prediction.
 
-**Arquivos novos**
-- `src/components/nexus2/NativeSheetImporter.tsx` — Card de upload + diálogo de revisão de mapeamento. Recebe `onConverted(rows: ParsedNativeRow[])` como prop.
-- `src/components/nexus2/nativeSheetMapping.ts` — Função pura `detectNativeMapping(headers: string[]): Record<TargetField, Suggestion>` reaproveitando `normalizeKey`, `jaroWinkler`, `defaultLegendBank` e adicionando aliases extras para os 6 campos (ex.: "pai", "sire", "father", "padre" → naab_pai; "data nascimento", "DN", "nasc" → data_nascimento; etc.).
+3. `src/lib/i18n.ts`
+   - Add PT/EN/ES keys for a soft warning shown when a placeholder substitution happened due to an unrecognized NAAB (e.g. `nexus2.warning.mgsReplacedByAverage`, `nexus2.warning.mmgsReplacedByAverage`), so the UI can label the row/result without flagging it as an error.
 
-**Edições**
-- `src/components/nexus2/Nexus2PredictionBatch.tsx`:
-  - Extrair a lógica que transforma linhas brutas (objetos `{idFazenda, nome, dataNascimento, naabPai, naabAvoMaterno, naabBisavoMaterno}`) em `BatchRow[]` para uma função reutilizável `ingestRawRows(rows, sourceFileName)` (faz lookup de NAABs no Supabase, monta `BatchRow` com `status/fieldErrors`). Essa função hoje vive dentro de `parseFile`.
-  - Renderizar os dois cards lado a lado (grid 2 colunas no md+, empilhado no mobile). O segundo card é o `<NativeSheetImporter onConverted={ingestRawRows} />`.
-  - Após `onConverted`, o estado `rows` é populado e o preview/validação/predição existentes funcionam sem outras mudanças.
+## Out of scope
 
-**Internacionalização**
-- Adicionar chaves em `src/lib/i18n.ts` (PT/EN/ES):
-  - `nexus2.batch.native.title`, `.description`, `.upload`, `.helper`
-  - `nexus2.batch.native.review.title`, `.column`, `.detected`, `.method`, `.confidence`, `.required`, `.optional`, `.confirm`, `.cancel`
-  - `nexus2.batch.native.errors.missingSire`
-
-**Sem mudanças de backend.** Toda detecção é client-side. Validação de NAABs continua usando `getBullByNaab` do Supabase exatamente como hoje.
-
-## Fora de escopo
-
-- Persistir mapeamentos customizados do usuário (banco de legendas próprio) — fica para um futuro incremento.
-- Suporte a múltiplas abas na planilha nativa (continuamos lendo só a primeira).
+- No changes to sire (pai) validation.
+- No changes to the prediction formula itself — it already accepts placeholders.
+- No DB or edge-function changes.

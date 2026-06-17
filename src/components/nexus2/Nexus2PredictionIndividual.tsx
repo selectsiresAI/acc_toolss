@@ -391,39 +391,42 @@ const Nexus2PredictionIndividual: React.FC = () => {
         return;
       }
 
-      // MGS: se em branco, usa placeholder 007HO00001 (média 2020).
-      // Se preenchido, exige confirmação válida.
+      // Pré-carrega placeholders (touro médio 2020 e 2017) — usados quando
+      // MGS/MGGS estão em branco OU quando o NAAB digitado não é reconhecido.
+      const [mgsPlaceholder, mmgsPlaceholder] = await Promise.all([
+        fetchPlaceholder(MGS_PLACEHOLDER_NAAB),
+        fetchPlaceholder(MGGS_PLACEHOLDER_NAAB),
+      ]);
+
+      // MGS: usa o selecionado; se em branco, usa placeholder; se digitado mas
+      // não reconhecido (confirmMgs retorna null), também cai no placeholder.
       let mgs: BullSummary | null;
       if (mgsField.selected) {
         mgs = mgsField.selected;
       } else if (!mgsField.inputValue.trim()) {
-        mgs = await fetchPlaceholder(MGS_PLACEHOLDER_NAAB);
+        mgs = mgsPlaceholder;
       } else {
-        mgs = await confirmMgs();
+        mgs = (await confirmMgs()) ?? mgsPlaceholder;
       }
       if (!mgs) {
         return;
       }
 
-      // MGGS: se em branco, usa placeholder 007HO00002 (média 2017).
+      // MGGS: mesma regra.
       let mmgs: BullSummary | null;
       if (mmgsField.selected) {
         mmgs = mmgsField.selected;
       } else if (!mmgsField.inputValue.trim()) {
-        mmgs = await fetchPlaceholder(MGGS_PLACEHOLDER_NAAB);
+        mmgs = mmgsPlaceholder;
       } else {
-        mmgs = await confirmMmgs();
+        mmgs = (await confirmMmgs()) ?? mmgsPlaceholder;
       }
       if (!mmgs) {
         return;
       }
 
-      // Carrega os placeholders sempre (também usados como fallback per-trait
-      // quando o MGS/MGGS real não possui aquela trait preenchida).
-      const [mgsPlaceholder, mmgsPlaceholder] = await Promise.all([
-        fetchPlaceholder(MGS_PLACEHOLDER_NAAB),
-        fetchPlaceholder(MGGS_PLACEHOLDER_NAAB),
-      ]);
+      // Placeholders já carregados acima — reutilizados também como fallback
+      // per-trait quando o MGS/MGGS real não possui aquela trait preenchida.
 
       const result = calculatePedigreePrediction({
         sire,
