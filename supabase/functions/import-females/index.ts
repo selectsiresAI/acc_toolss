@@ -129,6 +129,12 @@ function validateRecord(record: any, farmId: string): FemaleRecord | null {
   if (!name && record.identifier) {
     name = sanitizeString(record.identifier);
   }
+  // Conversão exports may leave both `name` and `identifier` empty when the
+  // animal is identified only by registration (cdcb_id). Fall back to it so
+  // the row is not silently dropped.
+  if (!name && record.cdcb_id) {
+    name = sanitizeString(record.cdcb_id);
+  }
   if (!name || name.length === 0 || name.length > 200) return null;
 
   // Nexus 2 exports include an `identifier` column but leave it blank,
