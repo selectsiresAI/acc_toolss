@@ -1,57 +1,50 @@
 
-## Diagnóstico
+## Objetivo
 
-A função SQL `public.calculate_hhp_dollar` que alimenta `females.hhp_dollar` e `bulls.hhp_dollar` está com coeficientes diferentes da planilha oficial enviada (`HHP_Index_auto_2.xlsx`). Isso explica os valores estranhos (ex.: HHP$ −1397 com NM$ 120, +2366 com NM$ 264). O culpado dominante é o peso do RFI (atual −16,67; correto −0,19 — quase 90× maior do que deveria).
+Na aba "Processamento em Lote" do Nexus 2, adicionar uma **segunda área de upload** ao lado da atual ("Enviar planilha"), permitindo que o usuário envie a planilha **nativa do seu software de rebanho** (IDEAGRI, Afidata, DairyComp, planilhas próprias, etc.) sem precisar reformatar manualmente. O sistema detecta automaticamente as 6 colunas necessárias, mostra uma revisão rápida do mapeamento e injeta as linhas no fluxo de validação NAAB + predição já existente.
 
-### Comparação coeficiente a coeficiente
+## UX
 
-| Trait (col Excel) | Fórmula correta (planilha) | Fórmula atual (banco) | Ação |
-|---|---|---|---|
-| PTA Fat (B) | `4,91 · ptaf` | `3,80 · ptaf` | trocar |
-| PTA Pro (C) | `6,01 · ptap` | `6,44 · ptap` | trocar |
-| PTA PL (D) | `12,83 · pl` | `13,80 · pl` | trocar |
-| PTA Livability (E) | `10,69 · liv` | `7,41 · liv` | trocar |
-| PTA SCS (F) | `−158,56 · (scs − 3)` (sinal mantido) | `30,20 · clamp(−(scs−2,5), 0)` | trocar fórmula e centro (2,5→3) |
-| PTA DPR (G) | `19,30 · dpr` | `6,82 · dpr` | trocar |
-| CCR (H) | `15,84 · ccr` | `3,50 · ccr` | trocar |
-| RFI (I) | `−0,19 · rfi` | `−16,67 · rfi` | **trocar (principal causa)** |
-| STA (J) | `−13,32 · sta` | `+7,69 · sta` | trocar sinal e magnitude |
-| DF / DFM (K) | `−8,88 · dfm` | `+3,85 · dfm` | trocar sinal e magnitude |
-| RUW (L) | `8,88 · ruw` | `3,85 · ruw` | trocar |
-| UD / UDP (M) | `13,32 · udp` | `11,54 · udp` | trocar |
-| RTP (N) | `−14,80 · (ABS(rtp) − 0,65)` | `−7,69 · ABS(rtp − 2,30)` | trocar (centro 0, não 2,3) |
-| TL / FTL (O) | `−26,64 · (ABS(ftl) − 0,5)` | `−7,69 · ABS(ftl − 0,5)` | trocar (centro 0, não 0,5) |
-| Mastitis (P) | `+25,37 · mast` | `−4,00 · mast` | trocar sinal e magnitude |
+Na seção "Processamento em Lote", o usuário verá dois caminhos lado a lado (cards):
 
-### Tratamento de traits ausentes
+```text
+┌─────────────────────────────┐  ┌─────────────────────────────┐
+│ Planilha no formato ToolSS  │  │ Planilha nativa (auto)      │
+│ [Enviar planilha]           │  │ [Enviar planilha nativa]    │
+│ Colunas: ID_Fazenda, Nome…  │  │ Detectamos as colunas para  │
+│                             │  │ você. Sem reformatar nada.  │
+└─────────────────────────────┘  └─────────────────────────────┘
+```
 
-O card "Traits requeridos para cálculo do HHP$" já diz: *"Traits ausentes resultam em HHP$ vazio."* Hoje o SQL usa `COALESCE(..., 0)` → trata ausente como zero, o que distorce o índice. Vai passar a retornar **NULL** se qualquer um dos 15 traits estiver ausente.
+Ao enviar uma planilha nativa:
+1. Lemos a primeira aba e extraímos os cabeçalhos originais.
+2. Para cada uma das 6 colunas-alvo (ID_Fazenda, Nome, Data_de_Nascimento, naab_pai, naab_avo_materno, naab_bisavo_materno), buscamos a melhor correspondência usando o `defaultLegendBank` + heurísticas regex + `jaroWinkler` (mesmas funções já usadas em `src/pages/tools/conversao`).
+3. Abre um **diálogo de revisão** mostrando, para cada coluna-alvo: a coluna detectada da planilha do usuário, método (legenda/regex/fuzzy), confiança, e um `Select` para o usuário trocar se necessário. Campos com confiança ≥ 0.88 ou match por legenda já vêm pré-aprovados.
+4. Botão "Confirmar e carregar" converte internamente as linhas no formato canônico esperado pelo `parseFile` atual e popula o estado `rows` do componente — daí em diante é o mesmo fluxo (preview, validação de NAABs no Supabase, predição, envio ao rebanho).
 
-## Mudanças
+Quando não é possível detectar `naab_pai`, bloqueamos o "Confirmar" (campo obrigatório). `data_nascimento`, `naab_avo_materno` e `naab_bisavo_materno` são opcionais (o sistema já trata placeholders).
 
-1. **Recriar `public.calculate_hhp_dollar(...)`** com:
-   - Os 15 coeficientes corretos exatamente como na planilha.
-   - SCS: `−158,56 · (scs − 3)` (sem clamp, sem abs).
-   - RTP: `−14,8 · (ABS(rtp) − 0,65)`.
-   - FTL: `−26,64 · (ABS(ftl) − 0,5)`.
-   - Retorno `NULL` se qualquer um dos 15 parâmetros for `NULL` (sem `COALESCE`).
-   - `ROUND(result, 0)` no fim, mantendo `SECURITY DEFINER` + `search_path = public`.
+## Implementação técnica
 
-2. **Manter triggers existentes** `trg_females_hhp_dollar` e `trg_bulls_hhp_dollar` (já leem das colunas top-level corretas). Eles passam a chamar automaticamente a função corrigida; nenhuma mudança de trigger necessária.
+**Arquivos novos**
+- `src/components/nexus2/NativeSheetImporter.tsx` — Card de upload + diálogo de revisão de mapeamento. Recebe `onConverted(rows: ParsedNativeRow[])` como prop.
+- `src/components/nexus2/nativeSheetMapping.ts` — Função pura `detectNativeMapping(headers: string[]): Record<TargetField, Suggestion>` reaproveitando `normalizeKey`, `jaroWinkler`, `defaultLegendBank` e adicionando aliases extras para os 6 campos (ex.: "pai", "sire", "father", "padre" → naab_pai; "data nascimento", "DN", "nasc" → data_nascimento; etc.).
 
-3. **Backfill** em `public.females` e `public.bulls`:
-   - `UPDATE … SET hhp_dollar = NULL`
-   - `UPDATE … SET updated_at = now()` → reativa o trigger e recalcula todos os HHP$ com a nova fórmula. Linhas sem os 15 traits ficarão com HHP$ vazio (esperado).
+**Edições**
+- `src/components/nexus2/Nexus2PredictionBatch.tsx`:
+  - Extrair a lógica que transforma linhas brutas (objetos `{idFazenda, nome, dataNascimento, naabPai, naabAvoMaterno, naabBisavoMaterno}`) em `BatchRow[]` para uma função reutilizável `ingestRawRows(rows, sourceFileName)` (faz lookup de NAABs no Supabase, monta `BatchRow` com `status/fieldErrors`). Essa função hoje vive dentro de `parseFile`.
+  - Renderizar os dois cards lado a lado (grid 2 colunas no md+, empilhado no mobile). O segundo card é o `<NativeSheetImporter onConverted={ingestRawRows} />`.
+  - Após `onConverted`, o estado `rows` é populado e o preview/validação/predição existentes funcionam sem outras mudanças.
 
-4. **Memória do projeto** `mem://infrastructure/hhp-dollar-auto-calculation-v2025` atualizada com os coeficientes oficiais para referência futura.
+**Internacionalização**
+- Adicionar chaves em `src/lib/i18n.ts` (PT/EN/ES):
+  - `nexus2.batch.native.title`, `.description`, `.upload`, `.helper`
+  - `nexus2.batch.native.review.title`, `.column`, `.detected`, `.method`, `.confidence`, `.required`, `.optional`, `.confirm`, `.cancel`
+  - `nexus2.batch.native.errors.missingSire`
 
-## Validação após aplicar
+**Sem mudanças de backend.** Toda detecção é client-side. Validação de NAABs continua usando `getBullByNaab` do Supabase exatamente como hoje.
 
-- Conferir 3 fêmeas onde temos todos os 15 traits — recalcular HHP$ manualmente com a planilha e comparar.
-- Conferir distribuição: spread de HHP$ deve ficar muito mais próximo de NM$ (não mais ±1500 puxado pelo RFI).
-- Fêmeas sem algum dos 15 traits devem aparecer com HHP$ vazio na tabela do rebanho.
+## Fora de escopo
 
-## Fora do escopo
-
-- Front-end (formatação, gráficos, filtros) — sem mudanças, já consome `hhp_dollar` direto.
-- Pesos do TPI, NM$ ou outros índices — não tocar.
+- Persistir mapeamentos customizados do usuário (banco de legendas próprio) — fica para um futuro incremento.
+- Suporte a múltiplas abas na planilha nativa (continuamos lendo só a primeira).

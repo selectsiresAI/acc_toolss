@@ -23,6 +23,7 @@ import {
   type PredictionTraitKey
 } from '@/services/prediction.service';
 import { read, utils, writeFileXLSX, SSF } from 'xlsx';
+import NativeSheetImporter from './NativeSheetImporter';
 
 const ACCEPTED_EXTENSIONS = '.csv,.xlsx,.xls,.xlsm';
 
@@ -698,15 +699,8 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
     return normalizedRows;
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
+  const processFile = async (file: File) => {
     setIsParsing(true);
-
     try {
       const parsedRows = await parseFile(file);
       setRows(parsedRows);
@@ -724,9 +718,15 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
       });
     } finally {
       setIsParsing(false);
-      if (event.target) {
-        event.target.value = '';
-      }
+    }
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await processFile(file);
+    if (event.target) {
+      event.target.value = '';
     }
   };
 
@@ -926,48 +926,67 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPTED_EXTENSIONS}
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={isParsing}>
-            {isParsing ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {t('nexus2.batch.upload.loading')}
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Upload className="h-4 w-4" />
-                {t('nexus2.batch.upload.button')}
-              </span>
-            )}
-          </Button>
-          {fileName && (
-            <Badge variant="outline" className="flex items-center gap-2">
-              {fileName}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5"
-                onClick={handleReset}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          )}
-          {rows.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {/* Caminho 1: planilha no formato ToolSS */}
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="text-base">
+                {isEs ? 'Planilla en formato ToolSS' : isEn ? 'ToolSS-format spreadsheet' : 'Planilha no formato ToolSS'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_EXTENSIONS}
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={isParsing}>
+                  {isParsing ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t('nexus2.batch.upload.loading')}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      {t('nexus2.batch.upload.button')}
+                    </span>
+                  )}
+                </Button>
+                {fileName && (
+                  <Badge variant="outline" className="flex items-center gap-2">
+                    {fileName}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      onClick={handleReset}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">{t('nexus2.batch.upload.helper')}</p>
+            </CardContent>
+          </Card>
+
+          {/* Caminho 2: planilha nativa do software do produtor */}
+          <NativeSheetImporter onConvertedFile={processFile} disabled={isParsing} />
+        </div>
+
+        {rows.length > 0 && (
+          <div className="flex justify-end">
             <Button type="button" variant="outline" onClick={handleReset}>
               {t('nexus2.batch.actions.reset')}
             </Button>
-          )}
-        </div>
-        <p className="text-sm text-muted-foreground">{t('nexus2.batch.upload.helper')}</p>
+          </div>
+        )}
+
 
         {rows.length > 0 ? (
           <div className="space-y-4">
