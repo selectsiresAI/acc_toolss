@@ -808,6 +808,9 @@ export default function SegmentationPage({
         Fonte: fonteInfo.label === '—' ? '' : fonteInfo.label,
         CustomScore: customScore,
         Classificacao: a.Classification ?? "",
+        sire_naab: (a as any).sire_naab ?? "",
+        mgs_naab: (a as any).mgs_naab ?? "",
+        mmgs_naab: (a as any).mmgs_naab ?? "",
         metrics
       };
     });
