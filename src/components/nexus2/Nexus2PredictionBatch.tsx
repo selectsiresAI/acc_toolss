@@ -364,12 +364,10 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
       if (row.naabPai && !row.bulls.sire) {
         sire.add(row.naabPai);
       }
-      // MGS/MGGS: NAAB foi informado mas substituído pelo placeholder porque
-      // não foi reconhecido (continua útil exportar para o usuário corrigir).
-      if (row.naabAvoMaterno && row.usedPlaceholder?.mgs) {
+      if (row.naabAvoMaterno && !row.bulls.mgs) {
         mgs.add(row.naabAvoMaterno);
       }
-      if (row.naabBisavoMaterno && row.usedPlaceholder?.mmgs) {
+      if (row.naabBisavoMaterno && !row.bulls.mmgs) {
         mmgs.add(row.naabBisavoMaterno);
       }
     }
