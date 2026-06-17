@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from "xlsx";
 import { useTranslation } from "@/hooks/useTranslation";
+import { normalizeRowHeaders } from "@/utils/headerNormalizer";
 
 export function BullsExcelImporter() {
   const { locale } = useTranslation();
@@ -22,87 +23,101 @@ export function BullsExcelImporter() {
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const rawData = XLSX.utils.sheet_to_json(worksheet);
+      const jsonData = rawData.map((row: any) => normalizeRowHeaders(row));
 
       setProgress(isEs ? `${jsonData.length} toros encontrados. Procesando...` : isEn ? `${jsonData.length} bulls found. Processing...` : `${jsonData.length} touros encontrados. Processando...`);
 
       // Convert to bulls format and insert
       const bulls = jsonData.map((row: any) => {
-        const birthDate = row["Birth Date"]
+        // Helper to get first non-null value from multiple possible canonical keys
+        const get = (...keys: string[]): any => {
+          for (const k of keys) {
+            if (row[k] !== undefined && row[k] !== null && row[k] !== '') return row[k];
+          }
+          return null;
+        };
+        const num = (...keys: string[]): number | null => {
+          const v = get(...keys);
+          if (v === null) return null;
+          const n = parseFloat(v);
+          return isNaN(n) ? null : n;
+        };
+
+        const rawBirthDate = get('dataNascimento', 'birth_date', 'Birth Date');
+        const birthDate = rawBirthDate
           ? new Date(
-              typeof row["Birth Date"] === "number"
-                ? (row["Birth Date"] - 25569) * 86400 * 1000
-                : row["Birth Date"]
-            )
-              .toISOString()
-              .split("T")[0]
+              typeof rawBirthDate === "number"
+                ? (rawBirthDate - 25569) * 86400 * 1000
+                : rawBirthDate
+            ).toISOString().split("T")[0]
           : null;
 
         return {
-          naab_code: row["Naab Code"]?.toString() || "",
-          code_normalized: (row["Naab Code"]?.toString() || "").trim().replace(/[\s-]/g, '').toUpperCase(),
-          name: row["Name"] || "",
-          registration: row["Reg Name"] || null,
-          company: row["Company"] || null,
-          beta_casein: row["Beta Casein"] || null,
-          kappa_casein: row["Kappa Casein"] || null,
+          naab_code: (get('Naab', 'naab_code', 'code') ?? '').toString(),
+          code_normalized: (get('Naab', 'naab_code', 'code') ?? '').toString().trim().replace(/[\s-]/g, '').toUpperCase(),
+          name: get('Nome', 'name') ?? '',
+          registration: get('Registration', 'Reg Name', 'registration') ?? null,
+          company: get('Empresa', 'company') ?? null,
+          beta_casein: get('Beta-Casein', 'beta_casein') ?? null,
+          kappa_casein: get('Kappa-Casein', 'kappa_casein') ?? null,
           birth_date: birthDate,
-          tpi: parseFloat(row["TPI"]) || null,
-          nm_dollar: parseFloat(row["Net Merit"]) || null,
-          cm_dollar: parseFloat(row["CM$"]) || null,
-          fm_dollar: parseFloat(row["FM$"]) || null,
-          gm_dollar: parseFloat(row["Grazing Merit"]) || null,
-          hhp_dollar: parseFloat(row["Health Index"]) || null,
-          pta_milk: parseFloat(row["PTA Milk"]) || null,
-          pta_fat: parseFloat(row["PTA Fat"]) || null,
-          pta_fat_pct: parseFloat(row["% Fat"]) || null,
-          pta_protein: parseFloat(row["PTA Pro"]) || null,
-          pta_protein_pct: parseFloat(row["% Pro"]) || null,
-          cfp: parseFloat(row["CFP"]) || null,
-          pta_scs: parseFloat(row["SCS"]) || null,
-          pta_pl: parseFloat(row["PL"]) || null,
-          pta_dpr: parseFloat(row["PTA DPR"]) || null,
-          pta_livability: parseFloat(row["PTA LIV"]) || null,
-          gl: parseFloat(row["PTA GL"]) || null,
-          met: parseFloat(row["Metritis"]) || null,
-          mast: parseFloat(row["Mastitis"]) || null,
-          ket: parseFloat(row["Ketosis"]) || null,
-          pta_ccr: parseFloat(row["CCR"]) || null,
-          pta_hcr: parseFloat(row["HCR"]) || null,
-          fi: parseFloat(row["Fertil Index"]) || null,
-          f_sav: parseFloat(row["Feed Saved"]) || null,
-          rfi: parseFloat(row["RFI"]) || null,
-          pta_ptat: parseFloat(row["PTA Type"]) || null,
-          pta_udc: parseFloat(row["UDC"]) || null,
-          pta_flc: parseFloat(row["FLC"]) || null,
-          bwc: parseFloat(row["BWC"]) || null,
-          sta: parseFloat(row["STA"]) || null,
-          str_num: parseFloat(row["STR"]) || null,
-          dfm: parseFloat(row["DF"]) || null,
-          rua: parseFloat(row["RA"]) || null,
-          rls: parseFloat(row["RLS"]) || null,
-          rlr: parseFloat(row["RLR"]) || null,
-          rtp: parseFloat(row["RTP"]) || null,
-          fls: parseFloat(row["FLS"]) || null,
-          fua: parseFloat(row["FUA"]) || null,
-          ruh: parseFloat(row["RUH"]) || null,
-          ruw: parseFloat(row["RUW"]) || null,
-          ucl: parseFloat(row["UC"]) || null,
-          udp: parseFloat(row["UD"]) || null,
-          ftp: parseFloat(row["FTP"]) || null,
-          ftl: parseFloat(row["TL"]) || null,
-          fta: parseFloat(row["FA"]) || null,
-          pta_sce: parseFloat(row["SCE"]) || null,
-          pta_sire_sce: parseFloat(row["DCE"]) || null,
-          ssb: parseFloat(row["SSB"]) || null,
-          dsb: parseFloat(row["DSB"]) || null,
-          h_liv: parseFloat(row["Heifer Livability"]) || null,
-          da: parseFloat(row["Displaced Abomasum"]) || null,
-          rp: parseFloat(row["Retained Placenta"]) || null,
-          // efc removido: coluna não existe na tabela bulls
-          gfi: parseFloat(row["Feed Effic"]) || null,
-          rw: parseFloat(row["TW"]) || null,
-          pedigree: row["Sire x MGS x MGGS"] || null,
+          tpi: num('TPI'),
+          nm_dollar: num('NM$'),
+          cm_dollar: num('CM$'),
+          fm_dollar: num('FM$'),
+          gm_dollar: num('GM$'),
+          hhp_dollar: num('HHP$'),
+          pta_milk: num('PTAM'),
+          pta_fat: num('PTAF'),
+          pta_fat_pct: num('PTAF%'),
+          pta_protein: num('PTAP'),
+          pta_protein_pct: num('PTAP%'),
+          cfp: num('CFP'),
+          pta_scs: num('SCS'),
+          pta_pl: num('PL'),
+          pta_dpr: num('DPR'),
+          pta_livability: num('LIV'),
+          gl: num('GL'),
+          met: num('MET'),
+          mast: num('MAST'),
+          ket: num('KET'),
+          pta_ccr: num('CCR'),
+          pta_hcr: num('HCR'),
+          fi: num('FI'),
+          f_sav: num('F SAV'),
+          rfi: num('RFI'),
+          pta_ptat: num('PTAT'),
+          pta_udc: num('UDC'),
+          pta_flc: num('FLC'),
+          bwc: num('BWC'),
+          sta: num('STA'),
+          str_num: num('STR'),
+          dfm: num('DFM'),
+          rua: num('RUA'),
+          rls: num('RLS'),
+          rlr: num('RLR'),
+          rtp: num('RTP'),
+          fls: num('FLS'),
+          fua: num('FUA'),
+          ruh: num('RUH'),
+          ruw: num('RUW'),
+          ucl: num('UCL'),
+          udp: num('UDP'),
+          ftp: num('FTP'),
+          ftl: num('FTL'),
+          fta: num('FTA'),
+          rw: num('RW'),
+          pta_sce: num('SCE'),
+          pta_sire_sce: num('DCE'),
+          ssb: num('SSB'),
+          dsb: num('DSB'),
+          h_liv: num('H LIV'),
+          da: num('DA'),
+          rp: num('RP'),
+          gfi: num('GFI'),
+          mf_num: num('MF'),
+          pedigree: get('Pedigree') ?? null,
         };
       });
 

@@ -43,7 +43,8 @@ const HEADER_ALIASES: AliasMap = {
   // ── Identificação genérica (ToolSSApp) ──
   'Naab':                ['naab', 'naab code', 'codigo naab', 'cod naab', 'code'],
   'Brinco':              ['brinco', 'tag', 'ear tag', 'eartag', 'identificador', 'identifier', 'id'],
-  'Pedigree':            ['pedigree', 'ped'],
+  'Pedigree':            ['pedigree', 'ped', 'sire x mgs x mggs', 'sire stack'],
+  'Registration':        ['registration', 'reg name', 'registration name', 'registro'],
   'Empresa':             ['empresa', 'company', 'central', 'centrais', 'fornecedor'],
 
   // ── Ordem de parto / categoria ──
@@ -56,7 +57,7 @@ const HEADER_ALIASES: AliasMap = {
 
   // ── Índices econômicos ──
   'ID Fazenda':          ['id fazenda'],
-  'HHP$®':               ['hhp$', 'hhp', 'hhp dollar', 'hhp$®'],
+  'HHP$':                ['hhp$', 'hhp', 'hhp dollar', 'hhp$®', 'health index'],
   'TPI':                 ['tpi'],
   'NM$':                 ['nm$', 'nm', 'net merit', 'merito liquido', 'nm dollar', 'nmdollar'],
   'CM$':                 ['cm$', 'cm', 'cm dollar'],
@@ -97,7 +98,7 @@ const HEADER_ALIASES: AliasMap = {
   'RLS':                 ['rls', 'rear legs side'],
   'RTP':                 ['rtp', 'rump width'],
   'FTL':                 ['ftl', 'teat length', 'tl'],
-  'RW':                  ['rw', 'teat width', 'tw'],
+  'RW':                  ['rw', 'thurl width', 'tw'],
   'RLR':                 ['rlr', 'rear legs rear'],
   'FTA':                 ['fta', 'foot angle', 'fa'],
   'FLS':                 ['fls', 'feet legs score'],
@@ -127,10 +128,6 @@ const HEADER_ALIASES: AliasMap = {
   'Beta-Casein':         ['beta casein', 'betacasein', 'beta caseina', 'b casein', 'a2a2'],
   'Kappa-Casein':        ['kappa casein', 'kappacasein', 'kappa caseina', 'k casein'],
 
-  // ── Milk (alias ToolSS) ──
-  'Milk':                ['milk', 'leite'],
-  'Fat':                 ['fat', 'gordura'],
-  'Protein':             ['protein', 'proteina', 'proteína'],
 };
 
 // Pré-computa lookup: normalizado → canônico

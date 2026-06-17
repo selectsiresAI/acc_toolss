@@ -10,12 +10,26 @@ const entries: Array<Omit<LegendEntry, "source">> = [
   { alias: "birth date", canonical: "birth_date" },
   { alias: "data de nascimento", canonical: "birth_date" },
   { alias: "data_nascimento", canonical: "birth_date" },
+  { alias: "registration", canonical: "registration" },
+  { alias: "reg name", canonical: "registration" },
+  { alias: "registration name", canonical: "registration" },
+  { alias: "registro", canonical: "registration" },
+  { alias: "pedigree", canonical: "pedigree" },
+  { alias: "sire x mgs x mggs", canonical: "pedigree" },
+  { alias: "sire stack", canonical: "pedigree" },
   
   // Caseínas
   { alias: "beta casein", canonical: "beta_casein" },
   { alias: "beta-casein", canonical: "beta_casein" },
   { alias: "kappa casein", canonical: "kappa_casein" },
   { alias: "kappa-casein", canonical: "kappa_casein" },
+  
+  // HHP$ (Health Index)
+  { alias: "hhp$", canonical: "HHP$" },
+  { alias: "hhp", canonical: "HHP$" },
+  { alias: "hhp$®", canonical: "HHP$" },
+  { alias: "health index", canonical: "HHP$" },
+  { alias: "indice de saude", canonical: "HHP$" },
   
   // Índices econômicos
   { alias: "tpi", canonical: "TPI" },
@@ -208,6 +222,13 @@ const entries: Array<Omit<LegendEntry, "source">> = [
   { alias: "feed saved", canonical: "F_SAV" },
   { alias: "f sav", canonical: "F_SAV" },
   { alias: "fs", canonical: "F_SAV" },
+  
+  { alias: "efc", canonical: "EFC" },
+  { alias: "early first calving", canonical: "EFC" },
+  
+  { alias: "gfi", canonical: "GFI" },
+  { alias: "feed effic", canonical: "GFI" },
+  { alias: "feed efficiency", canonical: "GFI" },
   
   // Tipo e conformação
   { alias: "pta type", canonical: "PTAT" },
