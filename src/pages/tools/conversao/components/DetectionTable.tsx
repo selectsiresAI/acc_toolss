@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { cn } from "@/lib/utils";
 import { normalizeKey } from "../utils";
 import { useTranslation } from "@/hooks/useTranslation";
+import { getTraitFriendlyName } from "../traitNames";
 
 export type MappingMethod = "legend" | "regex" | "fuzzy" | undefined;
 
