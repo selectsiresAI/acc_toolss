@@ -22,7 +22,7 @@ export interface NativeTarget {
   regex?: RegExp[];
 }
 
-const norm = (s: string) => normalizeKey(s);
+const norm = (s: string, fuzzy = false) => normalizeKey(s, fuzzy);
 
 export const NATIVE_TARGETS: NativeTarget[] = [
   {
