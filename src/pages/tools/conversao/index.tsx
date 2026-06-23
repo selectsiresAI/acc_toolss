@@ -236,6 +236,19 @@ const ConversaoPage: React.FC = () => {
       if (headers.length === 0) {
         throw new Error(isEs ? "No encontramos encabezados en la primera fila del archivo modelo." : isEn ? "No headers found in the first row of the model file." : "Não encontramos cabeçalhos na primeira linha do arquivo modelo.");
       }
+      const hasBD = headers.some((h) => normalizeKey(h) === "bd");
+      if (!hasBD) {
+        toast({
+          title: isEs ? "Característica BD ausente" : isEn ? "BD trait missing" : "Característica BD ausente",
+          description: isEs
+            ? "El modelo cargado no contiene la característica BD. Agréguela a la lista de nomenclatura antes de convertir."
+            : isEn
+            ? "The loaded model does not contain the BD trait. Add it to the nomenclature list before converting."
+            : "O modelo carregado não contém a característica BD. Inclua-a na lista de nomenclatura antes de converter.",
+          variant: "destructive",
+          duration: 8000,
+        });
+      }
       setModelHeaders(headers);
       setModelFileName(file.name);
       toast({
@@ -302,6 +315,20 @@ const ConversaoPage: React.FC = () => {
 
   const handleDataUpload = async (file: File) => {
     try {
+      const hasBD = modelHeaders.some((h) => normalizeKey(h) === "bd");
+      if (modelHeaders.length > 0 && !hasBD) {
+        toast({
+          title: isEs ? "Característica BD ausente" : isEn ? "BD trait missing" : "Característica BD ausente",
+          description: isEs
+            ? "La lista de nomenclatura no contiene BD. Inclúyala antes de cargar el archivo de datos."
+            : isEn
+            ? "The nomenclature list does not contain BD. Add it before uploading the data file."
+            : "A lista de nomenclatura não contém BD. Inclua-a antes de carregar o arquivo de dados.",
+          variant: "destructive",
+          duration: 8000,
+        });
+        return;
+      }
       const workbook = await readWorkbook(file);
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       if (!sheet) {
