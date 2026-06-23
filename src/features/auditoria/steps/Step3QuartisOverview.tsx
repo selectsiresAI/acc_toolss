@@ -78,13 +78,13 @@ function Step3QuartisOverviewContent() {
 
       const { data, error } = await supabase
         .from("females_denorm")
-        .select(["farm_id", ...columns].join(","))
+        .select(["id", "name", "farm_id", ...columns].join(","))
         .eq("farm_id", farmId)
         .range(from, to);
 
       if (error) throw new Error(error.message);
 
-      const pageData = Array.isArray(data) ? data : [];
+      const pageData = Array.isArray(data) ? (data as any[]).filter(isCompleteFemaleRow) : [];
       allRows.push(...pageData);
 
       hasMore = pageData.length === PAGE_SIZE;
