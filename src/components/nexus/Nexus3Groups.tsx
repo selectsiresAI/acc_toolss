@@ -145,12 +145,17 @@ function TraitSection({ trait, farmId, supabase, isEn, isEs, onRemove, sharedBul
 
   const chartData = useMemo(() => {
     if (!mothers.length) return [];
-    return mothers.map((m) => ({
-      year: m.birth_year,
-      mothers_avg: m.avg_value,
-      daughters_pred: ((m.avg_value + bullsAvg) / 2) * 0.93,
-    }));
-  }, [mothers, bullsAvg]);
+    // SCS é escala logarítmica e não recebe o fator de regressão 0,93
+    const isSCS = (trait || '').toString().trim().toUpperCase() === 'SCS';
+    return mothers.map((m) => {
+      const base = (m.avg_value + bullsAvg) / 2;
+      return {
+        year: m.birth_year,
+        mothers_avg: m.avg_value,
+        daughters_pred: isSCS ? base : base * 0.93,
+      };
+    });
+  }, [mothers, bullsAvg, trait]);
 
   const [yMin, yMax] = useMemo(
     () => getAdaptiveYAxisDomainMultiple(chartData, ["mothers_avg", "daughters_pred"]),
@@ -758,10 +763,10 @@ export default function Nexus3Groups({ onBack, selectedFarmId }: Nexus3GroupsPro
             </h1>
             <p className="max-w-3xl text-sm text-muted-foreground">
               {isEs
-                ? "Seleccione una o varias características para comparar. Predicción: ((Madre + PromedioToros)/2) × 0,93"
+                ? "Seleccione una o varias características para comparar. Predicción: ((Madre + PromedioToros)/2) × 0,93 (excepto SCS, sin factor 0,93)"
                 : isEn
-                ? "Select one or more traits to compare. Prediction: ((Dam + SiresAvg)/2) × 0.93"
-                : "Selecione uma ou várias características para comparar. Predição: ((Mãe + MédiaTouros)/2) × 0,93"}
+                ? "Select one or more traits to compare. Prediction: ((Dam + SiresAvg)/2) × 0.93 (except SCS, no 0.93 factor)"
+                : "Selecione uma ou várias características para comparar. Predição: ((Mãe + MédiaTouros)/2) × 0,93 (exceto SCS, sem fator 0,93)"}
             </p>
           </div>
           {onBack && (

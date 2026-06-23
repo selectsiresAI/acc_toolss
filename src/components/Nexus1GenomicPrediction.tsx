@@ -95,9 +95,11 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
   // F10 × B: HHP 325,50 · TPI 1860,00 · NM 302,25 · PTAM 1255,50 · PTAF 32,55
   // F11 × A: HHP 511,50 · TPI 1999,50 · NM 348,75 · PTAM 1302,00 · PTAF 37,20
   // F11 × B: HHP 232,50 · TPI 1720,50 · NM 255,75 · PTAM 1069,50 · PTAF 23,25
-  const calculateGenomicPrediction = (femalePTA: number, bullPTA: number): number => {
-    const result = (femalePTA + bullPTA) / 2 * 0.93;
-    return result;
+  const calculateGenomicPrediction = (femalePTA: number, bullPTA: number, traitKey?: string): number => {
+    // SCS é escala logarítmica e não recebe o fator de regressão 0,93
+    const isSCS = (traitKey || '').toString().trim().toUpperCase() === 'SCS';
+    const base = (femalePTA + bullPTA) / 2;
+    return isSCS ? base : base * 0.93;
   };
 
   // Parse de arquivos
@@ -206,7 +208,7 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
               const femalePTA = parseFloat(female[pta]) || 0;
               const bullPTA = parseFloat(bull[pta]) || 0;
               if (!isNaN(femalePTA) && !isNaN(bullPTA)) {
-                predictions[pta] = calculateGenomicPrediction(femalePTA, bullPTA);
+                predictions[pta] = calculateGenomicPrediction(femalePTA, bullPTA, pta);
               }
             });
             results.push({
@@ -227,7 +229,7 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
               const femalePTA = parseFloat(female[pta]) || 0;
               const bullPTA = parseFloat(bull[pta]) || 0;
               if (!isNaN(femalePTA) && !isNaN(bullPTA)) {
-                predictions[pta] = calculateGenomicPrediction(femalePTA, bullPTA);
+                predictions[pta] = calculateGenomicPrediction(femalePTA, bullPTA, pta);
               }
             });
             results.push({
@@ -674,7 +676,7 @@ const Nexus1GenomicPrediction: React.FC<Nexus1GenomicPredictionProps> = ({
             <HelpHint content={isEs ? "Importe datos genómicos, valide y genere PTAs proyectadas con alta confiabilidad" : isEn ? "Import genomic data, validate and generate projected PTAs with high reliability" : "Importe dados genômicos, valide e gere PTAs projetadas com alta confiabilidade"} />
           </h2>
           <p className="text-muted-foreground">
-            {isEs ? "Basado en datos genómicos completos - Fórmula: ((PTA Hembra + PTA Toro) / 2) × 0,93" : isEn ? "Based on full genomic data - Formula: ((Female PTA + Bull PTA) / 2) × 0.93" : "Baseado em dados genômicos completos - Fórmula: ((PTA Fêmea + PTA Touro) / 2) × 0,93"}
+            {isEs ? "Basado en datos genómicos completos - Fórmula: ((PTA Hembra + PTA Toro) / 2) × 0,93 (excepto SCS, sin factor 0,93)" : isEn ? "Based on full genomic data - Formula: ((Female PTA + Bull PTA) / 2) × 0.93 (except SCS, no 0.93 factor)" : "Baseado em dados genômicos completos - Fórmula: ((PTA Fêmea + PTA Touro) / 2) × 0,93 (exceto SCS, sem fator 0,93)"}
           </p>
         </div>
       </div>

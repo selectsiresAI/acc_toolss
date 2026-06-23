@@ -2505,8 +2505,11 @@ function EvolucaoRebanhoPage({ mothers, daughters, onBack }: any) {
   ];
 
   // Aplicar fórmula Nexus: ((PTA da fêmea + PTA do touro)/2)*0.93
-  const calculateOffspringPTA = (motherPTA: number, bullPTA: number) => {
-    return ((motherPTA + bullPTA) / 2) * 0.93;
+  // Exceção: SCS (escala logarítmica) não recebe o fator 0,93
+  const calculateOffspringPTA = (motherPTA: number, bullPTA: number, ptaKey?: string) => {
+    const isSCS = (ptaKey || '').toString().trim().toUpperCase() === 'SCS';
+    const base = (motherPTA + bullPTA) / 2;
+    return isSCS ? base : base * 0.93;
   };
 
   const generateComparisonData = (ptaKey: string) => {
@@ -2519,7 +2522,7 @@ function EvolucaoRebanhoPage({ mothers, daughters, onBack }: any) {
 
       // Simular PTA de touros utilizados (média superior às mães)
       const avgBullPTA = motherAvg * 1.15; // Assumindo touros 15% superiores
-      const daughterProjection = calculateOffspringPTA(motherAvg, avgBullPTA);
+      const daughterProjection = calculateOffspringPTA(motherAvg, avgBullPTA, ptaKey);
       
       return {
         year,
