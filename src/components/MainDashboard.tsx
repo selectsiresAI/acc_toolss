@@ -855,9 +855,20 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
                              {getRoleLabel(farm.my_role)}
                            </Badge>
                            {farm.is_default && <Badge variant="outline">{t("farm.default")}</Badge>}
-                           {farm.my_role === 'owner' && <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground" onClick={e => handleDeleteFarm(farm.farm_id, farm.farm_name, e)} title={t("farm.delete")}>
-                               <Trash2 className="h-4 w-4" />
-                             </Button>}
+                            {(farm.my_role === 'owner' || farm.my_role === 'editor') && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => { e.stopPropagation(); setEditingFarm(farm); }}
+                                title={t('editFarm.title') || 'Editar fazenda'}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {farm.my_role === 'owner' && <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground" onClick={e => handleDeleteFarm(farm.farm_id, farm.farm_name, e)} title={t("farm.delete")}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>}
                          </div>
                        </div>
                      </CardHeader>
