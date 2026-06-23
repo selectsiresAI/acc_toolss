@@ -236,6 +236,19 @@ const ConversaoPage: React.FC = () => {
       if (headers.length === 0) {
         throw new Error(isEs ? "No encontramos encabezados en la primera fila del archivo modelo." : isEn ? "No headers found in the first row of the model file." : "Não encontramos cabeçalhos na primeira linha do arquivo modelo.");
       }
+      const hasBD = headers.some((h) => normalizeKey(h) === "bd");
+      if (!hasBD) {
+        toast({
+          title: isEs ? "Característica BD ausente" : isEn ? "BD trait missing" : "Característica BD ausente",
+          description: isEs
+            ? "El modelo cargado no contiene la característica BD. Agréguela a la lista de nomenclatura antes de convertir."
+            : isEn
+            ? "The loaded model does not contain the BD trait. Add it to the nomenclature list before converting."
+            : "O modelo carregado não contém a característica BD. Inclua-a na lista de nomenclatura antes de converter.",
+          variant: "destructive",
+          duration: 8000,
+        });
+      }
       setModelHeaders(headers);
       setModelFileName(file.name);
       toast({
