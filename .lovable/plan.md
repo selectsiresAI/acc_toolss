@@ -1,35 +1,36 @@
-## Goal
+## Objetivo
 
-In Nexus 2, when the maternal grandsire (MGS) or maternal great-grandsire (MGGS) NAAB is **provided but not recognized** in our bull database, fall back to the same "average bull" placeholders we already use when those fields are left blank — so the row stays valid and the prediction runs. The sire (pai) NAAB continues to be required and is **not** subject to this fallback.
+Remover o fator de regressão `0,93` da fórmula de predição **apenas quando a característica for SCS**. Para todas as outras traits, a fórmula permanece inalterada (`((Mãe + Touro) / 2) × 0,93`).
 
-## Today's behavior
+Motivo: SCS já é uma escala logarítmica em que a média geracional não regride como as traits lineares. Aplicar 0,93 estava puxando o valor das filhas para baixo artificialmente (no exemplo: pais 2,82 + mães 2,90 → esperado ≈ 2,86, mas saía 2,60).
 
-- Blank MGS → uses placeholder `007HO00001` (2020 average). Row stays valid.
-- Blank MGGS → uses placeholder `007HO00002` (2017 average). Row stays valid.
-- **Unrecognized MGS/MGGS NAAB** (typo, foreign code, not in DB) → row is marked invalid with `mgsNotFound` / `mmgsNotFound`, prediction is skipped, and the NAAB is exported in "missing NAABs".
+## Escopo — Nexus 1 (Genômica) e Nexus 3 (Grupos) e ToolSSApp
 
-## New behavior
+A predição de pedigree do **Nexus 2** usa fórmula diferente (0,57·Pai + 0,28·MGS + 0,15·MGGS), sem fator 0,93 — **não será alterada**.
 
-- Unrecognized MGS NAAB → silently swap to the 2020 placeholder, mark `usedPlaceholder.mgs = true`, keep row valid.
-- Unrecognized MGGS NAAB → silently swap to the 2017 placeholder, mark `usedPlaceholder.mmgs = true`, keep row valid.
-- Sire (pai) unchanged: a missing or unrecognized sire still invalidates the row.
-- The unresolved NAABs continue to be tracked so the "Export missing NAABs" sheet keeps working — they're still useful to surface back to the user — but they no longer block the prediction.
+### Arquivos afetados
 
-## Files to change
+1. **`src/components/Nexus1GenomicPrediction.tsx`** (linha 98-101)
+   - `calculateGenomicPrediction(femalePTA, bullPTA, traitKey?)` passa a aceitar a trait.
+   - Quando `traitKey` (case-insensitive) for `"scs"`, retorna `(femalePTA + bullPTA) / 2` sem multiplicar por 0,93.
+   - Atualizar todas as chamadas do componente para passar a chave da PTA.
+   - Atualizar os textos de ajuda (PT/EN/ES) para registrar a exceção do SCS.
 
-1. `src/components/nexus2/Nexus2PredictionBatch.tsx`
-   - In the row-finalization loop (around lines 654–697), when `naabAvoMaterno` is provided but `bullCache.get(...)` returns `null`, substitute `mgsPlaceholder` and set `usedPlaceholder.mgs = true` instead of pushing `mgsNotFound` into `errors`/`fieldErrors`. Same treatment for `naabBisavoMaterno` / `mggsPlaceholder`.
-   - Keep the unresolved NAAB recorded for the "missing NAABs" export (it already derives from rows; add a lightweight `unresolvedNaabs` marker on the row if needed so the export still lists them).
-   - Leave sire logic untouched.
+2. **`src/components/ToolSSApp.tsx`** (linha 2507-2510 e callers em `generateComparisonData`)
+   - `calculateOffspringPTA(motherPTA, bullPTA, ptaKey?)` recebe a chave; se `SCS`, não aplica 0,93.
+   - `generateComparisonData(ptaKey)` já tem `ptaKey` — apenas repassa.
 
-2. `src/components/nexus2/Nexus2PredictionIndividual.tsx`
-   - Mirror the same fallback in the individual flow (around lines 394 / 408): if the user types an MGS/MGGS NAAB that doesn't resolve, swap to the placeholder, surface a non-blocking warning, and proceed with the prediction.
+3. **`src/components/nexus/Nexus3Groups.tsx`** (linha 146-153 e textos linhas 761-764)
+   - No `useMemo` do `chartData`, calcular `daughters_pred` condicionalmente: se `trait === 'SCS'` (ou normalizado), usar `(m.avg_value + bullsAvg) / 2`; caso contrário, manter `× 0.93`.
+   - Atualizar as legendas PT/EN/ES para indicar “exceto SCS”.
 
-3. `src/lib/i18n.ts`
-   - Add PT/EN/ES keys for a soft warning shown when a placeholder substitution happened due to an unrecognized NAAB (e.g. `nexus2.warning.mgsReplacedByAverage`, `nexus2.warning.mmgsReplacedByAverage`), so the UI can label the row/result without flagging it as an error.
+### Não alterar
 
-## Out of scope
+- `src/services/prediction.service.ts` e `src/hooks/usePedigreeStore.ts` (Nexus 2 pedigree) — não usam 0,93.
+- Outras ocorrências de `0.9` no projeto pertencem à Calculadora de Reposição (taxa de fêmeas vivas / sêmen convencional) e não têm relação com predição genética.
 
-- No changes to sire (pai) validation.
-- No changes to the prediction formula itself — it already accepts placeholders.
-- No DB or edge-function changes.
+### Validação
+
+- Reabrir Nexus 1 com a fêmea e touro do exemplo (pais SCS 2,82; mães 2,90): a coluna SCS das filhas deve ficar próxima de **2,86**, não mais 2,60.
+- Conferir que demais traits (HHP$, TPI, NM$, PTAM, PTAF) continuam aplicando 0,93 e batem com os valores de validação já documentados no comentário do `calculateGenomicPrediction`.
+- Conferir o gráfico do Nexus 3 ao selecionar SCS e ao selecionar outra trait.
