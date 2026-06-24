@@ -109,7 +109,7 @@ function toIsoSafe(year: number, month: number, day: number): string | null {
   return `${year}-${mm}-${dd}`;
 }
 
-function validateDate(value: unknown): string | null {
+function validateDate(value: unknown, preferMMDD: boolean = false): string | null {
   if (value === null || value === undefined || value === '') return null;
 
   // Date object (xlsx can deliver real Dates when cellDates is enabled)
