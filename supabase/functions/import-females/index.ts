@@ -211,7 +211,7 @@ function validateDate(value: unknown, preferMMDD: boolean = false): string | nul
   return null;
 }
 
-function validateRecord(record: any, farmId: string): FemaleRecord | null {
+function validateRecord(record: any, farmId: string, preferMMDD: boolean = false): FemaleRecord | null {
   let name = sanitizeString(record.name);
   if (!name && record.identifier) {
     name = sanitizeString(record.identifier);
