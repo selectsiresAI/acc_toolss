@@ -284,9 +284,20 @@ function parseCSV(csvContent: string): { records: any[]; unmappedCols: string[] 
 
   // NOTE: 'id' is NOT forbidden because Conversão exports populate it as the animal id.
   // It is remapped to 'identifier' via columnMapping below.
-  const forbiddenFields = ['farm_id', 'client_id', 'ptas', 'created_at', 'updated_at', 'deleted_at'];
+  const forbiddenFields = [
+    'farm_id', 'client_id', 'ptas', 'created_at', 'updated_at', 'deleted_at',
+    // Mangled variants (some exporters strip "t" from headers)
+    'creaed_a', 'updaed_a', 'pas',
+  ];
 
   const columnMapping: Record<string, string> = {
+    // Mangled headers (exporter stripped the letter "t")
+    'birh_dae': 'birth_date',
+    'birh dae': 'birth_date',
+    'idenifier': 'identifier',
+    'pariy_order': 'parity_order',
+    'pariy order': 'parity_order',
+    'caegory': 'category',
     'hhp$': 'hhp_dollar',
     'nm$': 'nm_dollar',
     'cm$': 'cm_dollar',
