@@ -235,7 +235,7 @@ function validateRecord(record: any, farmId: string, preferMMDD: boolean = false
     name,
     identifier,
     cdcb_id: sanitizeString(record.cdcb_id)?.substring(0, 50) || undefined,
-    birth_date: validateDate(record.birth_date) || undefined,
+    birth_date: validateDate(record.birth_date, preferMMDD) || undefined,
     parity_order: validateNumber(record.parity_order, 0, 20) || undefined,
     category: sanitizeString(record.category)?.substring(0, 50) || undefined,
     sire_naab: sanitizeString(record.sire_naab)?.substring(0, 50) || undefined,
