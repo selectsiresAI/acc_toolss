@@ -109,10 +109,19 @@ const NativeSheetImporter: React.FC<Props> = ({ onConvertedFile, disabled }) => 
       const wb = await readWorkbook(file);
       if (!wb.SheetNames.length) throw new Error('emptyWorkbook');
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const aoa = utils.sheet_to_json<unknown[]>(sheet, { header: 1, blankrows: false });
+      const aoa = utils.sheet_to_json<unknown[]>(sheet, { header: 1, blankrows: false, defval: '', raw: true });
       if (!aoa.length) throw new Error('emptyWorkbook');
-      const headers = (aoa[0] as unknown[]).map((v) => String(v ?? '').trim()).filter(Boolean);
-      const rows = utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '', raw: true });
+      const rawHeaders = (aoa[0] as unknown[]).map((v) => String(v ?? '').trim());
+      // Filter out empty headers but keep index alignment for row mapping
+      const headerIndex: { name: string; idx: number }[] = [];
+      rawHeaders.forEach((h, i) => { if (h) headerIndex.push({ name: h, idx: i }); });
+      const headers = headerIndex.map((h) => h.name);
+      // Build rows using trimmed headers (avoids issues with trailing spaces in original keys)
+      const rows: Record<string, unknown>[] = (aoa.slice(1) as unknown[][]).map((arr) => {
+        const obj: Record<string, unknown> = {};
+        for (const { name, idx } of headerIndex) obj[name] = arr[idx] ?? '';
+        return obj;
+      });
 
       const detected = detectNativeMapping(headers);
       const mapping = {} as ReviewState['mapping'];
