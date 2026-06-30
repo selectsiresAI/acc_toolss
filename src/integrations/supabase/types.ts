@@ -1466,6 +1466,7 @@ export type Database = {
           nm_dollar: number | null
           nmpf: number | null
           parity_order: number | null
+          portal_source: string | null
           pta_bdc: number | null
           pta_ccr: number | null
           pta_dpr: number | null
@@ -1556,6 +1557,7 @@ export type Database = {
           nm_dollar?: number | null
           nmpf?: number | null
           parity_order?: number | null
+          portal_source?: string | null
           pta_bdc?: number | null
           pta_ccr?: number | null
           pta_dpr?: number | null
@@ -1646,6 +1648,7 @@ export type Database = {
           nm_dollar?: number | null
           nmpf?: number | null
           parity_order?: number | null
+          portal_source?: string | null
           pta_bdc?: number | null
           pta_ccr?: number | null
           pta_dpr?: number | null
