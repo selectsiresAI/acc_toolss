@@ -307,6 +307,39 @@ const buildResultInsertRows = (rows: BatchRow[], farmId: string): FemaleInsert[]
     });
 };
 
+const getIdentifierKey = (value: unknown) => String(value ?? '').trim();
+
+const dedupeInsertRowsByIdentifier = (records: FemaleInsert[]) => {
+  const byIdentifier = new Map<string, FemaleInsert>();
+  let duplicatesRemoved = 0;
+
+  for (const record of records) {
+    const identifier = getIdentifierKey(record.identifier);
+    if (!identifier) {
+      continue;
+    }
+
+    if (byIdentifier.has(identifier)) {
+      duplicatesRemoved += 1;
+    }
+
+    byIdentifier.set(identifier, {
+      ...record,
+      identifier,
+    });
+  }
+
+  return {
+    records: Array.from(byIdentifier.values()),
+    duplicatesRemoved,
+  };
+};
+
+const buildFemaleUpdatePayload = (record: FemaleInsert): Partial<FemaleInsert> => {
+  const { id, client_id, created_at, ...payload } = record as any;
+  return payload as Partial<FemaleInsert>;
+};
+
 const saveSheet = (data: Record<string, string>[], sheetName: string, filename: string, format: 'xlsx' | 'csv') => {
   const worksheet = utils.json_to_sheet(data);
   
