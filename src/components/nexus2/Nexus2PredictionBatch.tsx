@@ -898,7 +898,9 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
       return;
     }
 
-    const data = buildResultInsertRows(rows, selectedFarmId);
+    const { records: data, duplicatesRemoved } = dedupeInsertRowsByIdentifier(
+      buildResultInsertRows(rows, selectedFarmId)
+    );
 
     if (!data.length) {
       toast({
@@ -911,85 +913,28 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
     setIsSendingToHerd(true);
 
     try {
-      const { records: data, duplicatesRemoved } = dedupeInsertRowsByIdentifier(
-        buildResultInsertRows(rows, selectedFarmId)
-      );
-
-      if (!data.length) {
-        toast({
-          variant: 'destructive',
-          title: t('nexus2.batch.toast.noResultsToSend')
-        });
-        return;
-      }
-
       const batchSize = 100;
       let totalSaved = 0;
-      let totalUpdated = 0;
-      let totalInserted = 0;
 
       for (let index = 0; index < data.length; index += batchSize) {
         const chunk = data.slice(index, index + batchSize);
-        const identifiers = chunk
-          .map((record) => getIdentifierKey(record.identifier))
-          .filter(Boolean);
+        const { data: savedCount, error } = await supabase.rpc('import_females_json', {
+          p_client_id: selectedFarmId,
+          p_data: chunk as any,
+        });
 
-        const { data: existingRows, error: existingError } = await supabase
-          .from('females')
-          .select('id, identifier')
-          .eq('client_id', selectedFarmId)
-          .in('identifier', identifiers)
-          .is('deleted_at', null);
-
-        if (existingError) {
-          throw existingError;
+        if (error) {
+          throw error;
         }
 
-        const existingByIdentifier = new Map(
-          (existingRows ?? []).map((record: any) => [getIdentifierKey(record.identifier), record.id as string])
-        );
-        const recordsToInsert: FemaleInsert[] = [];
-        const recordsToUpdate: Array<{ id: string; payload: Partial<FemaleInsert> }> = [];
-
-        for (const record of chunk) {
-          const identifier = getIdentifierKey(record.identifier);
-          const existingId = existingByIdentifier.get(identifier);
-          if (existingId) {
-            recordsToUpdate.push({ id: existingId, payload: buildFemaleUpdatePayload(record) });
-          } else {
-            recordsToInsert.push(record);
-          }
-        }
-
-        if (recordsToInsert.length) {
-          const { error } = await supabase.from('females').insert(recordsToInsert);
-          if (error) {
-            throw error;
-          }
-          totalInserted += recordsToInsert.length;
-        }
-
-        for (const { id, payload } of recordsToUpdate) {
-          const { error } = await supabase
-            .from('females')
-            .update(payload)
-            .eq('id', id)
-            .eq('client_id', selectedFarmId);
-
-          if (error) {
-            throw error;
-          }
-          totalUpdated += 1;
-        }
-
-        totalSaved += chunk.length;
+        totalSaved += typeof savedCount === 'number' ? savedCount : chunk.length;
       }
 
       toast({
         title: t('nexus2.batch.toast.sendSuccess'),
         description: `${t('nexus2.batch.toast.sendSuccessDescription', { count: totalSaved })}${
-          totalUpdated > 0 || duplicatesRemoved > 0
-            ? ` (${totalInserted} novos, ${totalUpdated} atualizados${duplicatesRemoved > 0 ? `, ${duplicatesRemoved} duplicados no arquivo ignorados` : ''})`
+          duplicatesRemoved > 0
+            ? ` (${duplicatesRemoved} duplicados no arquivo ignorados)`
             : ''
         }`
       });
