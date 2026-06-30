@@ -281,8 +281,8 @@ const buildResultInsertRows = (rows: BatchRow[], farmId: string): FemaleInsert[]
   return rows
     .filter((row) => row.status === 'valid' && row.prediction)
     .map((row) => {
-      const name = row.idFazenda?.trim() || `Predição ${row.lineNumber}`;
-      const identifier = row.nome?.trim() || row.idFazenda?.trim() || `predicao-${row.lineNumber}`;
+      const identifier = row.idFazenda?.trim() || row.nome?.trim() || `predicao-${row.lineNumber}`;
+      const name = row.nome?.trim() || row.idFazenda?.trim() || `Predição ${row.lineNumber}`;
 
       const insertRecord: any = {
         client_id: farmId,
@@ -305,6 +305,34 @@ const buildResultInsertRows = (rows: BatchRow[], farmId: string): FemaleInsert[]
 
       return insertRecord as FemaleInsert;
     });
+};
+
+const getIdentifierKey = (value: unknown) => String(value ?? '').trim();
+
+const dedupeInsertRowsByIdentifier = (records: FemaleInsert[]) => {
+  const byIdentifier = new Map<string, FemaleInsert>();
+  let duplicatesRemoved = 0;
+
+  for (const record of records) {
+    const identifier = getIdentifierKey(record.identifier);
+    if (!identifier) {
+      continue;
+    }
+
+    if (byIdentifier.has(identifier)) {
+      duplicatesRemoved += 1;
+    }
+
+    byIdentifier.set(identifier, {
+      ...record,
+      identifier,
+    });
+  }
+
+  return {
+    records: Array.from(byIdentifier.values()),
+    duplicatesRemoved,
+  };
 };
 
 const saveSheet = (data: Record<string, string>[], sheetName: string, filename: string, format: 'xlsx' | 'csv') => {
@@ -870,7 +898,9 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
       return;
     }
 
-    const data = buildResultInsertRows(rows, selectedFarmId);
+    const { records: data, duplicatesRemoved } = dedupeInsertRowsByIdentifier(
+      buildResultInsertRows(rows, selectedFarmId)
+    );
 
     if (!data.length) {
       toast({
@@ -883,25 +913,30 @@ const Nexus2PredictionBatch: React.FC<Nexus2PredictionBatchProps> = ({ selectedF
     setIsSendingToHerd(true);
 
     try {
-      const batchSize = 200;
-      let totalInserted = 0;
+      const batchSize = 100;
+      let totalSaved = 0;
 
       for (let index = 0; index < data.length; index += batchSize) {
         const chunk = data.slice(index, index + batchSize);
-        const { error } = await supabase
-          .from('females')
-          .upsert(chunk, { onConflict: 'client_id,identifier', ignoreDuplicates: false });
+        const { data: savedCount, error } = await supabase.rpc('import_females_json', {
+          p_client_id: selectedFarmId,
+          p_data: chunk as any,
+        });
 
         if (error) {
           throw error;
         }
 
-        totalInserted += chunk.length;
+        totalSaved += typeof savedCount === 'number' ? savedCount : chunk.length;
       }
 
       toast({
         title: t('nexus2.batch.toast.sendSuccess'),
-        description: t('nexus2.batch.toast.sendSuccessDescription', { count: totalInserted })
+        description: `${t('nexus2.batch.toast.sendSuccessDescription', { count: totalSaved })}${
+          duplicatesRemoved > 0
+            ? ` (${duplicatesRemoved} duplicados no arquivo ignorados)`
+            : ''
+        }`
       });
     } catch (error) {
       console.error('Erro ao enviar resultados para o rebanho:', error);
