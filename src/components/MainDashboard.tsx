@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toolssLogo from '@/assets/toolss-logo.jpg';
+import acceleratedLogo from '@/assets/accelerated-genetics-logo.png';
 import { User } from '@supabase/supabase-js';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -719,7 +720,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
         <div data-tour="dashboard:header" className="flex h-16 items-center px-4 gap-4 bg-stone-50">
           <div className="flex items-center space-x-4">
             <img src={toolssLogo} alt="ToolSS Logo" className="h-10" />
-            
+            <span className="text-xs text-muted-foreground hidden sm:inline">by</span>
+            <img src={acceleratedLogo} alt="Accelerated Genetics" className="h-8 object-contain hidden sm:inline-block" />
           </div>
 
           <div className="ml-auto flex items-center gap-4">
@@ -942,10 +944,9 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 
           {/* Footer */}
           <div className="pt-8 border-t">
-            <div className="text-center text-sm text-muted-foreground">
-              
-              <p>Powered by
-Select Sires do Brasil</p>
+            <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
+              <p>Powered by</p>
+              <img src={acceleratedLogo} alt="Accelerated Genetics" className="h-12 object-contain" />
             </div>
           </div>
         </div>

@@ -488,7 +488,7 @@ const seedFemales: Female[] = generateComprehensiveFemales();
 // Função para gerar banco de touros simulado com 150 touros de 7 empresas
 const generateBullsDatabase = (): Bull[] => {
   const companies = [
-    { name: "Select Sires", code: "007HO", count: 21 },
+    { name: "Accelerated Genetics", code: "007HO", count: 21 },
     { name: "AG", code: "014HO", count: 21 },
     { name: "Alta", code: "011HO", count: 21 },
     { name: "Genex", code: "001HO", count: 22 },
@@ -1013,7 +1013,7 @@ export default function ToolSSApp() {
         Protein: Number(r.Protein || r.PTAP || 0),
         SCS: Number(r.SCS || 0),
         PTAT: Number(r.PTAT || 0),
-        empresa: r.Empresa || "SelectSires",
+        empresa: r.Empresa || "Accelerated Genetics",
         disponibilidade: "Disponível"
       }));
       const newClients = clients.map(c => c.id !== selectedClient.id ? c : {
@@ -1172,7 +1172,7 @@ function Header({
         <div className="flex items-center gap-3">
 
           <div className="font-bold text-xl">
-            TOOLSS <span className="font-normal text-sm text-muted-foreground">by Select Sires</span>
+            TOOLSS <span className="font-normal text-sm text-muted-foreground">by Accelerated Genetics</span>
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -2691,7 +2691,7 @@ function InfoPage({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
-            Este MVP demonstra a plataforma <b>ToolSS</b> (Select Sires) para visualização de dados genômicos de fêmeas
+            Este MVP demonstra a plataforma <b>ToolSS</b> (by Accelerated Genetics) para visualização de dados genômicos de fêmeas
             (CDCB EUA), comparação de índices, projeções de filhas e acompanhamento da evolução do rebanho.
           </p>
           <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
@@ -2700,7 +2700,7 @@ function InfoPage({
             <li><b>Predição:</b> Parent Average simplificado para o MVP (mãe+touro)/2.</li>
             <li><b>Gráficos:</b> evolução anual do rebanho com comparação de <i>mães × filhas (projeção)</i>.</li>
             <li><b>Importação:</b> CSV de fêmeas e touros (headers PT/EN). Persistência automática em localStorage.</li>
-            <li><b>Paleta Select Sires:</b> vermelho #ED1C24, preto #1C1C1C, cinza #D9D9D9, branco #F2F2F2.</li>
+            <li><b>Paleta by Accelerated Genetics:</b> vermelho #ED1C24, preto #1C1C1C, cinza #D9D9D9, branco #F2F2F2.</li>
           </ul>
           <div className="text-xs text-muted-foreground">
             *Para uso real, substituir dados simulados por exportações CDCB. Ajustar fórmulas (Parent Average, MACE/PA, compatibilidade de base, regressões) conforme as melhores práticas.

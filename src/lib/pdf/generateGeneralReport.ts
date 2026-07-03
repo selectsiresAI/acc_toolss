@@ -220,7 +220,7 @@ function addCoverPage(
   // ToolSS branding
   doc.setFontSize(10);
   doc.setTextColor(150, 150, 150);
-  doc.text('Powered by ToolSS - Select Sires', centerX, pageHeight - 15, { align: 'center' });
+  doc.text('Powered by ToolSS - by Accelerated Genetics', centerX, pageHeight - 15, { align: 'center' });
 }
 
 function addIndexPage(doc: jsPDF, pages: PageInfo[], locale: Locale = 'pt-BR'): void {

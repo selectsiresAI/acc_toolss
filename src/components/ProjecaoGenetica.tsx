@@ -477,7 +477,7 @@ function useAppState() {
           id: "bull1",
           name: "Bull Alpha",
           naab: "7HO17191",
-          empresa: "Select Sires",
+          empresa: "Accelerated Genetics",
           semen: "Sexado",
           pricePerDose: 155,
           doses: { novilhas: 120, primiparas: 60, secundiparas: 20, multiparas: 0 },
@@ -487,7 +487,7 @@ function useAppState() {
           id: "bull2",
           name: "Bull Beta",
           naab: "7HO17192",
-          empresa: "Select Sires",
+          empresa: "Accelerated Genetics",
           semen: "Convencional",
           pricePerDose: 75,
           doses: { novilhas: 40, primiparas: 90, secundiparas: 70, multiparas: 60 },
@@ -497,7 +497,7 @@ function useAppState() {
           id: "bull3",
           name: "Bull Core",
           naab: "7HO17193",
-          empresa: "Select Sires",
+          empresa: "Accelerated Genetics",
           semen: "Sexado",
           pricePerDose: 135,
           doses: { novilhas: 30, primiparas: 30, secundiparas: 40, multiparas: 60 },
@@ -2053,7 +2053,7 @@ function PageExport({ st }: { st: AppState }) {
     a.style.background = "#fff";
     a.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-        <div style="font-weight:800; font-size:18px; color:${COLORS.black}">${isEs ? "Proyección Genética MVP – Select Sires" : isEn ? "Genetic Projection MVP – Select Sires" : "Projeção Genética MVP – Select Sires"}</div>
+        <div style="font-weight:800; font-size:18px; color:${COLORS.black}">${isEs ? "Proyección Genética MVP – by Accelerated Genetics" : isEn ? "Genetic Projection MVP – by Accelerated Genetics" : "Projeção Genética MVP – by Accelerated Genetics"}</div>
         <div style="font-size:12px; color:${COLORS.black}">${new Date(st.farm.date || new Date().toISOString().slice(0,10)).toLocaleDateString(locale)}</div>
       </div>
       <div style="font-size:12px; margin-bottom:8px; color:${COLORS.black}">
