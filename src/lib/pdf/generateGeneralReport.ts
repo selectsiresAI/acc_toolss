@@ -187,7 +187,8 @@ function addCoverPage(
   farmOwner: string,
   userName: string,
   includeDateTime: boolean,
-  locale: Locale = 'pt-BR'
+  locale: Locale = 'pt-BR',
+  logo?: { dataUrl: string; width: number; height: number } | null
 ): void {
   const L = reportI18n[locale];
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -244,10 +245,15 @@ function addCoverPage(
     doc.text(`${L.generatedOn}: ${dateStr} ${L.atTime} ${timeStr}`, centerX, pageHeight - 30, { align: 'center' });
   }
 
-  // ToolSS branding
+  // Accelerated Genetics branding (logo + text) at the very bottom
+  if (logo) {
+    const logoH = 12;
+    const logoW = (logo.width / logo.height) * logoH;
+    doc.addImage(logo.dataUrl, 'PNG', centerX - logoW / 2, pageHeight - 28, logoW, logoH);
+  }
   doc.setFontSize(10);
   doc.setTextColor(150, 150, 150);
-  doc.text('Powered by ToolSS - by Accelerated Genetics', centerX, pageHeight - 15, { align: 'center' });
+  doc.text('Powered by ToolSS · by Accelerated Genetics', centerX, pageHeight - 10, { align: 'center' });
 }
 
 function addIndexPage(doc: jsPDF, pages: PageInfo[], locale: Locale = 'pt-BR'): void {
