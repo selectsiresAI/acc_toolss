@@ -720,7 +720,8 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
         <div data-tour="dashboard:header" className="flex h-16 items-center px-4 gap-4 bg-stone-50">
           <div className="flex items-center space-x-4">
             <img src={toolssLogo} alt="ToolSS Logo" className="h-10" />
-            
+            <span className="text-xs text-muted-foreground hidden sm:inline">by</span>
+            <img src={acceleratedLogo} alt="Accelerated Genetics" className="h-8 object-contain hidden sm:inline-block" />
           </div>
 
           <div className="ml-auto flex items-center gap-4">

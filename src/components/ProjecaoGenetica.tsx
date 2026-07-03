@@ -2053,7 +2053,7 @@ function PageExport({ st }: { st: AppState }) {
     a.style.background = "#fff";
     a.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
-        <div style="font-weight:800; font-size:18px; color:${COLORS.black}">${isEs ? "Proyección Genética MVP – Select Sires" : isEn ? "Genetic Projection MVP – Select Sires" : "Projeção Genética MVP – Select Sires"}</div>
+        <div style="font-weight:800; font-size:18px; color:${COLORS.black}">${isEs ? "Proyección Genética MVP – by Accelerated Genetics" : isEn ? "Genetic Projection MVP – by Accelerated Genetics" : "Projeção Genética MVP – by Accelerated Genetics"}</div>
         <div style="font-size:12px; color:${COLORS.black}">${new Date(st.farm.date || new Date().toISOString().slice(0,10)).toLocaleDateString(locale)}</div>
       </div>
       <div style="font-size:12px; margin-bottom:8px; color:${COLORS.black}">
