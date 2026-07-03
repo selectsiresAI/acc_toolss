@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toolssLogo from '@/assets/toolss-logo.jpg';
+import acceleratedLogo from '@/assets/accelerated-genetics-logo.png';
 import { User } from '@supabase/supabase-js';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
