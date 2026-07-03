@@ -943,10 +943,9 @@ const MainDashboard: React.FC<MainDashboardProps> = ({
 
           {/* Footer */}
           <div className="pt-8 border-t">
-            <div className="text-center text-sm text-muted-foreground">
-              
-              <p>Powered by
-Select Sires do Brasil</p>
+            <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
+              <p>Powered by</p>
+              <img src={acceleratedLogo} alt="Accelerated Genetics" className="h-12 object-contain" />
             </div>
           </div>
         </div>
