@@ -488,7 +488,7 @@ const seedFemales: Female[] = generateComprehensiveFemales();
 // Função para gerar banco de touros simulado com 150 touros de 7 empresas
 const generateBullsDatabase = (): Bull[] => {
   const companies = [
-    { name: "Select Sires", code: "007HO", count: 21 },
+    { name: "Accelerated Genetics", code: "007HO", count: 21 },
     { name: "AG", code: "014HO", count: 21 },
     { name: "Alta", code: "011HO", count: 21 },
     { name: "Genex", code: "001HO", count: 22 },
@@ -1013,7 +1013,7 @@ export default function ToolSSApp() {
         Protein: Number(r.Protein || r.PTAP || 0),
         SCS: Number(r.SCS || 0),
         PTAT: Number(r.PTAT || 0),
-        empresa: r.Empresa || "SelectSires",
+        empresa: r.Empresa || "Accelerated Genetics",
         disponibilidade: "Disponível"
       }));
       const newClients = clients.map(c => c.id !== selectedClient.id ? c : {
