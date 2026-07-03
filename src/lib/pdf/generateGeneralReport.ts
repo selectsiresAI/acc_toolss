@@ -319,38 +319,75 @@ function addIndexPage(doc: jsPDF, pages: PageInfo[], locale: Locale = 'pt-BR'): 
   });
 }
 
-function addPageNumber(doc: jsPDF, pageNum: number, totalPages: number, locale: Locale = 'pt-BR'): void {
+function addPageNumber(
+  doc: jsPDF,
+  pageNum: number,
+  totalPages: number,
+  locale: Locale = 'pt-BR',
+  logo?: { dataUrl: string; width: number; height: number } | null
+): void {
   const L = reportI18n[locale];
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  doc.setFontSize(10);
+  // Footer divider
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.2);
+  doc.line(15, pageHeight - 14, pageWidth - 15, pageHeight - 14);
+
+  // Left: logo + "by Accelerated Genetics"
+  if (logo) {
+    const logoH = 6;
+    const logoW = (logo.width / logo.height) * logoH;
+    doc.addImage(logo.dataUrl, 'PNG', 15, pageHeight - 11, logoW, logoH);
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text('by Accelerated Genetics', 15 + logoW + 2, pageHeight - 6);
+  } else {
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text('by Accelerated Genetics', 15, pageHeight - 6);
+  }
+
+  // Center: page numbering
+  doc.setFontSize(9);
   doc.setTextColor(150, 150, 150);
   doc.text(
     `${L.page} ${pageNum} ${L.of} ${totalPages}`,
     pageWidth / 2,
-    pageHeight - 10,
+    pageHeight - 6,
     { align: 'center' }
   );
 }
 
-function addSectionTitle(doc: jsPDF, title: string): void {
+function addSectionTitle(
+  doc: jsPDF,
+  title: string,
+  logo?: { dataUrl: string; width: number; height: number } | null
+): void {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
-  
+
   // Background bar
   doc.setFillColor(245, 245, 245);
   doc.rect(0, 0, pageWidth, 25, 'F');
-  
+
   // Red accent
   doc.setFillColor(239, 68, 68);
   doc.rect(0, 0, 5, 25, 'F');
-  
+
   // Title text
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text(title, margin, 17);
+
+  // Logo on the right side of the header
+  if (logo) {
+    const logoH = 10;
+    const logoW = (logo.width / logo.height) * logoH;
+    doc.addImage(logo.dataUrl, 'PNG', pageWidth - margin - logoW, 7.5, logoW, logoH);
+  }
 }
 
 export async function generateGeneralReport(
