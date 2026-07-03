@@ -20,7 +20,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 /**
  * ToolSS — MVP interativo (Lovable-ready)
- * Select Sires color palette integrated with design system
+ * Brand color palette integrated with design system
  */
 
 // ------------------------ Types ------------------------

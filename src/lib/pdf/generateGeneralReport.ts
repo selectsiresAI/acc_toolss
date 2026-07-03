@@ -2,6 +2,33 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import type { ReportSelection, GeneralReportConfig } from "@/hooks/useGeneralReport";
 import type { Locale } from "@/lib/i18n";
+import acceleratedLogoUrl from "@/assets/accelerated-genetics-logo.png";
+
+let _logoDataUrlCache: { dataUrl: string; width: number; height: number } | null = null;
+async function loadAcceleratedLogo(): Promise<{ dataUrl: string; width: number; height: number } | null> {
+  if (_logoDataUrlCache) return _logoDataUrlCache;
+  try {
+    const res = await fetch(acceleratedLogoUrl);
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    const dims: { width: number; height: number } = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+    _logoDataUrlCache = { dataUrl, ...dims };
+    return _logoDataUrlCache;
+  } catch (e) {
+    console.warn('Failed to load Accelerated Genetics logo for PDF', e);
+    return null;
+  }
+}
 
 export interface GenerateReportOptions {
   farmName: string;
@@ -160,7 +187,8 @@ function addCoverPage(
   farmOwner: string,
   userName: string,
   includeDateTime: boolean,
-  locale: Locale = 'pt-BR'
+  locale: Locale = 'pt-BR',
+  logo?: { dataUrl: string; width: number; height: number } | null
 ): void {
   const L = reportI18n[locale];
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -217,10 +245,15 @@ function addCoverPage(
     doc.text(`${L.generatedOn}: ${dateStr} ${L.atTime} ${timeStr}`, centerX, pageHeight - 30, { align: 'center' });
   }
 
-  // ToolSS branding
+  // Accelerated Genetics branding (logo + text) at the very bottom
+  if (logo) {
+    const logoH = 12;
+    const logoW = (logo.width / logo.height) * logoH;
+    doc.addImage(logo.dataUrl, 'PNG', centerX - logoW / 2, pageHeight - 28, logoW, logoH);
+  }
   doc.setFontSize(10);
   doc.setTextColor(150, 150, 150);
-  doc.text('Powered by ToolSS - by Accelerated Genetics', centerX, pageHeight - 15, { align: 'center' });
+  doc.text('Powered by ToolSS · by Accelerated Genetics', centerX, pageHeight - 10, { align: 'center' });
 }
 
 function addIndexPage(doc: jsPDF, pages: PageInfo[], locale: Locale = 'pt-BR'): void {
@@ -286,38 +319,75 @@ function addIndexPage(doc: jsPDF, pages: PageInfo[], locale: Locale = 'pt-BR'): 
   });
 }
 
-function addPageNumber(doc: jsPDF, pageNum: number, totalPages: number, locale: Locale = 'pt-BR'): void {
+function addPageNumber(
+  doc: jsPDF,
+  pageNum: number,
+  totalPages: number,
+  locale: Locale = 'pt-BR',
+  logo?: { dataUrl: string; width: number; height: number } | null
+): void {
   const L = reportI18n[locale];
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  doc.setFontSize(10);
+  // Footer divider
+  doc.setDrawColor(220, 220, 220);
+  doc.setLineWidth(0.2);
+  doc.line(15, pageHeight - 14, pageWidth - 15, pageHeight - 14);
+
+  // Left: logo + "by Accelerated Genetics"
+  if (logo) {
+    const logoH = 6;
+    const logoW = (logo.width / logo.height) * logoH;
+    doc.addImage(logo.dataUrl, 'PNG', 15, pageHeight - 11, logoW, logoH);
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text('by Accelerated Genetics', 15 + logoW + 2, pageHeight - 6);
+  } else {
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text('by Accelerated Genetics', 15, pageHeight - 6);
+  }
+
+  // Center: page numbering
+  doc.setFontSize(9);
   doc.setTextColor(150, 150, 150);
   doc.text(
     `${L.page} ${pageNum} ${L.of} ${totalPages}`,
     pageWidth / 2,
-    pageHeight - 10,
+    pageHeight - 6,
     { align: 'center' }
   );
 }
 
-function addSectionTitle(doc: jsPDF, title: string): void {
+function addSectionTitle(
+  doc: jsPDF,
+  title: string,
+  logo?: { dataUrl: string; width: number; height: number } | null
+): void {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
-  
+
   // Background bar
   doc.setFillColor(245, 245, 245);
   doc.rect(0, 0, pageWidth, 25, 'F');
-  
+
   // Red accent
   doc.setFillColor(239, 68, 68);
   doc.rect(0, 0, 5, 25, 'F');
-  
+
   // Title text
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text(title, margin, 17);
+
+  // Logo on the right side of the header
+  if (logo) {
+    const logoH = 10;
+    const logoW = (logo.width / logo.height) * logoH;
+    doc.addImage(logo.dataUrl, 'PNG', pageWidth - margin - logoW, 7.5, logoW, logoH);
+  }
 }
 
 export async function generateGeneralReport(
@@ -353,9 +423,12 @@ export async function generateGeneralReport(
 
   onProgress(5, L.preparingDoc);
 
+  // Preload Accelerated Genetics logo for headers/footers
+  const brandLogo = await loadAcceleratedLogo();
+
   // Add cover page
   if (config.includeCover) {
-    addCoverPage(doc, farmName, farmOwner, userName, config.includeDateTime, locale);
+    addCoverPage(doc, farmName, farmOwner, userName, config.includeDateTime, locale, brandLogo);
     doc.addPage();
     currentPage++;
   }
