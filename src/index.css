@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Select Sires ToolSS design system
+/* ToolSS by Accelerated Genetics design system
 Primary: Red #ED1C24, Black #1C1C1C, Gray #D9D9D9, White #F2F2F2, Green #8DC63F
 */
 
@@ -17,16 +17,16 @@ Primary: Red #ED1C24, Black #1C1C1C, Gray #D9D9D9, White #F2F2F2, Green #8DC63F
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 347 81% 47%; /* ED1C24 Select Sires Red */
+    --primary: 347 81% 47%; /* ED1C24 Brand Red */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 85%; /* D9D9D9 Select Sires Gray */
+    --secondary: 0 0% 85%; /* D9D9D9 Brand Gray */
     --secondary-foreground: 0 0% 11%;
 
-    --muted: 0 0% 95%; /* F2F2F2 Select Sires White */
+    --muted: 0 0% 95%; /* F2F2F2 Brand White */
     --muted-foreground: 0 0% 45%;
 
-    --accent: 83 65% 54%; /* 8DC63F Select Sires Green */
+    --accent: 83 65% 54%; /* 8DC63F Brand Green */
     --accent-foreground: 0 0% 11%;
 
     --destructive: 0 84.2% 60.2%;

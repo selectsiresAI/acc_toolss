@@ -21,7 +21,7 @@ import { EmptyChartPlaceholder } from "@/components/plano-genetico/EmptyChartPla
 import { useTranslation } from '@/hooks/useTranslation';
 
 /**
- * Projeção Genética MVP – Select Sires (Frontend Only, Single File)
+ * Projeção Genética MVP – by Accelerated Genetics (Frontend Only, Single File)
  * ---------------------------------------------------------------
  * - Sem backend / sem banco. Todos os dados são inseridos manualmente.
  * - Persistência local automática em localStorage.
@@ -29,7 +29,7 @@ import { useTranslation } from '@/hooks/useTranslation';
  * - ROI em R$ baseado no índice econômico selecionado ponderado × nº de bezerras − custo de sêmen.
  * - Gráficos com Chart.js carregado dinamicamente via CDN (jsDelivr).
  * - Exportação PDF com html2canvas + jsPDF (CDN), com fallback para window.print().
- * - Identidade visual Select Sires na UI (cores e tipografia Montserrat sugeridas no index.html do projeto Lovable).
+ * - Identidade visual Accelerated Genetics na UI (cores e tipografia Montserrat sugeridas no index.html do projeto Lovable).
  *
  * Como usar no Lovable:
  * 1) Crie um projeto React/TS no Lovable e adicione este arquivo como App.tsx (ou substitua o App existente).
