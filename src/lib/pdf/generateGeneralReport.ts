@@ -2,6 +2,33 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import type { ReportSelection, GeneralReportConfig } from "@/hooks/useGeneralReport";
 import type { Locale } from "@/lib/i18n";
+import acceleratedLogoUrl from "@/assets/accelerated-genetics-logo.png";
+
+let _logoDataUrlCache: { dataUrl: string; width: number; height: number } | null = null;
+async function loadAcceleratedLogo(): Promise<{ dataUrl: string; width: number; height: number } | null> {
+  if (_logoDataUrlCache) return _logoDataUrlCache;
+  try {
+    const res = await fetch(acceleratedLogoUrl);
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    const dims: { width: number; height: number } = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+    _logoDataUrlCache = { dataUrl, ...dims };
+    return _logoDataUrlCache;
+  } catch (e) {
+    console.warn('Failed to load Accelerated Genetics logo for PDF', e);
+    return null;
+  }
+}
 
 export interface GenerateReportOptions {
   farmName: string;
