@@ -423,9 +423,12 @@ export async function generateGeneralReport(
 
   onProgress(5, L.preparingDoc);
 
+  // Preload Accelerated Genetics logo for headers/footers
+  const brandLogo = await loadAcceleratedLogo();
+
   // Add cover page
   if (config.includeCover) {
-    addCoverPage(doc, farmName, farmOwner, userName, config.includeDateTime, locale);
+    addCoverPage(doc, farmName, farmOwner, userName, config.includeDateTime, locale, brandLogo);
     doc.addPage();
     currentPage++;
   }
