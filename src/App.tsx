@@ -104,6 +104,22 @@ const AppContent = () => {
         />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route
+          path="/farms"
+          element={user ? <FarmsListPage /> : <AuthPage onAuthSuccess={handleAuthSuccess} />}
+        />
+        <Route
+          path="/farms/new"
+          element={user ? <FarmFormPage mode="create" /> : <AuthPage onAuthSuccess={handleAuthSuccess} />}
+        />
+        <Route
+          path="/farms/:farmId"
+          element={user ? <FarmDetailPage /> : <AuthPage onAuthSuccess={handleAuthSuccess} />}
+        />
+        <Route
+          path="/farms/:farmId/edit"
+          element={user ? <FarmFormPage mode="edit" /> : <AuthPage onAuthSuccess={handleAuthSuccess} />}
+        />
+        <Route
           path="/admin/*"
           element={
             user ? (
