@@ -21,6 +21,9 @@ import GlossaryManager from "@/pages/admin/GlossaryManager";
 import TranslationBatch from "@/pages/admin/TranslationBatch";
 import I18nDashboard from "@/pages/admin/I18nDashboard";
 import ResultsProcessingPage from "@/pages/admin/ResultsProcessingPage";
+import FarmsListPage from "@/features/farms-ag/FarmsListPage";
+import FarmFormPage from "@/features/farms-ag/FarmFormPage";
+import FarmDetailPage from "@/features/farms-ag/FarmDetailPage";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const AppContent = () => {
