@@ -21,6 +21,9 @@ import GlossaryManager from "@/pages/admin/GlossaryManager";
 import TranslationBatch from "@/pages/admin/TranslationBatch";
 import I18nDashboard from "@/pages/admin/I18nDashboard";
 import ResultsProcessingPage from "@/pages/admin/ResultsProcessingPage";
+import FarmsListPage from "@/features/farms-ag/FarmsListPage";
+import FarmFormPage from "@/features/farms-ag/FarmFormPage";
+import FarmDetailPage from "@/features/farms-ag/FarmDetailPage";
 import { useTranslation } from "@/hooks/useTranslation";
 
 const AppContent = () => {
@@ -100,6 +103,22 @@ const AppContent = () => {
           }
         />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route
+          path="/farms"
+          element={user ? <FarmsListPage /> : <AuthPage onAuthSuccess={handleAuthSuccess} />}
+        />
+        <Route
+          path="/farms/new"
+          element={user ? <FarmFormPage mode="create" /> : <AuthPage onAuthSuccess={handleAuthSuccess} />}
+        />
+        <Route
+          path="/farms/:farmId"
+          element={user ? <FarmDetailPage /> : <AuthPage onAuthSuccess={handleAuthSuccess} />}
+        />
+        <Route
+          path="/farms/:farmId/edit"
+          element={user ? <FarmFormPage mode="edit" /> : <AuthPage onAuthSuccess={handleAuthSuccess} />}
+        />
         <Route
           path="/admin/*"
           element={
