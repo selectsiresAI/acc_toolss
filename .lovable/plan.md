@@ -1,36 +1,38 @@
 ## Objetivo
 
-Remover o fator de regressão `0,93` da fórmula de predição **apenas quando a característica for SCS**. Para todas as outras traits, a fórmula permanece inalterada (`((Mãe + Touro) / 2) × 0,93`).
+Trocar o backend atual (`odactdxpecpiyiyaqfgi`) por um novo projeto Supabase que você criará na sua organização. O novo backend começa **vazio** — sem dados, sem tabelas, sem usuários, sem edge functions.
 
-Motivo: SCS já é uma escala logarítmica em que a média geracional não regride como as traits lineares. Aplicar 0,93 estava puxando o valor das filhas para baixo artificialmente (no exemplo: pais 2,82 + mães 2,90 → esperado ≈ 2,86, mas saía 2,60).
+## O que você precisa fazer antes (manual, no supabase.com)
 
-## Escopo — Nexus 1 (Genômica) e Nexus 3 (Grupos) e ToolSSApp
+1. Criar um novo projeto na sua org do Supabase.
+2. Anotar do painel do projeto (Project Settings → API):
+   - **Project URL** (ex.: `https://xxxxxxx.supabase.co`)
+   - **anon public key**
+   - **Project ID / ref** (o `xxxxxxx` da URL)
+3. Me passar esses 3 valores no chat.
 
-A predição de pedigree do **Nexus 2** usa fórmula diferente (0,57·Pai + 0,28·MGS + 0,15·MGGS), sem fator 0,93 — **não será alterada**.
+Não me envie a `service_role` key — ela nunca deve ir para o frontend.
 
-### Arquivos afetados
+## O que eu faço no código depois que você me passar os valores
 
-1. **`src/components/Nexus1GenomicPrediction.tsx`** (linha 98-101)
-   - `calculateGenomicPrediction(femalePTA, bullPTA, traitKey?)` passa a aceitar a trait.
-   - Quando `traitKey` (case-insensitive) for `"scs"`, retorna `(femalePTA + bullPTA) / 2` sem multiplicar por 0,93.
-   - Atualizar todas as chamadas do componente para passar a chave da PTA.
-   - Atualizar os textos de ajuda (PT/EN/ES) para registrar a exceção do SCS.
+1. **Atualizar o cliente do Supabase** — `src/integrations/supabase/client.ts`: novos `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`.
+2. **Atualizar `supabase/config.toml`** — trocar `project_id` para o ref novo.
+3. **Recriar o schema** aplicando as migrations existentes em `supabase/migrations/` no novo projeto, na ordem cronológica. Isso reconstrói: tabelas (`bulls`, `females`, `user_farms`, `profiles`, `user_roles`, etc.), views denormalizadas (`bulls_denorm`, `females_denorm`), funções (`has_role`, cálculo HHP$), triggers, RLS e GRANTs.
+4. **Reimplantar as edge functions** existentes (`import-bulls`, `import-females`, `create-users`, `share-farm`, `translate-i18n`, etc.) no novo projeto.
+5. **Reconfigurar secrets das edge functions** — vou listar quais secrets o novo projeto precisa (ex.: `SUPABASE_SERVICE_ROLE_KEY`, chaves de IA/tradução, etc.) e você adiciona no painel do novo projeto.
+6. **Verificação** — build + rodar o app em preview, testar login/signup, e checar que nenhum código ficou apontando para o ref antigo (`odactdxpecpiyiyaqfgi`).
 
-2. **`src/components/ToolSSApp.tsx`** (linha 2507-2510 e callers em `generateComparisonData`)
-   - `calculateOffspringPTA(motherPTA, bullPTA, ptaKey?)` recebe a chave; se `SCS`, não aplica 0,93.
-   - `generateComparisonData(ptaKey)` já tem `ptaKey` — apenas repassa.
+## O que fica quebrado até você reagir
 
-3. **`src/components/nexus/Nexus3Groups.tsx`** (linha 146-153 e textos linhas 761-764)
-   - No `useMemo` do `chartData`, calcular `daughters_pred` condicionalmente: se `trait === 'SCS'` (ou normalizado), usar `(m.avg_value + bullsAvg) / 2`; caso contrário, manter `× 0.93`.
-   - Atualizar as legendas PT/EN/ES para indicar “exceto SCS”.
+- **Dados**: catálogo de touros (`bulls_denorm` tem ~44k linhas hoje), fazendas, usuários, fêmeas importadas, relatórios salvos — tudo zerado. Você precisará reimportar (os importadores CSV/XLSX continuam funcionando).
+- **Usuários**: contas antigas não migram. Todo mundo precisa se cadastrar de novo. Papéis de admin precisam ser recriados manualmente na tabela `user_roles`.
+- **Storage**: arquivos enviados (Pasta de Arquivos, logos, etc.) não migram.
+- **Auth providers**: se hoje há Google/Apple configurados no projeto antigo, precisará reconfigurar no novo.
 
-### Não alterar
+## Alternativa que preserva os dados
 
-- `src/services/prediction.service.ts` e `src/hooks/usePedigreeStore.ts` (Nexus 2 pedigree) — não usam 0,93.
-- Outras ocorrências de `0.9` no projeto pertencem à Calculadora de Reposição (taxa de fêmeas vivas / sêmen convencional) e não têm relação com predição genética.
+Se em algum momento você quiser evitar a perda, o caminho é: fazer backup do banco atual via `pg_dump` no Supabase antigo → restaurar no novo → só então trocar as credenciais. Posso montar um plano separado para isso se decidir mudar de abordagem.
 
-### Validação
+## Próximo passo
 
-- Reabrir Nexus 1 com a fêmea e touro do exemplo (pais SCS 2,82; mães 2,90): a coluna SCS das filhas deve ficar próxima de **2,86**, não mais 2,60.
-- Conferir que demais traits (HHP$, TPI, NM$, PTAM, PTAF) continuam aplicando 0,93 e batem com os valores de validação já documentados no comentário do `calculateGenomicPrediction`.
-- Conferir o gráfico do Nexus 3 ao selecionar SCS e ao selecionar outra trait.
+Aprove este plano e me envie **URL, anon key e project ref** do novo projeto Supabase.
