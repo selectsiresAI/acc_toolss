@@ -30,6 +30,11 @@ supabase/.temp/
 __pycache__/
 *.pyc
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 # Temp data
 tmp_*.json
 PLAN*.md
